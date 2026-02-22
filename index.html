@@ -1,321 +1,35 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Le Vieux Poulet</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&display=swap');
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', sans-serif;
-  background: #fff8e1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
-#score, #bestScore {
-  position: fixed;
-  right: 20px;
-  font-weight: bold;
-  color: #ff0028;
-  text-shadow: 1px 1px #ffcc00;
-  z-index: 10;
-  text-align: right;
-}
-
-#score {
-  top: 10px;
-  font-size: 2rem;
-}
-
-#bestScore {
-  top: 50px;       /* juste en dessous de score */
-  font-size: 1.5rem; /* un peu plus petit */
-}
-
-
-h1 {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 4rem;
-  margin: 2rem 0 1rem;
-  color: #ff0028;
-  text-shadow: -3px -3px #ffcc00, 3px 3px #000;
-  position: relative;
-  letter-spacing: 2px;
-  animation: popIn 1s ease-out;
-}
-
-h1::after {
-  content: "🍗";
-  position: absolute;
-  right: -50px;
-  animation: bounce 1s infinite alternate;
-}
-
-@keyframes popIn {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-10px) rotate(-10deg); }
-}
-
-.slogan {
-  font-size: 1.3rem;
-  color: #ffcc00;
-  font-weight: bold;
-  margin-bottom: 2rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 1px 1px 0 #ff0028;
-}
-
-#bucketContainer {
-  perspective: 1000px;
-  position: relative;
-  width: 200px;
-  height: 200px;
-  margin-top: 20vh;
-  z-index: 5;
-}
-
-#bucket {
-  width: 100%;
-  height: 100%;
-  background: url('bucket.png') no-repeat center/cover;
-  border-radius: 50%;
-  transform-style: preserve-3d;
-  animation: rotateBucket 3s linear infinite;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-}
-
-@keyframes rotateBucket {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
-}
-
-.cards {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.card {
-  position: absolute;
-  transform: translate(-50%, -50%) scale(0);
-  background: #fff;
-  border-radius: 15px;
-  padding: 1rem;
-  text-align: center;
-  border: 3px solid #ffcc00;
-  box-shadow: 5px 5px 0 #ff0028;
-  transition: transform 0.8s ease, opacity 0.8s ease;
-  cursor: pointer;
-}
-
-.card.show {
-  transform: translate(-50%, -50%) scale(1);
-  pointer-events: auto;
-}
-
-.card:hover {
-  transform: translate(-50%, -50%) scale(1.1) rotate(-3deg);
-  box-shadow: 8px 8px 0 #ffcc00;
-}
-
-.nickname {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 1.5rem;
-  color: #ff0028;
-  text-shadow: 1px 1px 0 #ffcc00;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%,100% { transform: scale(1); }
-  50% { transform: scale(1.1); color: #ff8800; }
-}
-
-.card a {
-  display: inline-block;
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #fff;
-  background: linear-gradient(90deg, #ffcc00, #ff8800);
-  padding: 0.5rem 1rem;
-  border-radius: 30px;
-  text-decoration: none;
-  transition: transform 0.2s ease, background 0.3s ease;
-  box-shadow: 2px 2px 0 #ff0028;
-  position: relative;
-  overflow: hidden;
-}
-
-.card a::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255,255,255,0.4);
-  transform: skewX(-25deg);
-}
-
-.card a:hover::after { animation: shine 0.8s forwards; }
-@keyframes shine { to { left: 150%; } }
-.card a:hover { background: linear-gradient(90deg, #ff0028, #ff8800); }
-
-footer {
-  margin-top: auto;
-  padding: 1rem;
-  text-align: center;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #fff;
-  background: #ff0028;
-  width: 100%;
-  text-shadow: 2px 2px 0 #000;
-  letter-spacing: 1px;
-}
-
-footer span { color: #ffcc00; }
-
-.confetti {
-  position: fixed;
-  top: -50px;
-  font-size: 2rem;
-  animation: fall linear infinite;
-  cursor: pointer;
-  opacity: 0.8;
-  z-index: 0;
-  transition: transform 0.3s, opacity 0.3s;
-}
-@keyframes fall {
-  from { transform: translateY(-50px) rotate(0deg); }
-  to { transform: translateY(110vh) rotate(360deg); }
-}
-.explode { transform: scale(2) rotate(360deg); opacity: 0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Fwitter Championship</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0a1428 0%, #1a2f4f 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        h1 {
+            color: #f0e6d2;
+            font-size: 4rem;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+            letter-spacing: 2px;
+        }
+    </style>
 </head>
 <body>
-
-<div id="score">Score: 0</div>
-<div id="bestScore">Best: 0</div> <!-- ajout du best score -->
-
-
-<h1>Le Vieux Poulet</h1>
-<p class="slogan">Menu Spécial League of Charlemagne</p>
-
-<div id="bucketContainer">
-  <div id="bucket"></div>
-</div>
-
-<div class="cards" id="cardsContainer">
-  <div class="card"><p class="nickname">TheFool Combo</p><a href="https://op.gg/fr/lol/summoners/euw/TheFool-JOK3R" target="_blank">Raouf</a></div>
-  <div class="card"><p class="nickname">Super Gooner Bucket</p><a href="https://op.gg/fr/lol/summoners/euw/Super%20Gooner-prout" target="_blank">Cyp</a></div>
-  <div class="card"><p class="nickname">Fortnite Crispy</p><a href="https://op.gg/lol/summoners/euw/Fortnite-CHIBR" target="_blank">Ilan</a></div>
-  <div class="card"><p class="nickname">XeleriaZ Spicy Wings</p><a href="https://op.gg/lol/summoners/euw/GRM%20XeleriaZ-GRM" target="_blank">Esteban</a></div>
-  <div class="card"><p class="nickname">NaasaX Family Pack</p><a href="https://op.gg/lol/summoners/euw/NaasaX-8747" target="_blank">Marcelin</a></div>
-</div>
-
-<footer>🍗 Finger lickin' <span>Le Vieux Poulet</span> — Since 2025 🍗</footer>
-
-<script>
-const emojis = ["🍗","🍟","🥤"];
-const scoreEl = document.getElementById("score");
-const bestEl = document.getElementById("bestScore"); // assure-toi d'avoir un <div id="bestScore"></div>
-let score = 0;
-
-// récupérer le best score depuis localStorage
-let bestScore = localStorage.getItem('bestScore') || 0;
-bestEl.textContent = 'Best: ' + bestScore;
-
-function increaseScore(amount = 1) {
-  score += amount;
-  scoreEl.textContent = "Score: " + score;
-
-  if(score > bestScore){
-    bestScore = score;
-    localStorage.setItem('bestScore', bestScore);
-    bestEl.textContent = "Best: " + bestScore;
-  }
-}
-
-function createConfetti() {
-  let confetti = document.createElement("div");
-  confetti.className = "confetti";
-  confetti.style.left = Math.random()*100+"vw";
-  confetti.style.animationDuration = (3+Math.random()*5)+"s";
-  confetti.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-  document.body.appendChild(confetti);
-
-  confetti.addEventListener("click", () => {
-    confetti.classList.add("explode");
-    increaseScore(); // utilise la fonction pour gérer score et best
-    setTimeout(() => confetti.remove(), 300);
-  });
-
-  setTimeout(() => { if(confetti.parentElement) confetti.remove(); }, (parseFloat(confetti.style.animationDuration) * 1000));
-}
-
-window.addEventListener('load', () => {
-  const cards = document.querySelectorAll('.card');
-  const bucket = document.getElementById('bucket');
-  const bucketRect = bucket.getBoundingClientRect();
-  const centerX = bucketRect.left + bucketRect.width/2;
-  const centerY = bucketRect.top + bucketRect.height/2;
-
-  const finalPositions = [
-    {x: window.innerWidth/2 - 500, y: window.innerHeight/2 - 30},
-    {x: window.innerWidth/2 - 250, y: window.innerHeight/2 + 20},
-    {x: window.innerWidth/2,       y: window.innerHeight/2 - 10},
-    {x: window.innerWidth/2 + 250, y: window.innerHeight/2 + 15},
-    {x: window.innerWidth/2 + 518, y: window.innerHeight/2 - 25}
-  ];
-
-  // initialisation des cartes au centre
-  cards.forEach((card, i) => {
-    card.style.left = centerX + "px";
-    card.style.top = centerY + "px";
-    card.style.zIndex = 100 + i;
-  });
-
-  setTimeout(() => {
-    // disparition du bucket
-    bucket.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
-    bucket.style.transform = 'scale(0)';
-    bucket.style.opacity = '0';
-
-    // animation des cartes
-    cards.forEach((card,i) => {
-      setTimeout(() => {
-        card.style.transition = 'all 0.8s cubic-bezier(.68,-0.55,.27,1.55)';
-        card.style.left = finalPositions[i].x + "px";
-        card.style.top  = finalPositions[i].y + "px";
-        card.style.transform = 'translate(-50%, -50%) scale(1)';
-        card.style.pointerEvents = 'auto';
-      }, i*300);
-    });
-
-    // activer pointer-events sur le conteneur
-    document.getElementById('cardsContainer').style.pointerEvents = 'auto';
-
-    // lancer confettis
-    setInterval(createConfetti, 300);
-  }, 1500);
-});
-</script>
-
+    <h1>LoL Fwitter Championship</h1>
 </body>
 </html>
