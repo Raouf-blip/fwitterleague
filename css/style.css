@@ -1,0 +1,149 @@
+:root {
+    --gold: #c8aa6e;
+    --gold-dark: #785a28;
+    --blue: #0ac8b9;
+    --dark-blue: #0a1428;
+    --dark-blue-light: #1a2f4f;
+    --white: #f0e6d2;
+    --grey: #a09b8c;
+    --red: #ff4655;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.lol-theme {
+    background: radial-gradient(circle at top, var(--dark-blue-light) 0%, var(--dark-blue) 100%);
+    color: var(--white);
+    font-family: 'Beaufort for LoL', 'Arial', sans-serif;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Navigation */
+.main-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    border-bottom: 2px solid var(--gold-dark);
+    background: rgba(10, 20, 40, 0.9);
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+}
+
+.nav-links a {
+    color: var(--white);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--gold);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 100px 0;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(200, 170, 110, 0.3);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: var(--grey);
+    margin-bottom: 40px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 12px 30px;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    border: 2px solid var(--gold);
+    transition: all 0.3s;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--gold);
+    color: var(--dark-blue);
+}
+
+.btn-primary:hover {
+    background: transparent;
+    color: var(--gold);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--gold);
+}
+
+.btn-secondary:hover {
+    background: var(--gold);
+    color: var(--dark-blue);
+}
+
+/* Grid & Sections */
+.section {
+    padding: 60px 0;
+}
+
+.section h2 {
+    color: var(--gold);
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    border-left: 4px solid var(--gold);
+    padding-left: 15px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.loading {
+    color: var(--grey);
+    font-style: italic;
+}
+
+footer {
+    text-align: center;
+    padding: 40px;
+    border-top: 1px solid var(--gold-dark);
+    margin-top: 60px;
+    color: var(--grey);
+    font-size: 0.8rem;
+}

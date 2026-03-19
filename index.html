@@ -3,33 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoL Fwitter Championship</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #0a1428 0%, #1a2f4f 100%);
-            font-family: 'Arial', sans-serif;
-        }
-        
-        h1 {
-            color: #f0e6d2;
-            font-size: 4rem;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
-            letter-spacing: 2px;
-        }
-    </style>
+    <title>FwitterLeague | Home</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <h1>LoL Fwitter Championship</h1>
+<body class="lol-theme">
+    <nav class="main-nav">
+        <div class="logo">FWITTERLEAGUE</div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">Accueil</a></li>
+            <li><a href="agents.html">Agents Libres</a></li>
+            <li><a href="teams.html">Équipes</a></li>
+            <li id="auth-link"><a href="login.html">Connexion</a></li>
+            <li id="profile-link" style="display:none;"><a href="profile.html">Mon Profil</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <h1>Bienvenue dans la FwitterLeague</h1>
+            <p>La ligue indépendante LoL par excellence.</p>
+            <div class="cta-buttons">
+                <a href="agents.html" class="btn btn-primary">Trouver des joueurs</a>
+                <a href="teams.html" class="btn btn-secondary">Voir les équipes</a>
+            </div>
+        </header>
+
+        <section id="latest-agents" class="section">
+            <h2>Nouveaux Agents Libres</h2>
+            <div id="agents-grid" class="grid">
+                <!-- Chargé via JS -->
+                <p class="loading">Chargement des agents...</p>
+            </div>
+        </section>
+
+        <section id="latest-teams" class="section">
+            <h2>Équipes en recrutement</h2>
+            <div id="teams-grid" class="grid">
+                <!-- Chargé via JS -->
+                <p class="loading">Chargement des équipes...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 FwitterLeague - Indépendant</p>
+    </footer>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
