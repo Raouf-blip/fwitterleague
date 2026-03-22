@@ -21,6 +21,10 @@
             <template #icon><Send :size="16" /></template>
             Postuler
           </BaseButton>
+          <BaseButton v-if="isCaptain" variant="secondary" size="sm" @click="showEdit = true">
+            <template #icon><Edit :size="14" /></template>
+            Modifier
+          </BaseButton>
           <BaseButton v-if="isMember && !isCaptain" variant="danger" size="sm" @click="leaveTeam">
             Quitter
           </BaseButton>
@@ -89,6 +93,19 @@
       :loading="applying"
       @submit="doApply"
     />
+
+    <!-- Edit Team Modal -->
+    <BaseModal v-model="showEdit" title="Modifier l'equipe" size="md">
+      <TeamCreateForm
+        :initial-name="team.name"
+        :initial-tag="team.tag"
+        :initial-description="team.description || ''"
+        :loading="updating"
+        submit-label="Enregistrer"
+        @submit="updateTeam"
+        @cancel="showEdit = false"
+      />
+    </BaseModal>
   </div>
 
   <BaseEmptyState v-else :icon="ShieldOff" title="Equipe introuvable" description="Cette equipe n'existe pas ou a ete dissoute.">
@@ -101,7 +118,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Send, ShieldOff, Trash2 } from 'lucide-vue-next'
+import { Send, ShieldOff, Trash2, Edit } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
@@ -113,10 +130,12 @@ import BaseCard from '../components/ui/BaseCard.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseModal from '../components/ui/BaseModal.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import RosterTable from '../components/domain/RosterTable.vue'
 import StatBlock from '../components/domain/StatBlock.vue'
 import ApplyModal from '../components/forms/ApplyModal.vue'
+import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -133,6 +152,8 @@ const kickTarget = ref<TeamMember | null>(null)
 const kicking = ref(false)
 const showDisband = ref(false)
 const disbanding = ref(false)
+const showEdit = ref(false)
+const updating = ref(false)
 
 const isCaptain = computed(() => !!(authStore.profile && team.value && team.value.captain_id === authStore.profile.id))
 const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
@@ -170,6 +191,23 @@ async function doApply(message: string) {
     notificationStore.show(e.message, 'error')
   } finally {
     applying.value = false
+  }
+}
+
+async function updateTeam(data: { name: string; tag: string; description: string }) {
+  updating.value = true
+  try {
+    const token = await getToken()
+    const updated = await api.patch(`/teams/${team.value!.id}`, data, token)
+    team.value = { ...team.value!, ...updated }
+    notificationStore.show('Equipe mise a jour !', 'success')
+    showEdit.value = false
+    // Refresh auth store to sync profile's team info if needed
+    await authStore.fetchProfile()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la mise a jour', 'error')
+  } finally {
+    updating.value = false
   }
 }
 

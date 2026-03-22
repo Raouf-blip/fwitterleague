@@ -208,7 +208,7 @@
           </div>
         </BaseCard>
 
-        <!-- Availability / Stats (Redesigned Toggle) -->
+        <!-- Statut de recrutement -->
         <BaseCard :hoverable="false" title="Statut de recrutement">
           <div class="space-y-4">
             <button 

@@ -2,6 +2,7 @@ export interface Profile {
   id: string
   username: string
   riot_id: string | null
+  opgg_url: string | null
   discord: string | null
   role: 'user' | 'admin' | 'superadmin'
   preferred_roles?: string[]
