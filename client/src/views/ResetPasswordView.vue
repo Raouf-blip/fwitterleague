@@ -3,10 +3,7 @@
     <div class="w-full max-w-md">
       <!-- Header -->
       <div class="text-center mb-8">
-        <Trophy :size="48" class="text-gold mx-auto mb-3" />
-        <h1 class="text-3xl font-extrabold text-text-primary">
-          Fwitter<span class="text-gold">League</span>
-        </h1>
+        <img src="../assets/logo.png" alt="FwitterLeague" class="h-20 w-auto mx-auto mb-3" />
         <p class="text-sm text-text-secondary mt-1">
           Plateforme de tournois League of Legends
         </p>
@@ -55,7 +52,6 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabase";
-import { Trophy } from "lucide-vue-next";
 import BaseCard from "../components/ui/BaseCard.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
