@@ -24,6 +24,10 @@
           <BaseButton v-if="isMember && !isCaptain" variant="danger" size="sm" @click="leaveTeam">
             Quitter
           </BaseButton>
+          <BaseButton v-if="isCaptain" variant="danger" size="sm" @click="showDisband = true">
+            <template #icon><Trash2 :size="14" /></template>
+            Dissoudre
+          </BaseButton>
         </div>
       </div>
     </BaseCard>
@@ -67,6 +71,17 @@
       @confirm="doKick"
     />
 
+    <!-- Disband Confirm -->
+    <ConfirmDialog
+      v-model="showDisband"
+      title="Dissoudre l'equipe ?"
+      :message="`Voulez-vous vraiment dissoudre ${team?.name} [${team?.tag}] ? Tous les membres seront retires et cette action est irreversible.`"
+      confirm-label="Dissoudre l'equipe"
+      variant="danger"
+      :loading="disbanding"
+      @confirm="disbandTeam"
+    />
+
     <!-- Apply Modal -->
     <ApplyModal
       v-model="showApply"
@@ -86,7 +101,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Send, ShieldOff } from 'lucide-vue-next'
+import { Send, ShieldOff, Trash2 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -103,6 +119,7 @@ import StatBlock from '../components/domain/StatBlock.vue'
 import ApplyModal from '../components/forms/ApplyModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 
@@ -114,6 +131,8 @@ const showApply = ref(false)
 const showKickConfirm = ref(false)
 const kickTarget = ref<TeamMember | null>(null)
 const kicking = ref(false)
+const showDisband = ref(false)
+const disbanding = ref(false)
 
 const isCaptain = computed(() => !!(authStore.profile && team.value && team.value.captain_id === authStore.profile.id))
 const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
@@ -172,6 +191,21 @@ async function doKick() {
     notificationStore.show(e.message, 'error')
   } finally {
     kicking.value = false
+  }
+}
+
+async function disbandTeam() {
+  disbanding.value = true
+  try {
+    const token = await getToken()
+    await api.delete(`/teams/${team.value!.id}`, token)
+    notificationStore.show('Equipe dissoute.', 'success')
+    await authStore.fetchProfile()
+    router.push('/teams')
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la dissolution', 'error')
+  } finally {
+    disbanding.value = false
   }
 }
 
