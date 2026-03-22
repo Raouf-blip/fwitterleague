@@ -24,6 +24,7 @@
         <ProfileSettingsForm
           :initial-bio="authStore.profile.bio || ''"
           :initial-riot-id="authStore.profile.riot_id || ''"
+          :initial-discord="authStore.profile.discord || ''"
           :initial-is-looking="authStore.profile.is_looking_for_team"
           :saving="savingProfile"
           :syncing="fetchingRiot"
@@ -186,9 +187,11 @@ async function fetchData() {
   if (!authStore.user) return
   const token = await getToken()
   try {
-    const res = await api.get('/social/inbox', token)
+    const [res, apps] = await Promise.all([
+      api.get('/social/inbox', token),
+      api.get('/profiles/me/applications', token),
+    ])
     notifications.value = res.notifications || []
-    const apps = await api.get('/profiles/me/applications', token)
     sentApplications.value = apps
   } catch (e) {
     console.error(e)
@@ -223,7 +226,7 @@ async function fetchRiotData(riotId: string) {
   }
 }
 
-async function updateProfile(data: { bio: string; riot_id: string; is_looking_for_team: boolean }) {
+async function updateProfile(data: { bio: string; riot_id: string; discord: string; is_looking_for_team: boolean }) {
   savingProfile.value = true
   try {
     const token = await getToken()

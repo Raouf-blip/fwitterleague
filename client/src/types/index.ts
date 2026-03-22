@@ -2,6 +2,7 @@ export interface Profile {
   id: string
   username: string
   riot_id: string | null
+  discord: string | null
   role: 'user' | 'admin' | 'superadmin'
   is_captain: boolean
   is_looking_for_team: boolean

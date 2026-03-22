@@ -11,6 +11,11 @@
       </div>
     </div>
 
+    <div v-if="player.discord" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+      <MessageCircle :size="12" class="text-[#5865F2]" />
+      <span>{{ player.discord }}</span>
+    </div>
+
     <p v-if="player.bio" class="text-sm text-text-secondary mt-3 line-clamp-2">{{ player.bio }}</p>
 
     <div v-if="player.winrate" class="mt-3 flex items-center gap-2 text-xs text-text-muted">
@@ -42,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, UserPlus } from 'lucide-vue-next'
+import { TrendingUp, UserPlus, MessageCircle } from 'lucide-vue-next'
 import type { Agent } from '../../types'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseAvatar from '../ui/BaseAvatar.vue'

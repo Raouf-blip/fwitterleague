@@ -61,6 +61,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminDashboardView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/tournaments',
+      name: 'admin-tournaments',
+      component: () => import('../views/TournamentManageView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('../views/NotFoundView.vue'),
@@ -76,6 +88,8 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && !authStore.user) {
     next('/login')
+  } else if (to.meta.requiresAdmin && authStore.profile?.role !== 'admin' && authStore.profile?.role !== 'superadmin') {
+    next('/')
   } else {
     next()
   }

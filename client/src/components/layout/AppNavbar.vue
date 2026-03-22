@@ -138,9 +138,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award } from 'lucide-vue-next'
+import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 
@@ -153,11 +153,22 @@ const showMobile = ref(false)
 const menuRef = ref<HTMLElement>()
 const unreadCount = ref(0)
 
-const navLinks = [
-  { to: '/tournaments', label: 'Tournois', icon: Award },
-  { to: '/agents', label: 'Mercato', icon: Users },
-  { to: '/teams', label: 'Equipes', icon: Shield },
-]
+const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
+
+const navLinks = computed(() => {
+  const links = [
+    { to: '/tournaments', label: 'Tournois', icon: Award },
+    { to: '/agents', label: 'Mercato', icon: Users },
+    { to: '/teams', label: 'Equipes', icon: Shield },
+  ]
+  if (isAdmin.value) {
+    links.push(
+      { to: '/admin', label: 'Admin', icon: Settings },
+      { to: '/admin/tournaments', label: 'Gestion', icon: Swords },
+    )
+  }
+  return links
+})
 
 function isActive(path: string) {
   return route.path === path || route.path.startsWith(path + '/')

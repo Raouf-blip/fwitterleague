@@ -60,8 +60,12 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    tournaments.value = await api.get('/tournaments')
-    matches.value = await api.get('/tournaments/matches')
+    const [t, m] = await Promise.all([
+      api.get('/tournaments'),
+      api.get('/tournaments/matches'),
+    ])
+    tournaments.value = t
+    matches.value = m
   } catch (e) {
     console.error(e)
   }

@@ -8,7 +8,7 @@
         <BaseAvatar :name="profile.username" size="xl" />
         <div class="flex-1">
           <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
-          <div class="flex items-center gap-3 mt-1">
+          <div class="flex items-center gap-3 mt-1 flex-wrap">
             <span class="text-sm text-gold">{{ profile.riot_id || 'Riot ID non configure' }}</span>
             <a
               v-if="opggUrl"
@@ -18,6 +18,10 @@
             >
               OP.GG
             </a>
+            <span v-if="profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
+              <MessageCircle :size="14" class="text-[#5865F2]" />
+              {{ profile.discord }}
+            </span>
           </div>
           <div class="flex items-center gap-4 mt-3">
             <RankBadge :rank="profile.rank" />
@@ -81,7 +85,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { UserPlus, UserX } from 'lucide-vue-next'
+import { UserPlus, UserX, MessageCircle } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { getOpggUrl } from '../lib/formatters'

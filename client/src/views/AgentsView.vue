@@ -78,11 +78,16 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    agents.value = await api.get('/social/agents')
     if (authStore.user && authStore.profile?.is_captain) {
       const token = await getToken()
-      const inbox = await api.get('/social/inbox', token)
+      const [agentsData, inbox] = await Promise.all([
+        api.get('/social/agents'),
+        api.get('/social/inbox', token),
+      ])
+      agents.value = agentsData
       myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
+    } else {
+      agents.value = await api.get('/social/agents')
     }
   } catch (e) {
     console.error(e)

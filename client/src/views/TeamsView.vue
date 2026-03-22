@@ -64,10 +64,16 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    teams.value = await api.get('/teams')
     if (authStore.user) {
       const token = await getToken()
-      myApplications.value = await api.get('/profiles/me/applications', token)
+      const [t, apps] = await Promise.all([
+        api.get('/teams'),
+        api.get('/profiles/me/applications', token),
+      ])
+      teams.value = t
+      myApplications.value = apps
+    } else {
+      teams.value = await api.get('/teams')
     }
   } catch (e) {
     console.error(e)

@@ -1,5 +1,5 @@
 <template>
-  <form @submit.prevent="$emit('save', { bio, riot_id: riotId, is_looking_for_team: isLooking })" class="space-y-5">
+  <form @submit.prevent="$emit('save', { bio, riot_id: riotId, discord, is_looking_for_team: isLooking })" class="space-y-5">
     <div>
       <div class="flex items-end gap-3">
         <BaseInput
@@ -29,6 +29,12 @@
         Voir sur OP.GG
       </a>
     </div>
+
+    <BaseInput
+      v-model="discord"
+      label="Discord"
+      placeholder="tonpseudo"
+    />
 
     <BaseTextarea
       v-model="bio"
@@ -69,21 +75,24 @@ import BaseButton from '../ui/BaseButton.vue'
 const props = defineProps<{
   initialBio?: string
   initialRiotId?: string
+  initialDiscord?: string
   initialIsLooking?: boolean
   saving?: boolean
   syncing?: boolean
 }>()
 
 defineEmits<{
-  save: [data: { bio: string; riot_id: string; is_looking_for_team: boolean }]
+  save: [data: { bio: string; riot_id: string; discord: string; is_looking_for_team: boolean }]
   'sync-riot': [riotId: string]
 }>()
 
 const bio = ref(props.initialBio || '')
 const riotId = ref(props.initialRiotId || '')
+const discord = ref(props.initialDiscord || '')
 const isLooking = ref(props.initialIsLooking || false)
 
 watch(() => props.initialBio, (v) => { if (v !== undefined) bio.value = v })
 watch(() => props.initialRiotId, (v) => { if (v !== undefined) riotId.value = v })
+watch(() => props.initialDiscord, (v) => { if (v !== undefined) discord.value = v })
 watch(() => props.initialIsLooking, (v) => { if (v !== undefined) isLooking.value = v })
 </script>

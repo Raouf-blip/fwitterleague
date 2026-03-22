@@ -202,12 +202,15 @@ const standings = computed(() => {
 
 onMounted(async () => {
   try {
-    const data = await api.get(`/tournaments/${route.params.id}`)
+    const [data, m] = await Promise.all([
+      api.get(`/tournaments/${route.params.id}`),
+      api.get('/tournaments/matches'),
+    ])
     tournament.value = data
     registrations.value = Array.isArray(data.registrations) && data.registrations[0]?.team
       ? data.registrations
       : []
-    matches.value = await api.get('/tournaments/matches')
+    matches.value = m
   } catch (e) {
     console.error(e)
   }
