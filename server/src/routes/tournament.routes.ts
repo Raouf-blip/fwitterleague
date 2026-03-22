@@ -123,7 +123,7 @@ router.patch('/:id', authenticate, authorizeAdmin, async (req: any, res) => {
 });
 
 // Admin Only: Delete tournament
-router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res) => {
+router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res: any) => {
   const { error } = await supabase.from('tournaments').delete().eq('id', req.params.id);
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Tournoi supprimé.' });
