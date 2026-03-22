@@ -198,7 +198,7 @@ async function doApply(message: string) {
   }
 }
 
-async function updateTeam(data: { name: string; tag: string; description: string }) {
+async function updateTeam(data: { name: string; tag: string; description: string; logo_url: string }) {
   updating.value = true
   try {
     const token = await getToken()

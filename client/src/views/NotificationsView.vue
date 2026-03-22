@@ -66,6 +66,7 @@ import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
+import { useInboxStore } from '../stores/inbox'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseTabs from '../components/ui/BaseTabs.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
@@ -74,14 +75,14 @@ import NotificationItem from '../components/domain/NotificationItem.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const inboxStore = useInboxStore()
 const loading = ref(true)
 const activeTab = ref('inbox')
-const rawData = ref<any>({ notifications: [], interactions: [] })
 
 const inbox = computed(() => {
-  const notifs = rawData.value.notifications.map((n: any) => ({ ...n, isNotif: true }))
+  const notifs = inboxStore.notifications.map((n: any) => ({ ...n, isNotif: true }))
 
-  const receivedApps = rawData.value.interactions.filter((i: any) => {
+  const receivedApps = inboxStore.applications.filter((i: any) => {
     const userIsCaptainOfThisTeam = authStore.profile?.team?.id === i.team_id && authStore.profile?.is_captain
     const userIsTargetOfOffer = i.type === 'offer' && i.sender_id === authStore.user?.id
 
@@ -96,7 +97,7 @@ const inbox = computed(() => {
 })
 
 const outbox = computed(() => {
-  return rawData.value.interactions.filter((i: any) => {
+  return inboxStore.applications.filter((i: any) => {
     const userIsApplicant = i.type === 'application' && i.sender_id === authStore.user?.id
     const userIsInitiatorOfOffer = i.type === 'offer' && authStore.profile?.team?.id === i.team_id && authStore.profile?.is_captain
     return userIsApplicant || userIsInitiatorOfOffer
@@ -110,8 +111,7 @@ onMounted(async () => {
 async function fetchData() {
   loading.value = true
   try {
-    const token = await getToken()
-    rawData.value = await api.get('/social/inbox', token)
+    await inboxStore.fetchInbox()
   } catch (e) {
     console.error(e)
   }
@@ -119,9 +119,11 @@ async function fetchData() {
 }
 
 async function markAsRead(item: any) {
-  const token = await getToken()
-  await api.patch(`/social/notifications/${item.id}`, {}, token)
-  await fetchData()
+  try {
+    await inboxStore.markAsRead(item.id)
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 async function respond(item: any, status: 'accepted' | 'rejected') {

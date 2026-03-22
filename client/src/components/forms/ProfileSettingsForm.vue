@@ -51,7 +51,6 @@
       v-model="riotId"
       label="Riot ID"
       placeholder="Pseudo#TAG"
-      required
     />
     
     <div v-if="riotId && riotId.includes('#')" class="flex items-center gap-2 -mt-3 mb-2">

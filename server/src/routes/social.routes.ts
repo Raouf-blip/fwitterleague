@@ -65,4 +65,11 @@ router.patch('/notifications/:id', authenticate, async (req: any, res) => {
   res.json(data);
 });
 
+// Private: Mark all notifications as read
+router.post('/notifications/read-all', authenticate, async (req: any, res) => {
+  const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', req.user.id).eq('is_read', false);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Toutes les notifications ont été marquées comme lues.' });
+});
+
 export default router;

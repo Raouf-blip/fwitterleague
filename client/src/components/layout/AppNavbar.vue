@@ -164,16 +164,19 @@ import {
   BookOpen,
 } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth";
+import { useInboxStore } from "../../stores/inbox";
 import BaseAvatar from "../ui/BaseAvatar.vue";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const inboxStore = useInboxStore();
 
 const showMenu = ref(false);
 const showMobile = ref(false);
 const menuRef = ref<HTMLElement>();
-const unreadCount = ref(0);
+
+const unreadCount = computed(() => inboxStore.unreadCount);
 
 const isAdmin = computed(
   () =>
@@ -214,6 +217,18 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener("click", handleClickOutside));
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+  if (authStore.user) {
+    inboxStore.fetchInbox();
+  }
+});
+
 onUnmounted(() => document.removeEventListener("click", handleClickOutside));
+
+watch(() => authStore.user, (newUser) => {
+  if (newUser) {
+    inboxStore.fetchInbox();
+  }
+});
 </script>

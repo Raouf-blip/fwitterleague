@@ -23,15 +23,13 @@
     <BaseInput
       v-model="riotId"
       label="Riot ID"
-      placeholder="Pseudo#TAG"
+      placeholder="Pseudo#TAG (Optionnel)"
       :error="riotError"
-      required
     />
     <BaseInput
       v-model="discord"
       label="Discord"
-      placeholder="tonpseudo"
-      required
+      placeholder="tonpseudo (Optionnel)"
     />
 
     <RoleSelector
@@ -58,6 +56,7 @@ import { ref, computed } from 'vue'
 import { Loader2 } from 'lucide-vue-next'
 import { supabase } from '../../lib/supabase'
 import { api } from '../../lib/api'
+import { useAuthStore } from '../../stores/auth'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import RoleSelector from '../ui/RoleSelector.vue'
@@ -92,7 +91,7 @@ async function handleSubmit() {
     error.value = 'Le mot de passe doit contenir au moins 6 caracteres'
     return
   }
-  if (!riotId.value.includes('#')) {
+  if (riotId.value && !riotId.value.includes('#')) {
     riotError.value = 'Format invalide. Utilisez Pseudo#TAG'
     return
   }
@@ -116,19 +115,21 @@ async function handleSubmit() {
       const token = session.access_token
       await api.patch('/profiles/me', {
         username: username.value,
-        riot_id: riotId.value,
-        discord: discord.value,
+        riot_id: riotId.value || null,
+        discord: discord.value || null,
         preferred_roles: preferredRoles.value,
         is_looking_for_team: true,
       }, token)
 
       // Step 3: Auto-sync Riot data
-      step.value = 'syncing'
-      try {
-        await api.post('/profiles/sync-riot', { riotId: riotId.value }, token)
-      } catch (syncErr) {
-        // Riot sync failure is non-blocking
-        console.warn('Riot sync failed during registration', syncErr)
+      if (riotId.value && riotId.value.includes('#')) {
+        step.value = 'syncing'
+        try {
+          await api.post('/profiles/sync-riot', { riotId: riotId.value }, token)
+        } catch (syncErr) {
+          // Riot sync failure is non-blocking
+          console.warn('Riot sync failed during registration', syncErr)
+        }
       }
 
       // Step 4: Refresh local profile in store to ensure it's ready

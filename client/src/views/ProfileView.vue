@@ -328,6 +328,7 @@ import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
+import { useInboxStore } from '../stores/inbox'
 import { getOpggUrl, getDpmUrl, formatRelativeTime, formatDate } from '../lib/formatters'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
@@ -343,6 +344,7 @@ import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const inboxStore = useInboxStore()
 const router = useRouter()
 
 const showSettings = ref(false)
@@ -352,10 +354,10 @@ const fetchingRiot = ref(false)
 const creatingTeam = ref(false)
 const togglingStatus = ref(false)
 const team = ref<any>(null)
-const notifications = ref<any[]>([])
 const sentApplications = ref<any[]>([])
 
-const unreadNotifs = computed(() => notifications.value.filter(n => !n.is_read).length)
+const notifications = computed(() => inboxStore.notifications)
+const unreadNotifs = computed(() => inboxStore.unreadCount)
 
 watch(() => authStore.profile, (p) => {
   if (p) {
@@ -405,22 +407,17 @@ async function fetchData() {
   if (!authStore.user) return
   const token = await getToken()
   try {
-    const [res, apps] = await Promise.all([
-      api.get('/social/inbox', token),
-      api.get('/profiles/me/applications', token),
-    ])
-    notifications.value = res.notifications || []
+    const apps = await api.get('/profiles/me/applications', token)
     sentApplications.value = apps
+    await inboxStore.fetchInbox()
   } catch (e) {
     console.error(e)
   }
 }
 
 async function markAsRead(id: string) {
-  const token = await getToken()
   try {
-    await api.patch(`/social/notifications/${id}`, { is_read: true }, token)
-    await fetchData()
+    await inboxStore.markAsRead(id)
   } catch (e) {
     console.error(e)
   }
@@ -457,7 +454,7 @@ async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_u
   }
 }
 
-async function createTeam(data: { name: string; tag: string; description: string }) {
+async function createTeam(data: { name: string; tag: string; description: string; logo_url: string }) {
   savingTeam.value = true
   try {
     const token = await getToken()
