@@ -153,9 +153,9 @@ const myTeamOffers = ref<any[]>([])
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
 const dpmUrl = computed(() => profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null)
 const canRecruit = computed(() => {
-  return authStore.profile?.is_captain && 
-         profile.value?.id !== authStore.user?.id && 
-         !team.value && 
+  return authStore.profile?.is_captain &&
+         profile.value?.id !== authStore.user?.id &&
+         !team.value &&
          profile.value?.is_looking_for_team
 })
 
@@ -169,7 +169,7 @@ onMounted(async () => {
     const data = await api.get(`/profiles/${route.params.id}`)
     profile.value = data
     team.value = data.team
-    
+
     if (authStore.user && authStore.profile?.is_captain) {
       const token = await getToken()
       const inbox = await api.get('/social/inbox', token)
@@ -192,7 +192,7 @@ async function sendInvite(message: string) {
     }, token)
     notificationStore.show('Offre de recrutement envoyee !', 'success')
     showInvite.value = false
-    
+
     // Refresh inbox
     const inbox = await api.get('/social/inbox', token)
     myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
