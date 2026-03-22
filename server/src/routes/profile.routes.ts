@@ -58,10 +58,14 @@ router.get('/me', authenticate, async (req: any, res) => {
 
 // Private: Update my profile
 router.patch('/me', authenticate, async (req: any, res) => {
-  // On empêche la modification manuelle du rôle via cette route
-  const { role, is_captain, last_riot_sync, ...updateData } = req.body;
+  // Prévention du Mass Assignment: on n'autorise que ces champs spécifiques
+  const { username, opgg_url, avatar_url, discord, preferred_roles, is_looking_for_team, bio } = req.body;
+  const updateData = { username, opgg_url, avatar_url, discord, preferred_roles, is_looking_for_team, bio };
+  
+  // Nettoyer les champs undefined pour ne mettre à jour que ce qui est fourni
+  const cleanUpdateData = Object.fromEntries(Object.entries(updateData).filter(([_, v]) => v !== undefined));
 
-  const { data, error } = await supabase.from('profiles').update(updateData).eq('id', req.user.id).select().single();
+  const { data, error } = await supabase.from('profiles').update(cleanUpdateData).eq('id', req.user.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
