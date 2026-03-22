@@ -3,13 +3,17 @@
     <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
 
     <!-- Filters -->
-    <div class="mb-6">
+    <div class="mb-6 flex flex-col sm:flex-row gap-4">
+      <BaseInput
+        v-model="search"
+        placeholder="Rechercher un joueur..."
+        class="sm:w-64"
+      />
       <BaseSelect
         v-model="filterRank"
-        label="Filtrer par rang"
         placeholder="Tous les rangs"
         :options="rankOptions"
-        class="max-w-xs"
+        class="sm:w-48"
       />
     </div>
 
@@ -55,6 +59,7 @@ import type { Agent } from '../types'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseInput from '../components/ui/BaseInput.vue'
 import BaseSelect from '../components/ui/BaseSelect.vue'
 import PlayerCard from '../components/domain/PlayerCard.vue'
 import InviteModal from '../components/forms/InviteModal.vue'
@@ -64,6 +69,7 @@ const notificationStore = useNotificationStore()
 const agents = ref<Agent[]>([])
 const myTeamOffers = ref<any[]>([])
 const loading = ref(true)
+const search = ref('')
 const filterRank = ref('')
 const showInvite = ref(false)
 const selectedAgent = ref<Agent | null>(null)
@@ -130,7 +136,17 @@ async function sendInvite(message: string) {
 }
 
 const filteredAgents = computed(() => {
-  if (!filterRank.value) return agents.value
-  return agents.value.filter(a => a.rank?.toUpperCase().includes(filterRank.value))
+  let result = agents.value
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    result = result.filter(a =>
+      a.username.toLowerCase().includes(q) ||
+      a.riot_id?.toLowerCase().includes(q)
+    )
+  }
+  if (filterRank.value) {
+    result = result.filter(a => a.rank?.toUpperCase().includes(filterRank.value))
+  }
+  return result
 })
 </script>

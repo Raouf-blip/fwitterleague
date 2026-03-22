@@ -19,7 +19,7 @@
               OP.GG
             </a>
             <span v-if="profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
-              <MessageCircle :size="14" class="text-[#5865F2]" />
+              <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ profile.discord }}
             </span>
           </div>
@@ -85,7 +85,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { UserPlus, UserX, MessageCircle } from 'lucide-vue-next'
+import { UserPlus, UserX } from 'lucide-vue-next'
+import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { getOpggUrl } from '../lib/formatters'

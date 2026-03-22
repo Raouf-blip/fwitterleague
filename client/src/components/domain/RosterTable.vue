@@ -13,15 +13,27 @@
         <BaseAvatar :name="slot.member.profile.username" size="sm" />
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <span class="font-semibold text-sm text-text-primary truncate">
+            <RouterLink
+              :to="`/profile/${slot.member.profile.id}`"
+              class="font-semibold text-sm text-text-primary truncate hover:text-gold transition-colors"
+            >
               {{ slot.member.profile.username }}
-            </span>
+            </RouterLink>
             <BaseBadge v-if="slot.member.role === 'Captain'" variant="gold" size="sm">
               Capitaine
             </BaseBadge>
           </div>
           <RankBadge :rank="slot.member.profile.rank" />
         </div>
+
+        <!-- View profile -->
+        <RouterLink
+          :to="`/profile/${slot.member.profile.id}`"
+          class="p-1.5 text-text-muted hover:text-cyan hover:bg-cyan-muted rounded-lg transition-colors"
+          title="Voir profil"
+        >
+          <Eye :size="16" />
+        </RouterLink>
 
         <!-- Kick button -->
         <button
@@ -46,7 +58,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UserMinus, UserPlus } from 'lucide-vue-next'
+import { UserMinus, UserPlus, Eye } from 'lucide-vue-next'
 import type { TeamMember } from '../../types'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 import BaseBadge from '../ui/BaseBadge.vue'

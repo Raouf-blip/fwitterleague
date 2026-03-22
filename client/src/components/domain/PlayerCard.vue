@@ -12,7 +12,7 @@
     </div>
 
     <div v-if="player.discord" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
-      <MessageCircle :size="12" class="text-[#5865F2]" />
+      <DiscordIcon :size="12" class="text-[#5865F2]" />
       <span>{{ player.discord }}</span>
     </div>
 
@@ -47,7 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, UserPlus, MessageCircle } from 'lucide-vue-next'
+import { TrendingUp, UserPlus } from 'lucide-vue-next'
+import DiscordIcon from '../icons/DiscordIcon.vue'
 import type { Agent } from '../../types'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseAvatar from '../ui/BaseAvatar.vue'
