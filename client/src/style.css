@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-body: #0f1419;
-  --color-surface: #1a1f2e;
-  --color-surface-elevated: #232836;
-  --color-surface-overlay: #2a3040;
+  --color-body: #101012;
+  --color-surface: #18181b;
+  --color-surface-elevated: #222225;
+  --color-surface-overlay: #27272a;
 
   --color-gold: #c8aa6e;
   --color-gold-light: #f0c75e;
@@ -61,13 +61,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-body);
 }
+
 ::-webkit-scrollbar-thumb {
   background: #3a3f4b;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #4a4f5b;
 }
@@ -83,6 +86,7 @@ body {
 .fade-leave-active {
   transition: opacity 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
@@ -92,10 +96,12 @@ body {
 .slide-up-leave-active {
   transition: all 0.3s ease;
 }
+
 .slide-up-enter-from {
   opacity: 0;
   transform: translateY(12px);
 }
+
 .slide-up-leave-to {
   opacity: 0;
   transform: translateY(-12px);
@@ -105,10 +111,12 @@ body {
 .slide-right-leave-active {
   transition: all 0.3s ease;
 }
+
 .slide-right-enter-from {
   opacity: 0;
   transform: translateX(-20px);
 }
+
 .slide-right-leave-to {
   opacity: 0;
   transform: translateX(20px);
@@ -118,17 +126,21 @@ body {
 .list-enter-active {
   transition: all 0.4s ease;
 }
+
 .list-leave-active {
   transition: all 0.3s ease;
 }
+
 .list-enter-from {
   opacity: 0;
   transform: translateY(20px);
 }
+
 .list-leave-to {
   opacity: 0;
   transform: translateX(-20px);
 }
+
 .list-move {
   transition: transform 0.3s ease;
 }
