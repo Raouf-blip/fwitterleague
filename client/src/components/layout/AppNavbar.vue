@@ -1,11 +1,19 @@
-5. Dégradé radial fixe avec glow
-Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comme un spot de lumière qui éclaire le contenu. Simple mais classe.<template>
-  <nav class="fixed top-0 left-0 right-0 z-40 bg-body/80 backdrop-blur-xl border-b border-border">
+5. Dégradé radial fixe avec glow Un halo de couleur (or ou cyan très atténué)
+centré en haut de la page, comme un spot de lumière qui éclaire le contenu.
+Simple mais classe.
+<template>
+  <nav
+    class="fixed top-0 left-0 right-0 z-40 bg-body/80 backdrop-blur-xl border-b border-border"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-2 group shrink-0">
-          <img src="../../assets/logo.png" alt="FwitterLeague" class="h-9 w-auto group-hover:brightness-125 transition-all" />
+          <img
+            src="../../assets/logo.png"
+            alt="FwitterLeague"
+            class="h-9 w-auto group-hover:brightness-125 transition-all"
+          />
         </RouterLink>
 
         <!-- Desktop Nav -->
@@ -21,7 +29,11 @@ Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comm
                 : 'text-text-secondary hover:text-text-primary hover:bg-white/5',
             ]"
           >
-            <component :is="link.icon" :size="16" class="inline-block mr-1.5 -mt-0.5" />
+            <component
+              :is="link.icon"
+              :size="16"
+              class="inline-block mr-1.5 -mt-0.5"
+            />
             {{ link.label }}
           </RouterLink>
         </div>
@@ -53,8 +65,13 @@ Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comm
                 class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-200 cursor-pointer"
                 @click="showMenu = !showMenu"
               >
-                <BaseAvatar :name="authStore.profile?.username || '?'" size="sm" />
-                <span class="text-sm font-medium text-text-primary hidden sm:block">
+                <BaseAvatar
+                  :name="authStore.profile?.username || '?'"
+                  size="sm"
+                />
+                <span
+                  class="text-sm font-medium text-text-primary hidden sm:block"
+                >
                   {{ authStore.profile?.username }}
                 </span>
                 <ChevronDown :size="14" class="text-text-muted" />
@@ -135,56 +152,73 @@ Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comm
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle, BookOpen } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/auth'
-import BaseAvatar from '../ui/BaseAvatar.vue'
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import {
+  Bell,
+  User,
+  ChevronDown,
+  LogOut,
+  Menu,
+  Users,
+  Shield,
+  Award,
+  Settings,
+  Swords,
+  MessageCircle,
+  BookOpen,
+} from "lucide-vue-next";
+import { useAuthStore } from "../../stores/auth";
+import BaseAvatar from "../ui/BaseAvatar.vue";
 
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
-const showMenu = ref(false)
-const showMobile = ref(false)
-const menuRef = ref<HTMLElement>()
-const unreadCount = ref(0)
+const showMenu = ref(false);
+const showMobile = ref(false);
+const menuRef = ref<HTMLElement>();
+const unreadCount = ref(0);
 
-const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
+const isAdmin = computed(
+  () =>
+    authStore.profile?.role === "admin" ||
+    authStore.profile?.role === "superadmin",
+);
 
 const navLinks = computed(() => {
   const links = [
-    { to: '/tournaments', label: 'Tournois', icon: Award },
-    { to: '/agents', label: 'Mercato', icon: Users },
-    { to: '/teams', label: 'Equipes', icon: Shield },
-    { to: '/rules', label: 'Règlement', icon: BookOpen },
-    { to: '/contact', label: 'Contact', icon: MessageCircle },
-  ]
+    { to: "/tournaments", label: "Tournois", icon: Award },
+    { to: "/agents", label: "Mercato", icon: Users },
+    { to: "/teams", label: "Equipes", icon: Shield },
+    { to: "/rules", label: "Règlement", icon: BookOpen },
+    { to: "/contact", label: "Contact", icon: MessageCircle },
+  ];
   if (isAdmin.value) {
     links.push(
-      { to: '/admin', label: 'Admin', icon: Settings },
-      { to: '/admin/tournaments', label: 'Gestion', icon: Swords },
-    )
+      { to: "/admin", label: "Admin", icon: Settings },
+      { to: "/admin/tournaments", label: "Gestion", icon: Swords },
+    );
   }
-  return links
-})
+  return links;
+});
 
 function isActive(path: string) {
-  return route.path === path || route.path.startsWith(path + '/')
+  return route.path === path || route.path.startsWith(path + "/");
 }
 
 async function handleSignOut() {
-  showMenu.value = false
-  await authStore.signOut()
-  router.push('/')
+  showMenu.value = false;
+  await authStore.signOut();
+  router.push("/");
 }
 
 function handleClickOutside(e: MouseEvent) {
   if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
-    showMenu.value = false
+    showMenu.value = false;
   }
 }
 
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 </script>
