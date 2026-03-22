@@ -4,12 +4,33 @@
 
     <!-- Filters -->
     <div class="mb-6 bg-surface p-4 rounded-xl border border-border">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        <BaseInput
-          v-model="search"
-          placeholder="Rechercher un joueur..."
-          class="w-full sm:w-64"
-        />
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+          <BaseInput
+            v-model="search"
+            placeholder="Rechercher un joueur..."
+            class="w-full sm:w-64"
+          />
+          
+          <!-- Toggle Filter -->
+          <div class="flex items-center gap-3 p-1 bg-white/5 rounded-lg border border-white/5">
+            <button
+              @click="filterOnlyFree = true"
+              class="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all"
+              :class="filterOnlyFree ? 'bg-cyan text-body shadow-lg' : 'text-text-muted hover:text-text-secondary'"
+            >
+              Agents Libres
+            </button>
+            <button
+              @click="filterOnlyFree = false"
+              class="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all"
+              :class="!filterOnlyFree ? 'bg-white/10 text-text-primary' : 'text-text-muted hover:text-text-secondary'"
+            >
+              Tout le monde
+            </button>
+          </div>
+        </div>
+
         <button
           @click="resetFilters"
           class="text-xs font-bold text-text-muted hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -145,6 +166,7 @@ const agents = ref<Agent[]>([])
 const myTeamOffers = ref<any[]>([])
 const loading = ref(true)
 const search = ref('')
+const filterOnlyFree = ref(true)
 const filterRanks = ref<string[]>([])
 const filterRoles = ref<string[]>([])
 const filterWinrateMin = ref<number | ''>(0)
@@ -178,7 +200,13 @@ async function fetchData() {
 }
 
 function canRecruit(agent: Agent) {
-  return authStore.profile?.is_captain && agent.id !== authStore.user?.id && !isInvited(agent)
+  // On ne peut recruter que si on est capitaine, que ce n'est pas nous-même, 
+  // que le joueur n'a pas déjà d'équipe et qu'il est en recherche active.
+  return authStore.profile?.is_captain && 
+         agent.id !== authStore.user?.id && 
+         !agent.team && 
+         agent.is_looking_for_team &&
+         !isInvited(agent)
 }
 
 function isInvited(agent: Agent) {
@@ -225,6 +253,7 @@ function toggleRole(role: string) {
 
 function resetFilters() {
   search.value = ''
+  filterOnlyFree.value = true
   filterRanks.value = []
   filterRoles.value = []
   filterWinrateMin.value = 0
@@ -232,7 +261,9 @@ function resetFilters() {
 }
 
 const filteredAgents = computed(() => {
-  let result = agents.value
+  let result = [...agents.value]
+  
+  // 1. Filtre de recherche
   if (search.value) {
     const q = search.value.toLowerCase()
     result = result.filter(a =>
@@ -240,13 +271,18 @@ const filteredAgents = computed(() => {
       a.riot_id?.toLowerCase().includes(q)
     )
   }
+
+  // 2. Filtre par rang
   if (filterRanks.value.length > 0) {
     result = result.filter(a => a.rank && filterRanks.value.some(r => a.rank!.toUpperCase().includes(r)))
   }
+
+  // 3. Filtre par rôle
   if (filterRoles.value.length > 0) {
     result = result.filter(a => a.preferred_roles && a.preferred_roles.some(r => filterRoles.value.includes(r)))
   }
   
+  // 4. Filtre par winrate
   const minW = typeof filterWinrateMin.value === 'number' ? filterWinrateMin.value : 0
   const maxW = typeof filterWinrateMax.value === 'number' ? filterWinrateMax.value : 100
   if (minW > 0 || maxW < 100) {
@@ -255,6 +291,21 @@ const filteredAgents = computed(() => {
       return a.winrate >= minW && a.winrate <= maxW
     })
   }
-  return result
+
+  // 5. Filtre par statut (Agents Libres vs Tout le monde)
+  if (filterOnlyFree.value) {
+    result = result.filter(a => a.is_looking_for_team && !a.team)
+  }
+
+  // 6. Tri : Agents Libres en priorité, puis par date de création
+  return result.sort((a, b) => {
+    const aIsFree = a.is_looking_for_team && !a.team;
+    const bIsFree = b.is_looking_for_team && !b.team;
+
+    if (aIsFree && !bIsFree) return -1;
+    if (!aIsFree && bIsFree) return 1;
+    
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  })
 })
 </script>

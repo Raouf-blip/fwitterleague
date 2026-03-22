@@ -1,9 +1,22 @@
 <template>
   <BaseCard class="flex flex-col">
     <div class="flex items-start gap-3">
-      <BaseAvatar :name="player.username" size="lg" />
+      <BaseAvatar :name="player.username" :src="player.avatar_url" size="lg" />
       <div class="flex-1 min-w-0">
-        <h3 class="font-bold text-text-primary truncate">{{ player.username }}</h3>
+        <div class="flex items-center gap-2 mb-1">
+          <h3 class="font-bold text-text-primary truncate">{{ player.username }}</h3>
+          
+          <!-- Status Badge next to name -->
+          <div v-if="player.team" class="flex items-center gap-1 px-1.5 py-0.5 bg-gold/10 rounded border border-gold/20 shrink-0">
+            <Shield :size="10" class="text-gold" />
+            <span class="text-[9px] font-black text-gold uppercase tracking-tighter">{{ player.team.tag || player.team.name }}</span>
+          </div>
+          <div v-else-if="player.is_looking_for_team" class="flex items-center gap-1 px-1.5 py-0.5 bg-cyan/10 rounded border border-cyan/20 shrink-0">
+            <UserPlus :size="10" class="text-cyan" />
+            <span class="text-[9px] font-black text-cyan uppercase tracking-tighter">Libre</span>
+          </div>
+        </div>
+
         <div v-if="player.riot_id" class="flex items-center gap-2 mt-0.5">
           <p class="text-xs text-text-secondary truncate">{{ player.riot_id }}</p>
           <a
@@ -29,6 +42,7 @@
         </div>
         <div class="mt-2 flex items-center gap-3">
           <RankBadge :rank="player.rank" />
+          
           <!-- Preferred Roles -->
           <div v-if="player.preferred_roles?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">
             <BaseTooltip
@@ -83,7 +97,7 @@
 <script setup lang="ts">
 import DiscordIcon from '../icons/DiscordIcon.vue'
 import LolRoleIcon from '../icons/LolRoleIcon.vue'
-import { TrendingUp, UserPlus, ExternalLink } from 'lucide-vue-next'
+import { TrendingUp, UserPlus, ExternalLink, Shield } from 'lucide-vue-next'
 import type { Agent } from '../../types'
 import { getOpggUrl, getDpmUrl } from '../../lib/formatters'
 import BaseCard from '../ui/BaseCard.vue'

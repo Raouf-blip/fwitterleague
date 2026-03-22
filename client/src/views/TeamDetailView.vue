@@ -5,7 +5,10 @@
     <!-- Team Header -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-        <div class="w-16 h-16 rounded-xl bg-gold-muted border border-border-gold flex items-center justify-center text-2xl font-black text-gold shrink-0">
+        <div v-if="team.logo_url" class="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+          <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+        </div>
+        <div v-else class="w-16 h-16 rounded-xl bg-gold-muted border border-border-gold flex items-center justify-center text-2xl font-black text-gold shrink-0">
           {{ team.tag }}
         </div>
         <div class="flex-1">
@@ -20,6 +23,10 @@
           <BaseButton v-if="canApply" variant="cyan" :loading="applying" @click="openApplyModal">
             <template #icon><Send :size="16" /></template>
             Postuler
+          </BaseButton>
+          <BaseButton v-if="isCaptain" variant="secondary" size="sm" @click="showEdit = true">
+            <template #icon><Edit :size="14" /></template>
+            Modifier
           </BaseButton>
           <BaseButton v-if="isMember && !isCaptain" variant="danger" size="sm" @click="leaveTeam">
             Quitter
@@ -89,6 +96,20 @@
       :loading="applying"
       @submit="doApply"
     />
+
+    <!-- Edit Team Modal -->
+    <BaseModal v-model="showEdit" title="Modifier l'equipe" size="md">
+      <TeamCreateForm
+        :initial-name="team.name"
+        :initial-tag="team.tag"
+        :initial-logo-url="team.logo_url || ''"
+        :initial-description="team.description || ''"
+        :loading="updating"
+        submit-label="Enregistrer"
+        @submit="updateTeam"
+        @cancel="showEdit = false"
+      />
+    </BaseModal>
   </div>
 
   <BaseEmptyState v-else :icon="ShieldOff" title="Equipe introuvable" description="Cette equipe n'existe pas ou a ete dissoute.">
@@ -101,7 +122,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Send, ShieldOff, Trash2 } from 'lucide-vue-next'
+import { Send, ShieldOff, Trash2, Edit } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
@@ -113,10 +134,12 @@ import BaseCard from '../components/ui/BaseCard.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseModal from '../components/ui/BaseModal.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import RosterTable from '../components/domain/RosterTable.vue'
 import StatBlock from '../components/domain/StatBlock.vue'
 import ApplyModal from '../components/forms/ApplyModal.vue'
+import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -133,6 +156,8 @@ const kickTarget = ref<TeamMember | null>(null)
 const kicking = ref(false)
 const showDisband = ref(false)
 const disbanding = ref(false)
+const showEdit = ref(false)
+const updating = ref(false)
 
 const isCaptain = computed(() => !!(authStore.profile && team.value && team.value.captain_id === authStore.profile.id))
 const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
@@ -170,6 +195,23 @@ async function doApply(message: string) {
     notificationStore.show(e.message, 'error')
   } finally {
     applying.value = false
+  }
+}
+
+async function updateTeam(data: { name: string; tag: string; description: string }) {
+  updating.value = true
+  try {
+    const token = await getToken()
+    const updated = await api.patch(`/teams/${team.value!.id}`, data, token)
+    team.value = { ...team.value!, ...updated }
+    notificationStore.show('Equipe mise a jour !', 'success')
+    showEdit.value = false
+    // Refresh auth store to sync profile's team info if needed
+    await authStore.fetchProfile()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la mise a jour', 'error')
+  } finally {
+    updating.value = false
   }
 }
 

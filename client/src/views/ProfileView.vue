@@ -3,7 +3,7 @@
     <!-- Profile Header (Aligned with ProfileDetailView) -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <BaseAvatar :name="authStore.profile.username" size="xl" />
+        <BaseAvatar :name="authStore.profile.username" :src="authStore.profile.avatar_url" size="xl" />
         
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
@@ -178,7 +178,10 @@
         <BaseCard :hoverable="false" title="Mon Equipe">
           <div v-if="team" class="space-y-4">
             <div class="flex items-center gap-4 p-3 rounded-xl bg-gold/5 border border-gold/20">
-              <div class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-black text-gold">
+              <div v-if="team.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+              </div>
+              <div v-else class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-black text-gold shrink-0">
                 {{ team.tag }}
               </div>
               <div class="min-w-0">
@@ -208,7 +211,7 @@
           </div>
         </BaseCard>
 
-        <!-- Availability / Stats (Redesigned Toggle) -->
+        <!-- Statut de recrutement -->
         <BaseCard :hoverable="false" title="Statut de recrutement">
           <div class="space-y-4">
             <button 
@@ -276,8 +279,10 @@
     <!-- Settings Modal -->
     <BaseModal v-model="showSettings" title="Parametres du profil" size="md">
       <ProfileSettingsForm
+        :username="authStore.profile.username"
         :initial-bio="authStore.profile.bio || ''"
         :initial-riot-id="authStore.profile.riot_id || ''"
+        :initial-avatar-url="authStore.profile.avatar_url || ''"
         :initial-discord="authStore.profile.discord || ''"
         :initial-is-looking="authStore.profile.is_looking_for_team"
         :initial-roles="authStore.profile.preferred_roles || []"
@@ -421,7 +426,7 @@ async function markAsRead(id: string) {
   }
 }
 
-async function handleSaveSettings(data: { bio: string; riot_id: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
+async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
   savingProfile.value = true
   fetchingRiot.value = true
   try {

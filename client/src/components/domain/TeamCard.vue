@@ -1,7 +1,10 @@
 <template>
   <BaseCard class="flex flex-col">
     <div class="flex items-start gap-3">
-      <div class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-extrabold text-gold shrink-0">
+      <div v-if="team.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+        <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+      </div>
+      <div v-else class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-extrabold text-gold shrink-0">
         {{ team.tag }}
       </div>
       <div class="flex-1 min-w-0">

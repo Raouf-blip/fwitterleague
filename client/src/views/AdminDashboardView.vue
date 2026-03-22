@@ -74,7 +74,7 @@
                 >
                   <td class="px-5 py-3">
                     <div class="flex items-center gap-3">
-                      <BaseAvatar :name="user.username" size="sm" />
+                      <BaseAvatar :name="user.username" :src="user.avatar_url" size="sm" />
                       <div>
                         <div class="font-semibold text-text-primary">{{ user.username }}</div>
                         <div class="text-xs text-text-muted">{{ formatDate(user.created_at) }}</div>
