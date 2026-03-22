@@ -27,11 +27,7 @@ router.post('/matches', authenticate, authorizeAdmin, async (req: any, res) => {
 
 // Admin Only: Update Match
 router.patch('/matches/:id', authenticate, authorizeAdmin, async (req: any, res) => {
-  const { scheduled_at, score_1, score_2, winner_id } = req.body;
-  const updateData = { scheduled_at, score_1, score_2, winner_id };
-  const cleanUpdateData = Object.fromEntries(Object.entries(updateData).filter(([_, v]) => v !== undefined));
-
-  const { data, error } = await supabase.from('matches').update(cleanUpdateData).eq('id', req.params.id).select().single();
+  const { data, error } = await supabase.from('matches').update(req.body).eq('id', req.params.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
@@ -127,11 +123,7 @@ router.delete('/:id/registrations/:teamId', authenticate, authorizeAdmin, async 
 
 // Admin Only: Update tournament
 router.patch('/:id', authenticate, authorizeAdmin, async (req: any, res) => {
-  const { name, description, max_teams, start_date, end_date, status } = req.body;
-  const updateData = { name, description, max_teams, start_date, end_date, status };
-  const cleanUpdateData = Object.fromEntries(Object.entries(updateData).filter(([_, v]) => v !== undefined));
-
-  const { data, error } = await supabase.from('tournaments').update(cleanUpdateData).eq('id', req.params.id).select().single();
+  const { data, error } = await supabase.from('tournaments').update(req.body).eq('id', req.params.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });

@@ -1,7 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import profileRoutes from './routes/profile.routes';
 import teamRoutes from './routes/team.routes';
 import socialRoutes from './routes/social.routes';
@@ -10,34 +8,7 @@ import recruitmentRoutes from './routes/recruitment.routes';
 
 const app = express();
 
-// Basic security headers
-app.use(helmet());
-
-// Global Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per `window`
-  message: { error: 'Trop de requêtes depuis cette adresse IP, veuillez réessayer plus tard.' }
-});
-app.use(limiter);
-
-// Restrict CORS
-const allowedOrigins = [
-  'http://localhost:5173',
-  process.env.CLIENT_URL
-].filter(Boolean);
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests) or allowed origins
-    if (!origin || allowedOrigins.includes(origin as string)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Non autorisé par CORS'));
-    }
-  }
-}));
-
+app.use(cors());
 app.use(express.json());
 
 // Points d'entrée de l'API v1
