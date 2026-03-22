@@ -3,6 +3,14 @@
     <PageHeader title="Tournois & Competitions" subtitle="Suivez les evenements en cours et inscrivez votre equipe." />
 
     <BaseSpinner v-if="loading" />
+    
+    <div v-if="!loading && authStore.profile?.is_captain && (authStore.profile?.team?.member_count || 0) < 5" class="mb-6 p-4 bg-gold/10 border border-gold/20 rounded-lg">
+      <p class="text-gold text-sm font-bold flex items-center gap-2">
+        <AlertTriangle :size="16" />
+        Votre équipe doit avoir au moins 5 membres pour s'inscrire à un tournoi.
+      </p>
+    </div>
+
     <BaseEmptyState
       v-else-if="tournaments.length === 0"
       :icon="Trophy"
@@ -36,7 +44,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Trophy } from 'lucide-vue-next'
+import { Trophy, AlertTriangle } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -91,7 +99,13 @@ async function fetchData() {
 }
 
 function canRegister(tournament: Tournament) {
-  return tournament.status === 'upcoming' && authStore.profile?.is_captain && !registeredTournamentIds.value.has(tournament.id)
+  const hasRequiredMembers = (authStore.profile?.team?.member_count || 0) >= 5
+  return (
+    tournament.status === 'upcoming' && 
+    authStore.profile?.is_captain && 
+    !registeredTournamentIds.value.has(tournament.id) &&
+    hasRequiredMembers
+  )
 }
 
 function isRegistered(tournament: Tournament) {
