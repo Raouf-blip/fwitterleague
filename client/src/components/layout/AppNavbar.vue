@@ -137,7 +137,7 @@ Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comm
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle } from 'lucide-vue-next'
+import { Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle, BookOpen } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 
@@ -157,6 +157,7 @@ const navLinks = computed(() => {
     { to: '/tournaments', label: 'Tournois', icon: Award },
     { to: '/agents', label: 'Mercato', icon: Users },
     { to: '/teams', label: 'Equipes', icon: Shield },
+    { to: '/rules', label: 'Règlement', icon: BookOpen },
     { to: '/contact', label: 'Contact', icon: MessageCircle },
   ]
   if (isAdmin.value) {
