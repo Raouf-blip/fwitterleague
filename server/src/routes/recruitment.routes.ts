@@ -38,19 +38,6 @@ router.post('/apply/:teamId', authenticate, async (req: any, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Notify Captain
-  const { data: team } = await supabase.from('teams').select('captain_id, name').eq('id', team_id).single();
-  const { data: profile } = await supabase.from('profiles').select('username').eq('id', sender_id).single();
-
-  if (team && profile) {
-    await supabase.from('notifications').insert({
-      user_id: team.captain_id,
-      title: 'Nouvelle candidature',
-      message: `${profile.username} souhaite rejoindre votre équipe ${team.name}`,
-      type: 'application'
-    });
-  }
-
   res.json(app);
 });
 
@@ -91,14 +78,6 @@ router.post('/invite/:playerId', authenticate, async (req: any, res) => {
     .single();
 
   if (error) return res.status(400).json({ error: error.message });
-
-  // Notify Player
-  await supabase.from('notifications').insert({
-    user_id: player_id,
-    title: 'Offre de recrutement',
-    message: `L'équipe ${team.name} souhaite vous recruter !`,
-    type: 'offer'
-  });
 
   res.json(app);
 });
