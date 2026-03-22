@@ -14,6 +14,11 @@
       placeholder="••••••••"
       required
     />
+    <div class="flex justify-end">
+      <router-link to="/forgot-password" class="text-sm text-gold hover:text-gold-light transition-colors">
+        Mot de passe oublié ?
+      </router-link>
+    </div>
     <p v-if="error" class="text-sm text-danger">{{ error }}</p>
     <BaseButton type="submit" variant="primary" size="lg" :loading="loading" class="w-full">
       Se connecter
