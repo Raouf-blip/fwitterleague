@@ -112,8 +112,7 @@
             <ul class="space-y-2 text-text-secondary text-sm">
               <li class="flex gap-2">
                 <span class="text-danger">•</span>
-                Toute insulte, racisme ou comportement toxique est strictement
-                interdit.
+                Le trash-talking est autorisé pour le divertissement de l'événement jusqu'à la limite du raisonable.
               </li>
               <li class="flex gap-2">
                 <span class="text-danger">•</span>
