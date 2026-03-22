@@ -119,13 +119,15 @@ async function handleFileUpload(event: Event) {
   const file = input.files[0]
   const fileExt = file.name.split('.').pop()
   const fileName = `${Math.random()}.${fileExt}`
-  const filePath = `team-logos/${fileName}`
+  const filePath = `${fileName}` // Upload to root of bucket
 
   uploading.value = true
   try {
     const { error: uploadError } = await supabase.storage
       .from('team-logos')
-      .upload(filePath, file)
+      .upload(filePath, file, {
+        upsert: true
+      })
 
     if (uploadError) throw uploadError
 
@@ -136,7 +138,7 @@ async function handleFileUpload(event: Event) {
     logoUrl.value = publicUrl
   } catch (error: any) {
     console.error('Error uploading logo:', error.message)
-    alert('Erreur lors de l\'upload du logo')
+    alert('Erreur lors de l\'upload du logo : ' + error.message)
   } finally {
     uploading.value = false
   }

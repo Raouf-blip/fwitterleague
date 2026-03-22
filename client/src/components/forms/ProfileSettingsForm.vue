@@ -168,14 +168,24 @@ async function handleFileUpload(event: Event) {
   const file = input.files[0]
   const fileExt = file.name.split('.').pop()
   const fileName = `${Math.random()}.${fileExt}`
-  const filePath = `user-avatars/${fileName}`
+  
+  // Get current user ID for the RLS policy: folder name must match user ID
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    alert('Session expiree')
+    return
+  }
+
+  const filePath = `${user.id}/${fileName}`
 
   uploading.value = true
   try {
     // 1. Upload to Supabase Storage
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, file)
+      .upload(filePath, file, {
+        upsert: true
+      })
 
     if (uploadError) throw uploadError
 
@@ -187,7 +197,7 @@ async function handleFileUpload(event: Event) {
     avatarUrl.value = publicUrl
   } catch (error: any) {
     console.error('Error uploading avatar:', error.message)
-    alert('Erreur lors de l\'upload de l\'image')
+    alert('Erreur lors de l\'upload de l\'image : ' + error.message)
   } finally {
     uploading.value = false
   }
