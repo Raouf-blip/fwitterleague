@@ -11,11 +11,32 @@ router.get('/', async (req, res) => {
   res.json(data || []);
 });
 
+// Public: List recent matches (MUST be before /:id to avoid shadowing)
+router.get('/matches', async (req, res) => {
+  const { data } = await supabase.from('matches').select('*, team_1:team_1_id(name), team_2:team_2_id(name)').limit(20);
+  res.json(data || []);
+});
+
+// Admin Only: Create Match (MUST be before /:id/register)
+router.post('/matches', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { tournament_id, team_1_id, team_2_id, scheduled_at } = req.body;
+  const { data, error } = await supabase.from('matches').insert({ tournament_id, team_1_id, team_2_id, scheduled_at }).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Admin Only: Update Match
+router.patch('/matches/:id', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { data, error } = await supabase.from('matches').update(req.body).eq('id', req.params.id).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 // Public: Get tournament detail with teams
 router.get('/:id', async (req, res) => {
   const { data, error } = await supabase.from('tournaments').select('*').eq('id', req.params.id).single();
   if (error) return res.status(404).json({ error: 'Tournoi introuvable.' });
-  
+
   const { data: registrations } = await supabase.from('tournament_registrations').select('*, team:team_id(*)').eq('tournament_id', req.params.id);
   res.json({ ...data, registrations });
 });
@@ -78,26 +99,6 @@ router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res) => {
   const { error } = await supabase.from('tournaments').delete().eq('id', req.params.id);
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Tournoi supprimé.' });
-});
-
-// Public: List recent matches
-router.get('/matches', async (req, res) => {
-  const { data } = await supabase.from('matches').select('*, team_1:team_1_id(name), team_2:team_2_id(name)').limit(20);
-  res.json(data || []);
-});
-
-// Admin Only: Create/Update Match
-router.post('/matches', authenticate, authorizeAdmin, async (req: any, res) => {
-  const { tournament_id, team_1_id, team_2_id, scheduled_at } = req.body;
-  const { data, error } = await supabase.from('matches').insert({ tournament_id, team_1_id, team_2_id, scheduled_at }).select().single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
-});
-
-router.patch('/matches/:id', authenticate, authorizeAdmin, async (req: any, res) => {
-  const { data, error } = await supabase.from('matches').update(req.body).eq('id', req.params.id).select().single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
 });
 
 export default router;
