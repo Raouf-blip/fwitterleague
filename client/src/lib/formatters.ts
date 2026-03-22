@@ -53,6 +53,11 @@ export function getOpggUrl(riotId: string): string {
   return `https://www.op.gg/summoners/euw/${encodeURIComponent(name)}-${encodeURIComponent(tag || '')}`
 }
 
+export function getDpmUrl(riotId: string): string {
+  const [name, tag] = riotId.split('#')
+  return `https://dpm.lol/${encodeURIComponent(name)}-${encodeURIComponent(tag || '')}`
+}
+
 export function getInitial(name: string): string {
   return name.charAt(0).toUpperCase()
 }

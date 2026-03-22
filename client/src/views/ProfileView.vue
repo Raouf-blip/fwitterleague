@@ -23,9 +23,21 @@
               v-if="authStore.profile.riot_id"
               :href="getOpggUrl(authStore.profile.riot_id)"
               target="_blank"
-              class="text-xs text-cyan hover:underline"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur OP.GG"
             >
+              <ExternalLink :size="12" />
               OP.GG
+            </a>
+            <a
+              v-if="authStore.profile.riot_id"
+              :href="getDpmUrl(authStore.profile.riot_id)"
+              target="_blank"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur DPM.LOL"
+            >
+              <ExternalLink :size="12" />
+              DPM.LOL
             </a>
             <span v-if="authStore.profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
               <DiscordIcon :size="14" class="text-[#5865F2]" />
@@ -303,6 +315,7 @@ import {
   Check,
   Send,
   Shield,
+  ExternalLink,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -310,7 +323,7 @@ import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
-import { getOpggUrl, formatRelativeTime, formatDate } from '../lib/formatters'
+import { getOpggUrl, getDpmUrl, formatRelativeTime, formatDate } from '../lib/formatters'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'

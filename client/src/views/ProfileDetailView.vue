@@ -14,9 +14,21 @@
               v-if="opggUrl"
               :href="opggUrl"
               target="_blank"
-              class="text-xs text-cyan hover:underline"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur OP.GG"
             >
+              <ExternalLink :size="12" />
               OP.GG
+            </a>
+            <a
+              v-if="dpmUrl"
+              :href="dpmUrl"
+              target="_blank"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur DPM.LOL"
+            >
+              <ExternalLink :size="12" />
+              DPM.LOL
             </a>
             <span v-if="profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
               <DiscordIcon :size="14" class="text-[#5865F2]" />
@@ -101,10 +113,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
-import { UserPlus, UserX } from 'lucide-vue-next'
+import { UserPlus, UserX, ExternalLink } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
-import { getOpggUrl } from '../lib/formatters'
+import { getOpggUrl, getDpmUrl } from '../lib/formatters'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import type { Profile } from '../types'
@@ -127,6 +139,7 @@ const loading = ref(true)
 const recruiting = ref(false)
 
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
+const dpmUrl = computed(() => profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null)
 const canRecruit = computed(() => authStore.profile?.is_captain && !team.value)
 
 onMounted(async () => {

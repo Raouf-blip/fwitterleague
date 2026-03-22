@@ -16,6 +16,16 @@
             <ExternalLink :size="10" />
             OP.GG
           </a>
+          <a
+            :href="getDpmUrl(player.riot_id)"
+            target="_blank"
+            class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+            title="Voir sur DPM.LOL"
+            @click.stop
+          >
+            <ExternalLink :size="10" />
+            DPM.LOL
+          </a>
         </div>
         <div class="mt-2 flex items-center gap-3">
           <RankBadge :rank="player.rank" />
@@ -75,7 +85,7 @@ import DiscordIcon from '../icons/DiscordIcon.vue'
 import LolRoleIcon from '../icons/LolRoleIcon.vue'
 import { TrendingUp, UserPlus, ExternalLink } from 'lucide-vue-next'
 import type { Agent } from '../../types'
-import { getOpggUrl } from '../../lib/formatters'
+import { getOpggUrl, getDpmUrl } from '../../lib/formatters'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 import BaseButton from '../ui/BaseButton.vue'
