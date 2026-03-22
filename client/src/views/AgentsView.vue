@@ -3,7 +3,7 @@
     <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
 
     <!-- Filters -->
-    <div class="mb-6 bg-[#111318] p-4 rounded-xl border border-gold/10">
+    <div class="mb-6 bg-surface p-4 rounded-xl border border-border">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <BaseInput
           v-model="search"
