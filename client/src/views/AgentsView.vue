@@ -3,18 +3,90 @@
     <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
 
     <!-- Filters -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4">
-      <BaseInput
-        v-model="search"
-        placeholder="Rechercher un joueur..."
-        class="sm:w-64"
-      />
-      <BaseSelect
-        v-model="filterRank"
-        placeholder="Tous les rangs"
-        :options="rankOptions"
-        class="sm:w-48"
-      />
+    <div class="mb-6 bg-surface p-4 rounded-xl border border-border">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        <BaseInput
+          v-model="search"
+          placeholder="Rechercher un joueur..."
+          class="w-full sm:w-64"
+        />
+        <button
+          @click="resetFilters"
+          class="text-xs font-bold text-text-muted hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <RefreshCw :size="14" />
+          Reinitialiser
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Rangs -->
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Rangs</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="rank in LOL_RANKS"
+              :key="rank"
+              @click="toggleRank(rank)"
+              class="px-2 py-1 text-[10px] font-bold rounded border transition-colors cursor-pointer"
+              :class="filterRanks.includes(rank) ? 'bg-cyan/20 border-cyan/50 text-cyan' : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20 hover:text-white'"
+            >
+              {{ rank }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Roles -->
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Postes</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="role in LOL_ROLES"
+              :key="role.key"
+              @click="toggleRole(role.key)"
+              class="flex items-center gap-1 px-2 py-1 rounded border transition-colors cursor-pointer"
+              :class="filterRoles.includes(role.key) ? 'bg-gold/20 border-gold/50 text-gold' : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20 hover:text-white'"
+            >
+              <LolRoleIcon :role="role.key" :size="12" />
+              <span class="text-[10px] font-bold">{{ role.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Winrate -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted">Winrate</label>
+            <span class="text-xs font-bold text-cyan">{{ filterWinrateMin }}% - {{ filterWinrateMax }}%</span>
+          </div>
+          <div class="space-y-3 mt-4">
+            <div class="relative">
+              <span class="absolute -top-3 left-0 text-[9px] text-text-muted">Min</span>
+              <input
+                type="range"
+                v-model.number="filterWinrateMin"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-cyan h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                @input="() => filterWinrateMin > filterWinrateMax ? filterWinrateMax = filterWinrateMin : null"
+              />
+            </div>
+            <div class="relative">
+              <span class="absolute -top-3 left-0 text-[9px] text-text-muted">Max</span>
+              <input
+                type="range"
+                v-model.number="filterWinrateMax"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-gold h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                @input="() => filterWinrateMax < filterWinrateMin ? filterWinrateMin = filterWinrateMax : null"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <BaseSpinner v-if="loading" />
@@ -49,12 +121,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { UserSearch } from 'lucide-vue-next'
+import { UserSearch, RefreshCw } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
-import { LOL_RANKS } from '../lib/constants'
+import { LOL_RANKS, LOL_ROLES } from '../lib/constants'
 import type { Agent } from '../types'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
@@ -63,6 +135,7 @@ import BaseInput from '../components/ui/BaseInput.vue'
 import BaseSelect from '../components/ui/BaseSelect.vue'
 import PlayerCard from '../components/domain/PlayerCard.vue'
 import InviteModal from '../components/forms/InviteModal.vue'
+import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
@@ -70,13 +143,14 @@ const agents = ref<Agent[]>([])
 const myTeamOffers = ref<any[]>([])
 const loading = ref(true)
 const search = ref('')
-const filterRank = ref('')
+const filterRanks = ref<string[]>([])
+const filterRoles = ref<string[]>([])
+const filterWinrateMin = ref<number | ''>(0)
+const filterWinrateMax = ref<number | ''>(100)
 const showInvite = ref(false)
 const selectedAgent = ref<Agent | null>(null)
 const inviting = ref(false)
 const recruitingId = ref<string | null>(null)
-
-const rankOptions = [{ value: '', label: 'Tous les rangs' }, ...LOL_RANKS.map(r => ({ value: r, label: r }))]
 
 onMounted(async () => {
   await fetchData()
@@ -135,6 +209,26 @@ async function sendInvite(message: string) {
   }
 }
 
+function toggleRank(rank: string) {
+  const i = filterRanks.value.indexOf(rank)
+  if (i === -1) filterRanks.value.push(rank)
+  else filterRanks.value.splice(i, 1)
+}
+
+function toggleRole(role: string) {
+  const i = filterRoles.value.indexOf(role)
+  if (i === -1) filterRoles.value.push(role)
+  else filterRoles.value.splice(i, 1)
+}
+
+function resetFilters() {
+  search.value = ''
+  filterRanks.value = []
+  filterRoles.value = []
+  filterWinrateMin.value = 0
+  filterWinrateMax.value = 100
+}
+
 const filteredAgents = computed(() => {
   let result = agents.value
   if (search.value) {
@@ -144,8 +238,20 @@ const filteredAgents = computed(() => {
       a.riot_id?.toLowerCase().includes(q)
     )
   }
-  if (filterRank.value) {
-    result = result.filter(a => a.rank?.toUpperCase().includes(filterRank.value))
+  if (filterRanks.value.length > 0) {
+    result = result.filter(a => a.rank && filterRanks.value.some(r => a.rank!.toUpperCase().includes(r)))
+  }
+  if (filterRoles.value.length > 0) {
+    result = result.filter(a => a.preferred_roles && a.preferred_roles.some(r => filterRoles.value.includes(r)))
+  }
+  
+  const minW = typeof filterWinrateMin.value === 'number' ? filterWinrateMin.value : 0
+  const maxW = typeof filterWinrateMax.value === 'number' ? filterWinrateMax.value : 100
+  if (minW > 0 || maxW < 100) {
+    result = result.filter(a => {
+      if (a.winrate === undefined || a.winrate === null) return false
+      return a.winrate >= minW && a.winrate <= maxW
+    })
   }
   return result
 })
