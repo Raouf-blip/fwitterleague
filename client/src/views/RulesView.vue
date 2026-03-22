@@ -112,7 +112,7 @@
             <ul class="space-y-2 text-text-secondary text-sm">
               <li class="flex gap-2">
                 <span class="text-danger">•</span>
-                Le trash-talking est autorisé pour le divertissement de l'événement jusqu'à la limite du raisonable.
+                Le trash-talking est autorisé pour le divertissement de l'événement jusqu'à la limite du raisonnable.
               </li>
               <li class="flex gap-2">
                 <span class="text-danger">•</span>

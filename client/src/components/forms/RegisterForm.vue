@@ -17,7 +17,7 @@
       v-model="password"
       label="Mot de passe"
       type="password"
-      placeholder="Min. 6 caracteres"
+      placeholder="Min. 6 caractères"
       required
     />
     <BaseInput
@@ -34,7 +34,7 @@
 
     <RoleSelector
       v-model="preferredRoles"
-      label="Postes preferes (Max 2)"
+      label="Postes préférés (Max 2)"
     />
 
     <p v-if="error" class="text-sm text-danger">{{ error }}</p>
@@ -46,7 +46,7 @@
     </div>
 
     <BaseButton type="submit" variant="primary" size="lg" :loading="loading" class="w-full">
-      Creer mon compte
+      Créer mon compte
     </BaseButton>
   </form>
 </template>
@@ -76,7 +76,7 @@ const step = ref<'idle' | 'creating' | 'saving' | 'syncing'>('idle')
 
 const stepLabel = computed(() => {
   switch (step.value) {
-    case 'creating': return 'Creation du compte...'
+    case 'creating': return 'Création du compte...'
     case 'saving': return 'Sauvegarde du profil...'
     case 'syncing': return 'Synchronisation Riot...'
     default: return ''
@@ -88,7 +88,7 @@ async function handleSubmit() {
   riotError.value = ''
 
   if (password.value.length < 6) {
-    error.value = 'Le mot de passe doit contenir au moins 6 caracteres'
+    error.value = 'Le mot de passe doit contenir au moins 6 caractères'
     return
   }
   if (riotId.value && !riotId.value.includes('#')) {

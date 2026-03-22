@@ -2,7 +2,7 @@
   <BaseModal :model-value="modelValue" title="Recruter un joueur" size="sm" @update:model-value="$emit('update:modelValue', $event)">
     <div class="space-y-4">
       <p class="text-sm text-text-secondary">
-        Inviter <strong class="text-text-primary">{{ playerName }}</strong> a rejoindre votre equipe ?
+        Inviter <strong class="text-text-primary">{{ playerName }}</strong> à rejoindre votre équipe ?
       </p>
       <BaseTextarea
         v-model="message"

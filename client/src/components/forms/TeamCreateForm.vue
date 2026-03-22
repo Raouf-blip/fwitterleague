@@ -42,20 +42,20 @@
         />
       </div>
       <div class="text-center">
-        <p class="text-[10px] font-black uppercase tracking-widest text-gold mb-1">Logo de l'equipe</p>
+        <p class="text-[10px] font-black uppercase tracking-widest text-gold mb-1">Logo de l'équipe</p>
         <p class="text-[10px] text-text-muted uppercase font-bold tracking-tight">PNG, JPG ou SVG (Max 2Mo)</p>
       </div>
     </div>
 
     <BaseInput
       v-model="name"
-      label="Nom de l'equipe"
+      label="Nom de l'équipe"
       placeholder="Les Invincibles"
       required
     />
     <BaseInput
       v-model="tag"
-      label="Tag (max 4 caracteres)"
+      label="Tag (max 4 caractères)"
       placeholder="INVC"
       required
       :maxlength="4"
@@ -63,7 +63,7 @@
     <BaseTextarea
       v-model="description"
       label="Description"
-      placeholder="Presentation de l'equipe..."
+      placeholder="Présentation de l'équipe..."
       :rows="3"
     />
     <div class="flex gap-3 pt-2">
@@ -93,7 +93,7 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   submitLabel?: string
 }>(), {
-  submitLabel: 'Creer',
+  submitLabel: 'Créer',
 })
 
 const emit = defineEmits<{

@@ -72,13 +72,13 @@
 
     <RoleSelector
       v-model="preferredRoles"
-      label="Postes preferes"
+      label="Postes préférés"
     />
 
     <BaseTextarea
       v-model="bio"
       label="Bio / Description"
-      placeholder="Decris ton style de jeu, tes champions preferes..."
+      placeholder="Décris ton style de jeu, tes champions préférés..."
       :rows="4"
     />
 
@@ -98,8 +98,8 @@
       </div>
       <div class="flex-1">
         <span class="block text-sm font-bold text-text-primary">Recrutement actif</span>
-        <span v-if="hasTeam" class="block text-xs text-gold font-bold">Desactive (Deja en equipe)</span>
-        <span v-else class="block text-xs text-text-secondary">Je recherche une equipe</span>
+        <span v-if="hasTeam" class="block text-xs text-gold font-bold">Désactivé (Déjà en équipe)</span>
+        <span v-else class="block text-xs text-text-secondary">Je recherche une équipe</span>
       </div>
     </label>
 
@@ -171,7 +171,7 @@ async function handleFileUpload(event: Event) {
   // Get current user ID for the RLS policy: folder name must match user ID
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    alert('Session expiree')
+    alert('Session expirée')
     return
   }
 

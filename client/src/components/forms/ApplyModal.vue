@@ -1,13 +1,13 @@
 <template>
-  <BaseModal :model-value="modelValue" title="Postuler a l'equipe" size="sm" @update:model-value="$emit('update:modelValue', $event)">
+  <BaseModal :model-value="modelValue" title="Postuler à l'équipe" size="sm" @update:model-value="$emit('update:modelValue', $event)">
     <div class="space-y-4">
       <p class="text-sm text-text-secondary">
-        Envoyer une candidature a <strong class="text-text-primary">{{ teamName }}</strong> ?
+        Envoyer une candidature à <strong class="text-text-primary">{{ teamName }}</strong> ?
       </p>
       <BaseTextarea
         v-model="message"
         label="Message (optionnel)"
-        placeholder="Presentez-vous brievement..."
+        placeholder="Présentez-vous brièvement..."
         :rows="3"
       />
     </div>

@@ -7,7 +7,7 @@ const router = Router();
 
 // Public: List all tournaments
 router.get('/', async (req, res) => {
-  const { data } = await supabase.from('tournaments').select('*').order('start_date', { ascending: true });
+  const { data } = await supabase.from('tournaments').select('*, registrations:tournament_registrations(count)').order('start_date', { ascending: true });
   res.json(data || []);
 });
 

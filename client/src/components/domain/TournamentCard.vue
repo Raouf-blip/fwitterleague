@@ -16,7 +16,7 @@
       </div>
       <div class="flex items-center gap-1">
         <Users :size="14" />
-        <span>{{ regCount }}/{{ tournament.max_teams }} equipes</span>
+        <span>{{ regCount }}/{{ tournament.max_teams }} équipes</span>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
 
     <div class="mt-auto pt-4 flex items-center gap-2">
       <BaseButton variant="ghost" size="sm" :to="`/tournaments/${tournament.id}`">
-        Voir details
+        Voir détails
       </BaseButton>
       <BaseButton
         v-if="showRegister && tournament.status === 'upcoming'"
@@ -42,7 +42,7 @@
         :loading="registering"
         @click="$emit('register', tournament)"
       >
-        Inscrire mon equipe
+        Inscrire mon équipe
       </BaseButton>
       <BaseButton
         v-else-if="isRegistered && tournament.status === 'upcoming'"
@@ -51,7 +51,7 @@
         :loading="registering"
         @click="$emit('unregister', tournament)"
       >
-        Se desinscrire
+        Se désinscrire
       </BaseButton>
     </div>
   </BaseCard>
