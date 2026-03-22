@@ -4,9 +4,37 @@
       <BaseAvatar :name="player.username" size="lg" />
       <div class="flex-1 min-w-0">
         <h3 class="font-bold text-text-primary truncate">{{ player.username }}</h3>
-        <p v-if="player.riot_id" class="text-xs text-text-secondary mt-0.5">{{ player.riot_id }}</p>
-        <div class="mt-2">
+        <div v-if="player.riot_id" class="flex items-center gap-2 mt-0.5">
+          <p class="text-xs text-text-secondary truncate">{{ player.riot_id }}</p>
+          <a
+            :href="getOpggUrl(player.riot_id)"
+            target="_blank"
+            class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+            title="Voir sur OP.GG"
+            @click.stop
+          >
+            <ExternalLink :size="10" />
+            OP.GG
+          </a>
+        </div>
+        <div class="mt-2 flex items-center gap-3">
           <RankBadge :rank="player.rank" />
+          <!-- Preferred Roles -->
+          <div v-if="player.preferred_roles?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">
+            <BaseTooltip 
+              v-for="role in player.preferred_roles" 
+              :key="role"
+              :content="role"
+            >
+              <div class="cursor-pointer flex items-center justify-center">
+                <component 
+                  :is="getRoleIcon(role)" 
+                  :size="14" 
+                  class="text-cyan"
+                />
+              </div>
+            </BaseTooltip>
+          </div>
         </div>
       </div>
     </div>
@@ -47,12 +75,23 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, UserPlus } from 'lucide-vue-next'
 import DiscordIcon from '../icons/DiscordIcon.vue'
+import { 
+  TrendingUp, 
+  UserPlus, 
+  Shield, 
+  Swords, 
+  Sparkles, 
+  Target, 
+  Heart,
+  ExternalLink
+} from 'lucide-vue-next'
 import type { Agent } from '../../types'
+import { getOpggUrl } from '../../lib/formatters'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 import BaseButton from '../ui/BaseButton.vue'
+import BaseTooltip from '../ui/BaseTooltip.vue'
 import RankBadge from './RankBadge.vue'
 
 defineProps<{
@@ -64,4 +103,15 @@ defineProps<{
 defineEmits<{
   recruit: [player: Agent]
 }>()
+
+function getRoleIcon(role: string) {
+  switch (role) {
+    case 'Top': return Shield
+    case 'Jungle': return Swords
+    case 'Mid': return Sparkles
+    case 'ADC': return Target
+    case 'Support': return Heart
+    default: return Target
+  }
+}
 </script>

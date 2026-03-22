@@ -4,11 +4,13 @@ export interface Profile {
   riot_id: string | null
   discord: string | null
   role: 'user' | 'admin' | 'superadmin'
+  preferred_roles?: string[]
   is_captain: boolean
   is_looking_for_team: boolean
   bio: string | null
   rank: string | null
   winrate: number
+  lp?: number
   last_riot_sync: string | null
   created_at: string
   team: TeamSummary | null

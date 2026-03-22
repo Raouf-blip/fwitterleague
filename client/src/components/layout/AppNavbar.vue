@@ -42,12 +42,11 @@
               ]"
             >
               <Bell :size="20" />
+              <!-- Red Dot Badge -->
               <span
                 v-if="unreadCount > 0"
-                class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center"
-              >
-                {{ unreadCount > 9 ? '9+' : unreadCount }}
-              </span>
+                class="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border border-body ring-2 ring-danger/20"
+              />
             </RouterLink>
 
             <!-- User Menu -->
@@ -138,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'

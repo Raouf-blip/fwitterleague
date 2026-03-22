@@ -34,6 +34,11 @@
       required
     />
 
+    <RoleSelector
+      v-model="preferredRoles"
+      label="Postes preferes (Max 2)"
+    />
+
     <p v-if="error" class="text-sm text-danger">{{ error }}</p>
 
     <!-- Step indicator during signup -->
@@ -55,6 +60,7 @@ import { supabase } from '../../lib/supabase'
 import { api } from '../../lib/api'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
+import RoleSelector from '../ui/RoleSelector.vue'
 
 const emit = defineEmits<{ success: [] }>()
 
@@ -63,6 +69,7 @@ const email = ref('')
 const password = ref('')
 const riotId = ref('')
 const discord = ref('')
+const preferredRoles = ref<string[]>([])
 const loading = ref(false)
 const error = ref('')
 const riotError = ref('')
@@ -111,6 +118,7 @@ async function handleSubmit() {
         username: username.value,
         riot_id: riotId.value,
         discord: discord.value,
+        preferred_roles: preferredRoles.value,
         is_looking_for_team: true,
       }, token)
 
@@ -118,10 +126,14 @@ async function handleSubmit() {
       step.value = 'syncing'
       try {
         await api.post('/profiles/sync-riot', { riotId: riotId.value }, token)
-      } catch {
+      } catch (syncErr) {
         // Riot sync failure is non-blocking
-        console.warn('Riot sync failed during registration, will retry later')
+        console.warn('Riot sync failed during registration', syncErr)
       }
+
+      // Step 4: Refresh local profile in store to ensure it's ready
+      const authStore = useAuthStore()
+      await authStore.fetchProfile(token)
     }
 
     step.value = 'idle'

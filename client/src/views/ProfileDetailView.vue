@@ -25,6 +25,24 @@
           </div>
           <div class="flex items-center gap-4 mt-3">
             <RankBadge :rank="profile.rank" />
+            <div v-if="profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
+              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
+              <div class="flex items-center gap-2">
+                <BaseTooltip 
+                  v-for="role in profile.preferred_roles" 
+                  :key="role"
+                  :content="role"
+                >
+                  <div class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
+                    <component 
+                      :is="getRoleIcon(role)" 
+                      :size="16" 
+                      class="text-cyan"
+                    />
+                  </div>
+                </BaseTooltip>
+              </div>
+            </div>
             <span class="text-sm text-text-secondary">
               Winrate: <strong class="text-text-primary">{{ profile.winrate }}%</strong>
             </span>
@@ -85,8 +103,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { UserPlus, UserX } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
+import { UserPlus, UserX, Shield, Swords, Sparkles, Target, Heart } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { getOpggUrl } from '../lib/formatters'
@@ -94,6 +112,7 @@ import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import type { Profile } from '../types'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseTooltip from '../components/ui/BaseTooltip.vue'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
@@ -109,6 +128,17 @@ const profile = ref<Profile | null>(null)
 const team = ref<any>(null)
 const loading = ref(true)
 const recruiting = ref(false)
+
+function getRoleIcon(role: string) {
+  switch (role) {
+    case 'Top': return Shield
+    case 'Jungle': return Swords
+    case 'Mid': return Sparkles
+    case 'ADC': return Target
+    case 'Support': return Heart
+    default: return Target
+  }
+}
 
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
 const canRecruit = computed(() => authStore.profile?.is_captain && !team.value)
