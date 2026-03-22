@@ -28,10 +28,11 @@
               v-for="rank in LOL_RANKS"
               :key="rank"
               @click="toggleRank(rank)"
-              class="px-2 py-1 text-[10px] font-bold rounded border transition-colors cursor-pointer"
+              class="flex items-center gap-1.5 px-2 py-1 rounded border transition-colors cursor-pointer"
               :class="filterRanks.includes(rank) ? 'bg-cyan/20 border-cyan/50 text-cyan' : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20 hover:text-white'"
             >
-              {{ rank }}
+              <img :src="getRankIconUrl(rank)" :alt="rank" class="w-3.5 h-3.5 object-contain" :class="!filterRanks.includes(rank) && 'opacity-60 grayscale'" />
+              <span class="text-[10px] font-bold">{{ rank }}</span>
             </button>
           </div>
         </div>
@@ -127,6 +128,7 @@ import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import { LOL_RANKS, LOL_ROLES } from '../lib/constants'
+import { getRankIconUrl } from '../lib/formatters'
 import type { Agent } from '../types'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'

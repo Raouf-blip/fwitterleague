@@ -42,6 +42,12 @@ export function getRankColor(rank: string | null): string {
   return RANK_COLORS[tier] || '#5b5a56'
 }
 
+export function getRankIconUrl(rank: string | null): string {
+  if (!rank) return new URL('../assets/ranks/unranked.png', import.meta.url).href
+  const baseRank = rank.split(' ')[0].toLowerCase()
+  return new URL(`../assets/ranks/${baseRank}.png`, import.meta.url).href
+}
+
 export function getOpggUrl(riotId: string): string {
   const [name, tag] = riotId.split('#')
   return `https://www.op.gg/summoners/euw/${encodeURIComponent(name)}-${encodeURIComponent(tag || '')}`
