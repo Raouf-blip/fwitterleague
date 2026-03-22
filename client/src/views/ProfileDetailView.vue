@@ -61,13 +61,12 @@
         </div>
         <BaseButton
           v-if="canRecruit"
-          :variant="isInvited ? 'secondary' : 'primary'"
+          variant="primary"
           :loading="recruiting"
-          :disabled="isInvited"
-          @click="showInvite = true"
+          @click="recruitPlayer"
         >
           <template #icon><UserPlus :size="16" /></template>
-          {{ isInvited ? 'Déjà invité' : 'Recruter' }}
+          Recruter
         </BaseButton>
       </div>
     </BaseCard>
@@ -107,15 +106,6 @@
       <BaseButton to="/agents">Retour aux agents</BaseButton>
     </template>
   </BaseEmptyState>
-
-  <!-- Invite Modal -->
-  <InviteModal
-    v-if="profile"
-    v-model="showInvite"
-    :player-name="profile.username"
-    :loading="recruiting"
-    @submit="sendInvite"
-  />
 </template>
 
 <script setup lang="ts">
@@ -138,7 +128,6 @@ import BaseButton from '../components/ui/BaseButton.vue'
 import BaseAvatar from '../components/ui/BaseAvatar.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
 import RankBadge from '../components/domain/RankBadge.vue'
-import InviteModal from '../components/forms/InviteModal.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -148,55 +137,32 @@ const profile = ref<Profile | null>(null)
 const team = ref<any>(null)
 const loading = ref(true)
 const recruiting = ref(false)
-const showInvite = ref(false)
-const myTeamOffers = ref<any[]>([])
 
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
 const dpmUrl = computed(() => profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null)
-const canRecruit = computed(() => {
-  return authStore.profile?.is_captain && 
-         profile.value?.id !== authStore.user?.id && 
-         !team.value && 
-         profile.value?.is_looking_for_team
-})
-
-const isInvited = computed(() => {
-  if (!profile.value) return false
-  return myTeamOffers.value.some((o: any) => o.sender_id === profile.value!.id)
-})
+const canRecruit = computed(() => authStore.profile?.is_captain && !team.value)
 
 onMounted(async () => {
   try {
     const data = await api.get(`/profiles/${route.params.id}`)
     profile.value = data
     team.value = data.team
-    
-    if (authStore.user && authStore.profile?.is_captain) {
-      const token = await getToken()
-      const inbox = await api.get('/social/inbox', token)
-      myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
-    }
   } catch (e) {
     console.error(e)
   }
   loading.value = false
 })
 
-async function sendInvite(message: string) {
+async function recruitPlayer() {
   if (!profile.value) return
   recruiting.value = true
   try {
     const token = await getToken()
     await api.post(`/recruitment/invite/${profile.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
+      message: `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
     notificationStore.show('Offre de recrutement envoyee !', 'success')
-    showInvite.value = false
-    
-    // Refresh inbox
-    const inbox = await api.get('/social/inbox', token)
-    myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
   } catch (err: any) {
     notificationStore.show(err.message || "Impossible d'envoyer l'invitation", 'error')
   } finally {
