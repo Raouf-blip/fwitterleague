@@ -99,6 +99,14 @@
         </div>
       </BaseCard>
     </div>
+
+    <!-- Invite Modal -->
+    <InviteModal
+      v-model="showInvite"
+      :player-name="profile.username"
+      :loading="recruiting"
+      @submit="sendInvite"
+    />
   </div>
 
   <BaseEmptyState v-else :icon="UserX" title="Profil introuvable" description="Ce joueur n'existe pas.">
