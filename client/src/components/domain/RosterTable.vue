@@ -10,7 +10,7 @@
       <span class="text-xs font-bold text-text-muted w-5 text-center">{{ index + 1 }}</span>
 
       <template v-if="slot.member">
-        <BaseAvatar :name="slot.member.profile.username" size="sm" />
+        <BaseAvatar :name="slot.member.profile.username" :src="slot.member.profile.avatar_url" size="sm" />
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <RouterLink

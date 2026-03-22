@@ -5,7 +5,10 @@
     <!-- Team Header -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-        <div class="w-16 h-16 rounded-xl bg-gold-muted border border-border-gold flex items-center justify-center text-2xl font-black text-gold shrink-0">
+        <div v-if="team.logo_url" class="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+          <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+        </div>
+        <div v-else class="w-16 h-16 rounded-xl bg-gold-muted border border-border-gold flex items-center justify-center text-2xl font-black text-gold shrink-0">
           {{ team.tag }}
         </div>
         <div class="flex-1">
@@ -99,6 +102,7 @@
       <TeamCreateForm
         :initial-name="team.name"
         :initial-tag="team.tag"
+        :initial-logo-url="team.logo_url || ''"
         :initial-description="team.description || ''"
         :loading="updating"
         submit-label="Enregistrer"

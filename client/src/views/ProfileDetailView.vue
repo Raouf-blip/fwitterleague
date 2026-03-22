@@ -5,7 +5,7 @@
     <!-- Profile Header -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <BaseAvatar :name="profile.username" size="xl" />
+        <BaseAvatar :name="profile.username" :src="profile.avatar_url" size="xl" />
         <div class="flex-1">
           <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
           <div class="flex items-center gap-3 mt-1 flex-wrap">

@@ -3,6 +3,7 @@ export interface Profile {
   username: string
   riot_id: string | null
   opgg_url: string | null
+  avatar_url: string | null
   discord: string | null
   role: 'user' | 'admin' | 'superadmin'
   preferred_roles?: string[]
@@ -21,12 +22,14 @@ export interface TeamSummary {
   id: string
   name: string
   tag: string
+  logo_url?: string | null
 }
 
 export interface Team {
   id: string
   name: string
   tag: string
+  logo_url: string | null
   description: string | null
   captain_id: string
   is_locked: boolean
@@ -43,6 +46,7 @@ export interface TeamMember {
   profile: {
     id: string
     username: string
+    avatar_url: string | null
     rank: string | null
     winrate: number
   }

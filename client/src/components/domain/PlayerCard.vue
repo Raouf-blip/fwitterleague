@@ -1,7 +1,7 @@
 <template>
   <BaseCard class="flex flex-col">
     <div class="flex items-start gap-3">
-      <BaseAvatar :name="player.username" size="lg" />
+      <BaseAvatar :name="player.username" :src="player.avatar_url" size="lg" />
       <div class="flex-1 min-w-0">
         <h3 class="font-bold text-text-primary truncate">{{ player.username }}</h3>
         <div v-if="player.riot_id" class="flex items-center gap-2 mt-0.5">

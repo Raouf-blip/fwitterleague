@@ -65,13 +65,8 @@ Simple mais classe.
                 class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-200 cursor-pointer"
                 @click="showMenu = !showMenu"
               >
-                <BaseAvatar
-                  :name="authStore.profile?.username || '?'"
-                  size="sm"
-                />
-                <span
-                  class="text-sm font-medium text-text-primary hidden sm:block"
-                >
+                <BaseAvatar :name="authStore.profile?.username || '?'" :src="authStore.profile?.avatar_url" size="sm" />
+                <span class="text-sm font-medium text-text-primary hidden sm:block">
                   {{ authStore.profile?.username }}
                 </span>
                 <ChevronDown :size="14" class="text-text-muted" />
