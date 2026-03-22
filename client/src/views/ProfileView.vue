@@ -189,9 +189,20 @@
                 <p class="text-xs text-gold uppercase tracking-widest font-bold">Membre actif</p>
               </div>
             </div>
-            <BaseButton variant="secondary" size="md" :to="'/teams/' + team.id" class="w-full">
-              Gerer l'equipe
-            </BaseButton>
+            <div class="flex gap-2">
+              <BaseButton variant="secondary" size="md" :to="'/teams/' + team.id" class="flex-1">
+                Gerer l'equipe
+              </BaseButton>
+              <BaseButton
+                v-if="!authStore.profile?.is_captain"
+                variant="danger"
+                size="md"
+                @click="showLeaveConfirm = true"
+              >
+                <template #icon><DoorOpen :size="16" /></template>
+                Quitter
+              </BaseButton>
+            </div>
           </div>
           
           <div v-else-if="!creatingTeam" class="text-center py-6">
@@ -292,6 +303,17 @@
         @save="handleSaveSettings"
       />
     </BaseModal>
+
+    <!-- Leave Team Confirm -->
+    <ConfirmDialog
+      v-model="showLeaveConfirm"
+      title="Quitter l'equipe"
+      :message="`Voulez-vous vraiment quitter ${team?.name} [${team?.tag}] ? Cette action est irreversible.`"
+      confirm-label="Quitter l'equipe"
+      variant="danger"
+      :loading="leavingTeam"
+      @confirm="leaveTeam"
+    />
   </div>
 
   <BaseSpinner v-else-if="authStore.loading" />
@@ -321,6 +343,7 @@ import {
   Send,
   Shield,
   ExternalLink,
+  DoorOpen,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -341,6 +364,7 @@ import BaseTooltip from '../components/ui/BaseTooltip.vue'
 import RankBadge from '../components/domain/RankBadge.vue'
 import ProfileSettingsForm from '../components/forms/ProfileSettingsForm.vue'
 import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
@@ -352,6 +376,8 @@ const savingProfile = ref(false)
 const savingTeam = ref(false)
 const fetchingRiot = ref(false)
 const creatingTeam = ref(false)
+const showLeaveConfirm = ref(false)
+const leavingTeam = ref(false)
 const togglingStatus = ref(false)
 const team = ref<any>(null)
 const sentApplications = ref<any[]>([])
@@ -467,6 +493,22 @@ async function createTeam(data: { name: string; tag: string; description: string
     notificationStore.show('Erreur: ' + err.message, 'error')
   } finally {
     savingTeam.value = false
+  }
+}
+
+async function leaveTeam() {
+  if (!team.value) return
+  leavingTeam.value = true
+  try {
+    const token = await getToken()
+    await api.post(`/teams/${team.value.id}/leave`, {}, token)
+    notificationStore.show('Vous avez quitte l\'equipe.', 'success')
+    showLeaveConfirm.value = false
+    await authStore.fetchProfile()
+  } catch (err: any) {
+    notificationStore.show(err.message || 'Erreur lors du depart', 'error')
+  } finally {
+    leavingTeam.value = false
   }
 }
 
