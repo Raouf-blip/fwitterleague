@@ -100,6 +100,14 @@
         </div>
       </BaseCard>
     </div>
+
+    <!-- Invite Modal -->
+    <InviteModal
+      v-model="showInvite"
+      :player-name="profile.username"
+      :loading="recruiting"
+      @submit="sendInvite"
+    />
   </div>
 
   <BaseEmptyState v-else :icon="UserX" title="Profil introuvable" description="Ce joueur n'existe pas.">
@@ -107,15 +115,6 @@
       <BaseButton to="/agents">Retour aux agents</BaseButton>
     </template>
   </BaseEmptyState>
-
-  <!-- Invite Modal -->
-  <InviteModal
-    v-if="profile"
-    v-model="showInvite"
-    :player-name="profile.username"
-    :loading="recruiting"
-    @submit="sendInvite"
-  />
 </template>
 
 <script setup lang="ts">
