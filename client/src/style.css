@@ -44,6 +44,18 @@ body {
   min-height: 100vh;
 }
 
+/* Radial gold glow background */
+#app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 120% 50% at 50% -5%, rgba(200, 170, 110, 0.10) 0%, rgba(200, 170, 110, 0.03) 40%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(240, 199, 94, 0.05) 0%, transparent 50%),
+    var(--color-body);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
