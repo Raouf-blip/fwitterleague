@@ -57,6 +57,30 @@
             </div>
           </div>
 
+          <!-- Registered teams -->
+          <div v-if="getRegistrationsForTournament(t.id).length > 0" class="px-5 py-3 border-b border-border">
+            <h4 class="text-sm font-semibold text-text-secondary mb-3">
+              Equipes inscrites ({{ getRegistrationsForTournament(t.id).length }})
+            </h4>
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="reg in getRegistrationsForTournament(t.id)"
+                :key="reg.id"
+                class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-border/50"
+              >
+                <span class="text-sm font-semibold text-text-primary">{{ reg.team?.name || 'Equipe' }}</span>
+                <span class="text-xs text-text-muted">[{{ reg.team?.tag || '?' }}]</span>
+                <button
+                  class="ml-1 p-0.5 text-text-muted hover:text-danger transition-colors cursor-pointer"
+                  title="Retirer cette equipe"
+                  @click="adminUnregister(t.id, reg.team_id, reg.team?.name)"
+                >
+                  <UserMinus :size="14" />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Tournament matches -->
           <div v-if="getMatchesForTournament(t.id).length > 0" class="px-5 py-3">
             <h4 class="text-sm font-semibold text-text-secondary mb-3">
@@ -201,7 +225,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Plus, Pencil, Trash2, Swords, RefreshCw } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Swords, RefreshCw, UserMinus } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useNotificationStore } from '../stores/notifications'
@@ -223,6 +247,7 @@ const notificationStore = useNotificationStore()
 const tournaments = ref<Tournament[]>([])
 const matches = ref<Match[]>([])
 const teams = ref<Team[]>([])
+const registrations = ref<Record<string, any[]>>({})
 const loading = ref(true)
 
 // Tournament form
@@ -279,6 +304,10 @@ function getMatchesForTournament(tournamentId: string) {
   return matches.value.filter(m => m.tournament_id === tournamentId)
 }
 
+function getRegistrationsForTournament(tournamentId: string) {
+  return registrations.value[tournamentId] || []
+}
+
 onMounted(async () => {
   await fetchAll()
 })
@@ -294,10 +323,32 @@ async function fetchAll() {
     tournaments.value = t
     matches.value = m
     teams.value = te
+
+    // Fetch registrations per tournament
+    const regsMap: Record<string, any[]> = {}
+    await Promise.all(t.map(async (tournament: Tournament) => {
+      try {
+        const detail = await api.get(`/tournaments/${tournament.id}`)
+        regsMap[tournament.id] = detail.registrations || []
+      } catch { /* ignore */ }
+    }))
+    registrations.value = regsMap
   } catch (e: any) {
     notificationStore.show(e.message || 'Erreur chargement', 'error')
   }
   loading.value = false
+}
+
+async function adminUnregister(tournamentId: string, teamId: string, teamName?: string) {
+  if (!confirm(`Retirer ${teamName || 'cette equipe'} du tournoi ?`)) return
+  try {
+    const token = await getToken()
+    await api.delete(`/tournaments/${tournamentId}/registrations/${teamId}`, token)
+    notificationStore.show(`${teamName || 'Equipe'} retiree du tournoi.`, 'success')
+    await fetchAll()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur', 'error')
+  }
 }
 
 // Tournament CRUD

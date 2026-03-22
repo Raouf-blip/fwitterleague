@@ -76,7 +76,7 @@ const selectedAgent = ref<Agent | null>(null)
 const inviting = ref(false)
 const recruitingId = ref<string | null>(null)
 
-const rankOptions = LOL_RANKS.map(r => ({ value: r, label: r }))
+const rankOptions = [{ value: '', label: 'Tous les rangs' }, ...LOL_RANKS.map(r => ({ value: r, label: r }))]
 
 onMounted(async () => {
   await fetchData()

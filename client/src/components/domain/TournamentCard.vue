@@ -44,6 +44,15 @@
       >
         Inscrire mon equipe
       </BaseButton>
+      <BaseButton
+        v-else-if="isRegistered && tournament.status === 'upcoming'"
+        variant="danger"
+        size="sm"
+        :loading="registering"
+        @click="$emit('unregister', tournament)"
+      >
+        Se desinscrire
+      </BaseButton>
     </div>
   </BaseCard>
 </template>
@@ -61,11 +70,13 @@ import BaseButton from '../ui/BaseButton.vue'
 const props = defineProps<{
   tournament: Tournament
   showRegister?: boolean
+  isRegistered?: boolean
   registering?: boolean
 }>()
 
 defineEmits<{
   register: [tournament: Tournament]
+  unregister: [tournament: Tournament]
 }>()
 
 const regCount = computed(() => getRegistrationCount(props.tournament.registrations))

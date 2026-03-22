@@ -40,6 +40,14 @@
         >
           Inscrire mon equipe
         </BaseButton>
+        <BaseButton
+          v-else-if="isAlreadyRegistered && tournament?.status === 'upcoming'"
+          variant="danger"
+          :loading="registering"
+          @click="unregisterTeam"
+        >
+          Se desinscrire
+        </BaseButton>
       </div>
     </BaseCard>
 
@@ -168,7 +176,13 @@ const statusConfig = computed(() => tournament.value ? TOURNAMENT_STATUS_MAP[tou
 const statusLabel = computed(() => statusConfig.value.label)
 const statusVariant = computed(() => statusConfig.value.color as 'cyan' | 'gold' | 'muted')
 
-const canRegister = computed(() => tournament.value?.status === 'upcoming' && authStore.profile?.is_captain)
+const isAlreadyRegistered = computed(() => {
+  const teamId = authStore.profile?.team?.id
+  if (!teamId) return false
+  return registrations.value.some(r => r.team_id === teamId)
+})
+
+const canRegister = computed(() => tournament.value?.status === 'upcoming' && authStore.profile?.is_captain && !isAlreadyRegistered.value)
 
 const tournamentMatches = computed(() =>
   matches.value.filter(m => m.tournament_id === tournament.value?.id)
@@ -228,6 +242,22 @@ async function registerTeam() {
     registrations.value = data.registrations || []
   } catch (e: any) {
     notificationStore.show(e.message || "Erreur lors de l'inscription.", 'error')
+  } finally {
+    registering.value = false
+  }
+}
+
+async function unregisterTeam() {
+  registering.value = true
+  try {
+    const token = await getToken()
+    await api.post(`/tournaments/${tournament.value!.id}/unregister`, {}, token)
+    notificationStore.show('Desinscription reussie.', 'success')
+    const data = await api.get(`/tournaments/${route.params.id}`)
+    tournament.value = data
+    registrations.value = data.registrations || []
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la desinscription.', 'error')
   } finally {
     registering.value = false
   }

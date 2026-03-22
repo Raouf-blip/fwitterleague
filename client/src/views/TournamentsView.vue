@@ -16,8 +16,10 @@
           :key="tournament.id"
           :tournament="tournament"
           :show-register="canRegister(tournament)"
+          :is-registered="isRegistered(tournament)"
           :registering="registeringId === tournament.id"
           @register="registerTeam"
+          @unregister="unregisterTeam"
         />
       </TransitionGroup>
     </div>
@@ -53,6 +55,7 @@ const tournaments = ref<Tournament[]>([])
 const matches = ref<Match[]>([])
 const loading = ref(true)
 const registeringId = ref<string | null>(null)
+const registeredTournamentIds = ref<Set<string>>(new Set())
 
 onMounted(async () => {
   await fetchData()
@@ -66,6 +69,21 @@ async function fetchData() {
     ])
     tournaments.value = t
     matches.value = m
+
+    // Fetch registered tournaments for captain's team
+    if (authStore.profile?.is_captain && authStore.profile?.team?.id) {
+      const ids = new Set<string>()
+      for (const tournament of t) {
+        try {
+          const detail = await api.get(`/tournaments/${tournament.id}`)
+          const regs = detail.registrations || []
+          if (regs.some((r: any) => r.team_id === authStore.profile?.team?.id)) {
+            ids.add(tournament.id)
+          }
+        } catch { /* ignore */ }
+      }
+      registeredTournamentIds.value = ids
+    }
   } catch (e) {
     console.error(e)
   }
@@ -73,7 +91,11 @@ async function fetchData() {
 }
 
 function canRegister(tournament: Tournament) {
-  return tournament.status === 'upcoming' && authStore.profile?.is_captain
+  return tournament.status === 'upcoming' && authStore.profile?.is_captain && !registeredTournamentIds.value.has(tournament.id)
+}
+
+function isRegistered(tournament: Tournament) {
+  return authStore.profile?.is_captain && registeredTournamentIds.value.has(tournament.id)
 }
 
 async function registerTeam(tournament: Tournament) {
@@ -85,6 +107,20 @@ async function registerTeam(tournament: Tournament) {
     await fetchData()
   } catch (e: any) {
     notificationStore.show(e.message || "Erreur lors de l'inscription.", 'error')
+  } finally {
+    registeringId.value = null
+  }
+}
+
+async function unregisterTeam(tournament: Tournament) {
+  registeringId.value = tournament.id
+  try {
+    const token = await getToken()
+    await api.post(`/tournaments/${tournament.id}/unregister`, {}, token)
+    notificationStore.show('Desinscription reussie.', 'success')
+    await fetchData()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la desinscription.', 'error')
   } finally {
     registeringId.value = null
   }

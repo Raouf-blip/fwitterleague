@@ -87,6 +87,34 @@ router.post('/:id/register', authenticate, async (req: any, res) => {
   res.json({ message: `L'équipe ${team.name} a été inscrite avec succès !` });
 });
 
+// Private: Unregister a team from a tournament
+router.post('/:id/unregister', authenticate, async (req: any, res) => {
+  const tournamentId = req.params.id;
+  const userId = req.user.id;
+
+  const { data: team } = await supabase.from('teams').select('id, name, captain_id').eq('captain_id', userId).single();
+  if (!team) return res.status(403).json({ error: 'Seul un capitaine peut désinscrire son équipe.' });
+
+  const { data: tournament } = await supabase.from('tournaments').select('status').eq('id', tournamentId).single();
+  if (!tournament) return res.status(404).json({ error: 'Tournoi introuvable.' });
+  if (tournament.status !== 'upcoming') return res.status(400).json({ error: 'Impossible de se désinscrire d\'un tournoi en cours ou terminé.' });
+
+  const { error } = await supabase.from('tournament_registrations').delete().eq('tournament_id', tournamentId).eq('team_id', team.id);
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: `L'équipe ${team.name} a été désinscrite du tournoi.` });
+});
+
+// Admin Only: Force-remove a team from a tournament
+router.delete('/:id/registrations/:teamId', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { id: tournamentId, teamId } = req.params;
+
+  const { error } = await supabase.from('tournament_registrations').delete().eq('tournament_id', tournamentId).eq('team_id', teamId);
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: 'Équipe retirée du tournoi.' });
+});
+
 // Admin Only: Update tournament
 router.patch('/:id', authenticate, authorizeAdmin, async (req: any, res) => {
   const { data, error } = await supabase.from('tournaments').update(req.body).eq('id', req.params.id).select().single();
