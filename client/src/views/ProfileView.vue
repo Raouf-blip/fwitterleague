@@ -279,7 +279,7 @@
                 Statut verrouillé (En équipe)
               </p>
               <p v-else class="text-[10px] text-text-muted leading-relaxed uppercase font-bold tracking-wider">
-                {{ authStore.profile.is_looking_for_team ? 'Vous apparaissez dans la liste des agents. Cliquez pour vous retirer.' : 'Activez pour que les capitaines puissent vous recruter.' }}
+                {{ authStore.profile.is_looking_for_team ? 'Vous apparaissez dans la liste des agents. Cliquez pour vous retirer.' : 'Activez le statut "Agent Libre" pour que les capitaines puissent vous recruter, sinon vous serez invisible.' }}
               </p>
             </div>
           </div>

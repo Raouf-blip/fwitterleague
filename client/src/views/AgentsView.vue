@@ -111,6 +111,14 @@
       </div>
     </div>
 
+    <!-- Visibility Notice -->
+    <div class="mb-6 p-4 bg-cyan/10 border border-cyan/20 rounded-xl">
+      <p class="text-cyan text-sm font-bold flex items-center gap-2">
+        <Info :size="16" />
+        Note : Seuls les Agents Libres ou les joueurs possédant déjà une équipe apparaissent dans le Mercato.
+      </p>
+    </div>
+
     <BaseSpinner v-if="loading" />
     <BaseEmptyState
       v-else-if="filteredAgents.length === 0"
@@ -144,7 +152,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { UserSearch, RefreshCw } from 'lucide-vue-next'
+import { UserSearch, RefreshCw, Info } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'

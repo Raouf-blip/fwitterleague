@@ -23,6 +23,7 @@ export interface TeamSummary {
   name: string
   tag: string
   logo_url?: string | null
+  member_count?: number
 }
 
 export interface Team {

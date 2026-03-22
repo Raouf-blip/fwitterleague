@@ -40,6 +40,15 @@
         >
           Inscrire mon équipe
         </BaseButton>
+        <div 
+          v-else-if="authStore.profile?.is_captain && !isAlreadyRegistered && tournament?.status === 'upcoming' && !hasRequiredMembers" 
+          class="p-4 bg-gold/10 border border-gold/20 rounded-lg"
+        >
+          <p class="text-gold text-sm font-bold flex items-center gap-2">
+            <AlertTriangle :size="16" />
+            Votre équipe doit avoir au moins 5 membres pour s'inscrire.
+          </p>
+        </div>
         <BaseButton
           v-else-if="isAlreadyRegistered && tournament?.status === 'upcoming'"
           variant="danger"
@@ -141,7 +150,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Calendar, Users, ShieldOff, Swords, BarChart3, Trophy } from 'lucide-vue-next'
+import { Calendar, Users, ShieldOff, Swords, BarChart3, Trophy, AlertTriangle } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { formatDate } from '../lib/formatters'
@@ -182,7 +191,14 @@ const isAlreadyRegistered = computed(() => {
   return registrations.value.some(r => r.team_id === teamId)
 })
 
-const canRegister = computed(() => tournament.value?.status === 'upcoming' && authStore.profile?.is_captain && !isAlreadyRegistered.value)
+const hasRequiredMembers = computed(() => (authStore.profile?.team?.member_count || 0) >= 5)
+
+const canRegister = computed(() => 
+  tournament.value?.status === 'upcoming' && 
+  authStore.profile?.is_captain && 
+  !isAlreadyRegistered.value &&
+  hasRequiredMembers.value
+)
 
 const tournamentMatches = computed(() =>
   matches.value.filter(m => m.tournament_id === tournament.value?.id)

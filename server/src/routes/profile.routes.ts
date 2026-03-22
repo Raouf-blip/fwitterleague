@@ -48,7 +48,10 @@ router.get('/me', authenticate, async (req: any, res) => {
   let team = null;
   if (member) {
     const { data: teamData } = await supabase.from('teams').select('*').eq('id', member.team_id).single();
-    team = teamData;
+    if (teamData) {
+      const { count } = await supabase.from('team_members').select('*', { count: 'exact', head: true }).eq('team_id', member.team_id);
+      team = { ...teamData, member_count: count || 0 };
+    }
   }
   res.json({ ...profile, team });
 });

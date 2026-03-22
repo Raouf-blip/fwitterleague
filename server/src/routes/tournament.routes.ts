@@ -67,6 +67,12 @@ router.post('/:id/register', authenticate, async (req: any, res) => {
   const { data: team } = await supabase.from('teams').select('id, name, captain_id').eq('captain_id', userId).single();
   if (!team) return res.status(403).json({ error: 'Seul un capitaine peut inscrire son équipe.' });
 
+  // NEW: Check if team has at least 5 members
+  const { count: memberCount } = await supabase.from('team_members').select('*', { count: 'exact', head: true }).eq('team_id', team.id);
+  if (!memberCount || memberCount < 5) {
+    return res.status(400).json({ error: 'Votre équipe doit avoir au moins 5 joueurs pour s\'inscrire.' });
+  }
+
   // 2. Get tournament and check limits
   const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
   if (!tournament) return res.status(404).json({ error: 'Tournoi introuvable.' });
