@@ -1,159 +1,169 @@
 <template>
-  <div v-if="authStore.profile" class="profile">
-    <div class="profile-header card">
-      <div class="profile-main">
-        <div class="avatar-placeholder">
-          {{ authStore.profile.username?.[0]?.toUpperCase() }}
-        </div>
-        <div class="profile-info">
-          <h2>{{ authStore.profile.username }}</h2>
-          <p class="riot-id">{{ authStore.profile.riot_id || 'Riot ID non configuré' }}</p>
-          <div class="stats">
-            <div class="stat-item">
-              <span class="label">Rang</span>
-              <span class="value">{{ authStore.profile.rank || 'Unranked' }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="label">Winrate</span>
-              <span class="value">{{ authStore.profile.winrate }}%</span>
-            </div>
+  <div v-if="authStore.profile">
+    <!-- Profile Header -->
+    <BaseCard :hoverable="false" class="!p-6 mb-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <BaseAvatar :name="authStore.profile.username" size="xl" />
+        <div class="flex-1">
+          <h1 class="text-2xl font-extrabold text-text-primary">{{ authStore.profile.username }}</h1>
+          <p class="text-sm text-gold mt-0.5">{{ authStore.profile.riot_id || 'Riot ID non configure' }}</p>
+          <div class="flex items-center gap-4 mt-3">
+            <RankBadge :rank="authStore.profile.rank" />
+            <span class="text-sm text-text-secondary">
+              Winrate: <strong class="text-text-primary">{{ authStore.profile.winrate }}%</strong>
+            </span>
           </div>
         </div>
       </div>
-      <div class="header-actions">
-         <button @click="logout" class="btn btn-secondary">Déconnexion</button>
-      </div>
+    </BaseCard>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Settings -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-5 pb-3 border-b border-border">Parametres</h2>
+        <ProfileSettingsForm
+          :initial-bio="authStore.profile.bio || ''"
+          :initial-riot-id="authStore.profile.riot_id || ''"
+          :initial-is-looking="authStore.profile.is_looking_for_team"
+          :saving="savingProfile"
+          :syncing="fetchingRiot"
+          @save="updateProfile"
+          @sync-riot="fetchRiotData"
+        />
+      </BaseCard>
+
+      <!-- Team -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-5 pb-3 border-b border-border">Mon Equipe</h2>
+        <div v-if="team">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-lg font-black text-gold">
+              {{ team.tag }}
+            </div>
+            <div>
+              <h3 class="font-bold text-text-primary">{{ team.name }} [{{ team.tag }}]</h3>
+              <p class="text-xs text-text-secondary">{{ team.description }}</p>
+            </div>
+          </div>
+          <BaseButton variant="secondary" size="sm" :to="'/teams/' + team.id">
+            Voir l'equipe
+          </BaseButton>
+        </div>
+        <div v-else-if="!creatingTeam">
+          <BaseEmptyState
+            :icon="ShieldPlus"
+            title="Pas d'equipe"
+            description="Vous n'avez pas encore d'equipe."
+          >
+            <template #action>
+              <BaseButton @click="creatingTeam = true">Creer une equipe</BaseButton>
+            </template>
+          </BaseEmptyState>
+        </div>
+        <div v-else>
+          <TeamCreateForm
+            :loading="savingTeam"
+            @submit="createTeam"
+            @cancel="creatingTeam = false"
+          />
+        </div>
+      </BaseCard>
     </div>
 
-    <div class="profile-content grid">
-      <!-- Paramètres du profil -->
-      <div class="settings-card card">
-        <h3>Paramètres</h3>
-        <form @submit.prevent="updateProfile">
-          <div class="form-group">
-            <label>Riot ID (GameName#TagLine)</label>
-            <div class="input-with-button">
-              <input type="text" v-model="form.riot_id" placeholder="Pseudo#TAG" />
-              <button type="button" @click="fetchRiotData" class="btn btn-secondary btn-sm" :disabled="fetchingRiot">
-                {{ fetchingRiot ? 'Sync...' : 'Sync Riot' }}
+    <!-- Notifications + Applications -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <!-- Notifications -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">
+          Notifications
+          <span v-if="unreadNotifs > 0" class="ml-2 text-xs px-2 py-0.5 bg-cyan-muted text-cyan rounded-full">{{ unreadNotifs }}</span>
+        </h2>
+        <div v-if="notifications.length === 0" class="text-center text-text-muted py-6 text-sm">Aucune notification.</div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="notif in notifications.slice(0, 5)"
+            :key="notif.id"
+            :class="['p-3 rounded-lg text-sm', !notif.is_read ? 'bg-cyan-muted/20 border-l-2 border-l-cyan' : 'bg-white/[0.02]']"
+          >
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <strong class="text-text-primary">{{ notif.title }}</strong>
+                <p class="text-text-secondary text-xs mt-0.5">{{ notif.message }}</p>
+              </div>
+              <button
+                v-if="!notif.is_read"
+                class="text-xs text-cyan hover:underline shrink-0 cursor-pointer"
+                @click="markAsRead(notif.id)"
+              >
+                Marquer lu
               </button>
             </div>
           </div>
-          <div class="form-group" v-if="opggUrl">
-            <label>Lien OP.GG</label>
-            <div class="opgg-preview">
-               <a :href="opggUrl" target="_blank" class="accent-link">Voir mon OP.GG ↗</a>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Bio</label>
-            <textarea v-model="form.bio" placeholder="Parlez-nous de vous..."></textarea>
-          </div>
+        </div>
+        <BaseButton v-if="notifications.length > 0" variant="ghost" size="sm" to="/notifications" class="mt-3">
+          Voir tout
+        </BaseButton>
+      </BaseCard>
 
-          <div class="form-group checkbox">
-            <input type="checkbox" id="looking" v-model="form.is_looking_for_team" />
-            <label for="looking">Je cherche une équipe</label>
-          </div>
-          <button type="submit" class="btn btn-primary" :disabled="savingProfile">
-            {{ savingProfile ? 'Enregistrement...' : 'Enregistrer' }}
-          </button>
-        </form>
-      </div>
-
-      <!-- Gestion d'Équipe -->
-      <div class="team-card card">
-        <h3>Mon Équipe</h3>
-        <div v-if="team" class="team-info">
-          <h4>{{ team.name }} [{{ team.tag }}]</h4>
-          <p>{{ team.description }}</p>
-          <RouterLink :to="'/teams/' + team.id" class="btn btn-secondary">Voir l'équipe</RouterLink>
-        </div>
-        <div v-else-if="!creatingTeam" class="no-team">
-          <p>Vous n'avez pas encore d'équipe.</p>
-          <div class="team-actions">
-            <button @click="creatingTeam = true" class="btn btn-primary">Créer une équipe</button>
+      <!-- Sent Applications -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Candidatures envoyees</h2>
+        <div v-if="sentApplications.length === 0" class="text-center text-text-muted py-6 text-sm">Aucune candidature envoyee.</div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="app in sentApplications"
+            :key="app.id"
+            class="flex items-center justify-between p-3 rounded-lg bg-white/[0.02]"
+          >
+            <div>
+              <strong class="text-sm text-text-primary">{{ app.team?.name }} [{{ app.team?.tag }}]</strong>
+              <p v-if="app.message" class="text-xs text-text-muted mt-0.5 italic">{{ app.message }}</p>
+            </div>
+            <BaseBadge
+              :variant="app.status === 'accepted' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'"
+              size="sm"
+            >
+              {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepte' : 'Refuse' }}
+            </BaseBadge>
           </div>
         </div>
-        <div v-else class="create-team-form">
-          <form @submit.prevent="createTeam">
-            <div class="form-group">
-              <label>Nom de l'équipe</label>
-              <input type="text" v-model="teamForm.name" required />
-            </div>
-            <div class="form-group">
-              <label>Tag (3-4 caractères)</label>
-              <input type="text" v-model="teamForm.tag" maxlength="4" required />
-            </div>
-            <div class="form-group">
-              <label>Description</label>
-              <textarea v-model="teamForm.description"></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" :disabled="savingTeam">
-                 {{ savingTeam ? 'Création...' : 'Créer' }}
-              </button>
-              <button type="button" @click="creatingTeam = false" class="btn btn-secondary">Annuler</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section Notifications & Candidatures -->
-    <div class="dashboard-grid grid">
-      <!-- Mes Notifications (Reçues) -->
-      <section class="section card">
-        <h3>Notifications</h3>
-        <div v-if="notifications.length === 0" class="no-data">Aucune notification.</div>
-        <div v-else class="notification-list">
-          <div v-for="notif in notifications" :key="notif.id" class="notification-item" :class="{ 'unread': !notif.is_read }">
-            <div class="notif-content">
-              <strong>{{ notif.title }}</strong>
-              <p>{{ notif.message }}</p>
-              <span class="notif-date">{{ new Date(notif.created_at).toLocaleDateString() }}</span>
-            </div>
-            <div class="notif-actions">
-               <button v-if="!notif.is_read" @click="markAsRead(notif.id)" class="btn btn-sm btn-secondary">Lu</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Mes Candidatures Envoyées -->
-      <section class="section card">
-        <h3>Candidatures Envoyées</h3>
-        <div v-if="sentApplications.length === 0" class="no-data">Aucune candidature envoyée.</div>
-        <div v-else class="sent-apps-list">
-          <div v-for="app in sentApplications" :key="app.id" class="app-item">
-            <div class="app-info">
-              <strong>{{ app.team?.name }} [{{ app.team?.tag }}]</strong>
-              <span class="status-badge" :class="app.status">{{ app.status }}</span>
-            </div>
-            <p class="app-message" v-if="app.message">{{ app.message }}</p>
-            <span class="notif-date">{{ new Date(app.created_at).toLocaleDateString() }}</span>
-          </div>
-        </div>
-      </section>
+      </BaseCard>
     </div>
   </div>
-  <div v-else-if="!authStore.loading" class="error-container card">
-    <h2>Oups ! Profil introuvable.</h2>
-    <p>Il semble que votre profil n'ait pas été créé correctement lors de l'inscription.</p>
-    <button @click="logout" class="btn btn-primary">Retour à l'accueil</button>
-  </div>
+
+  <BaseEmptyState
+    v-else-if="!authStore.loading"
+    :icon="AlertTriangle"
+    title="Profil introuvable"
+    description="Votre profil n'a pas ete cree correctement."
+  >
+    <template #action>
+      <BaseButton @click="logout">Retour a l'accueil</BaseButton>
+    </template>
+  </BaseEmptyState>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ShieldPlus, AlertTriangle } from 'lucide-vue-next'
+import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
-import { supabase } from '../lib/supabase'
-import { api } from '../lib/api'
-import { useRouter } from 'vue-router'
+import BaseCard from '../components/ui/BaseCard.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseBadge from '../components/ui/BaseBadge.vue'
+import BaseAvatar from '../components/ui/BaseAvatar.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import RankBadge from '../components/domain/RankBadge.vue'
+import ProfileSettingsForm from '../components/forms/ProfileSettingsForm.vue'
+import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const router = useRouter()
+
 const savingProfile = ref(false)
 const savingTeam = ref(false)
 const fetchingRiot = ref(false)
@@ -162,36 +172,10 @@ const team = ref<any>(null)
 const notifications = ref<any[]>([])
 const sentApplications = ref<any[]>([])
 
-const form = reactive({
-  riot_id: '',
-  bio: '',
-  rank: 'Unranked',
-  winrate: 0,
-  is_looking_for_team: false
-})
+const unreadNotifs = computed(() => notifications.value.filter(n => !n.is_read).length)
 
-const opggUrl = computed(() => {
-  if (!form.riot_id || !form.riot_id.includes('#')) return null
-  const parts = form.riot_id.split('#')
-  if (parts.length < 2 || !parts[1]) return null
-  return `https://www.op.gg/summoners/euw/${encodeURIComponent(parts[0])}-${encodeURIComponent(parts[1])}`
-})
-
-const teamForm = reactive({
-  name: '',
-  tag: '',
-  description: ''
-})
-
-watch(() => authStore.profile, (newProfile) => {
-  if (newProfile) {
-    form.riot_id = newProfile.riot_id || ''
-    form.bio = newProfile.bio || ''
-    form.rank = newProfile.rank || 'Unranked'
-    form.winrate = newProfile.winrate || 0
-    form.is_looking_for_team = newProfile.is_looking_for_team || false
-    team.value = newProfile.team
-  }
+watch(() => authStore.profile, (p) => {
+  if (p) team.value = p.team
 }, { immediate: true })
 
 onMounted(async () => {
@@ -199,48 +183,39 @@ onMounted(async () => {
 })
 
 async function fetchData() {
-  if (authStore.user) {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-
-    try {
-      // Le serveur renvoie { notifications: [], interactions: [] }
-      const res = await api.get('/social/inbox', token)
-      notifications.value = res.notifications || []
-
-      // Route /profiles/me/applications existe et renvoie les candidatures envoyées
-      const apps = await api.get('/profiles/me/applications', token)
-      sentApplications.value = apps
-    } catch (e) {
-      console.error('FetchData error:', e)
-    }
+  if (!authStore.user) return
+  const token = await getToken()
+  try {
+    const res = await api.get('/social/inbox', token)
+    notifications.value = res.notifications || []
+    const apps = await api.get('/profiles/me/applications', token)
+    sentApplications.value = apps
+  } catch (e) {
+    console.error(e)
   }
 }
 
 async function markAsRead(id: string) {
-  const { data: { session } } = await supabase.auth.getSession()
+  const token = await getToken()
   try {
-    await api.patch(`/social/notifications/${id}`, {}, session?.access_token)
+    await api.patch(`/social/notifications/${id}`, {}, token)
     await fetchData()
   } catch (e) {
     console.error(e)
   }
 }
 
-async function fetchRiotData() {
-  if (!form.riot_id.includes('#')) {
+async function fetchRiotData(riotId: string) {
+  if (!riotId.includes('#')) {
     notificationStore.show('Format invalide. Utilisez GameName#TagLine', 'error')
     return
   }
-
   fetchingRiot.value = true
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const data = await api.post('/profiles/sync-riot', { riotId: form.riot_id }, session?.access_token)
-
-    form.rank = data.rank
-    form.winrate = data.winrate
-    notificationStore.show('Données Riot synchronisées !')
+    const token = await getToken()
+    await api.post('/profiles/sync-riot', { riotId }, token)
+    await authStore.fetchProfile()
+    notificationStore.show('Donnees Riot synchronisees !', 'success')
   } catch (err: any) {
     notificationStore.show('Erreur: ' + err.message, 'error')
   } finally {
@@ -248,23 +223,13 @@ async function fetchRiotData() {
   }
 }
 
-async function updateProfile() {
-  if (!authStore.user) return
-  
+async function updateProfile(data: { bio: string; riot_id: string; is_looking_for_team: boolean }) {
   savingProfile.value = true
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    await api.patch('/profiles/me', {
-      riot_id: form.riot_id,
-      bio: form.bio,
-      rank: form.rank,
-      winrate: form.winrate,
-      is_looking_for_team: form.is_looking_for_team,
-      opgg_url: opggUrl.value
-    }, session?.access_token)
-    
+    const token = await getToken()
+    await api.patch('/profiles/me', data, token)
     await authStore.fetchProfile()
-    notificationStore.show('Profil mis à jour !')
+    notificationStore.show('Profil mis a jour !', 'success')
   } catch (err: any) {
     notificationStore.show('Erreur: ' + err.message, 'error')
   } finally {
@@ -272,22 +237,17 @@ async function updateProfile() {
   }
 }
 
-async function createTeam() {
+async function createTeam(data: { name: string; tag: string; description: string }) {
   savingTeam.value = true
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    await api.post('/teams', {
-      name: teamForm.name,
-      tag: teamForm.tag,
-      description: teamForm.description
-    }, session?.access_token)
-
+    const token = await getToken()
+    await api.post('/teams', data, token)
     creatingTeam.value = false
     await authStore.fetchProfile()
     await fetchData()
-    notificationStore.show('Équipe créée avec succès !')
+    notificationStore.show('Equipe creee avec succes !', 'success')
   } catch (err: any) {
-    notificationStore.show('Erreur équipe: ' + err.message, 'error')
+    notificationStore.show('Erreur: ' + err.message, 'error')
   } finally {
     savingTeam.value = false
   }
@@ -298,184 +258,3 @@ async function logout() {
   router.push('/')
 }
 </script>
-
-<style scoped>
-/* (Style inchangé) */
-.error-container {
-  text-align: center;
-  padding: 4rem;
-  margin-top: 2rem;
-}
-
-.dashboard-grid {
-  margin-top: 2rem;
-  align-items: start;
-}
-
-.no-data {
-  text-align: center;
-  color: #888;
-  padding: 2rem 0;
-}
-
-.notification-item, .app-item {
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.notif-content, .app-info {
-  flex: 1;
-}
-
-.notif-date {
-  font-size: 0.75rem;
-  color: #666;
-  display: block;
-  margin-top: 0.2rem;
-}
-
-.notification-item.unread {
-  border-left: 3px solid var(--primary-color);
-  background: rgba(11, 198, 227, 0.03);
-}
-
-.app-item {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.app-info {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  align-items: center;
-}
-
-.app-message {
-  font-size: 0.9rem;
-  color: #ccc;
-  font-style: italic;
-  margin: 0;
-}
-
-.status-badge {
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.status-badge.pending { background: #c89b3c; color: #000; }
-.status-badge.accepted { background: #4dff4d; color: #000; }
-.status-badge.rejected { background: #ff4d4d; color: #fff; }
-
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding: 2rem;
-}
-
-.profile-main {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.avatar-placeholder {
-  width: 100px;
-  height: 100px;
-  background: var(--accent-color);
-  color: var(--bg-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 3rem;
-  font-weight: bold;
-  border-radius: 50%;
-}
-
-.stats {
-  display: flex;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-item .label {
-  font-size: 0.8rem;
-  color: #888;
-  text-transform: uppercase;
-}
-
-.stat-item .value {
-  font-size: 1.2rem;
-  color: var(--accent-color);
-  font-weight: bold;
-}
-
-.card {
-  background: rgba(30, 35, 40, 0.7);
-  border: 1px solid var(--border-color);
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.2rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
-}
-
-input[type="text"], textarea {
-  width: 100%;
-  padding: 0.7rem;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--border-color);
-  color: white;
-}
-
-.input-with-button {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-}
-
-.no-team {
-  text-align: center;
-  padding: 2rem 0;
-}
-
-.create-team-form {
-  margin-top: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-</style>

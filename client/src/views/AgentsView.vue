@@ -1,66 +1,76 @@
 <template>
-  <div class="agents-view">
-    <header class="page-header">
-      <h1>Agents Libres</h1>
-      <p>Joueurs à la recherche d'une équipe pour la saison.</p>
-    </header>
+  <div>
+    <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
 
-    <div class="filters card">
-      <div class="filter-group">
-        <label>Rang</label>
-        <select v-model="filterRank">
-          <option value="">Tous les rangs</option>
-          <option value="Challenger">Challenger</option>
-          <option value="Grandmaster">Grandmaster</option>
-          <option value="Master">Master</option>
-          <option value="Diamond">Diamond</option>
-          <option value="Emerald">Emerald</option>
-          <option value="Platinum">Platinum</option>
-          <option value="Gold">Gold</option>
-          <option value="Silver">Silver</option>
-          <option value="Bronze">Bronze</option>
-          <option value="Iron">Iron</option>
-        </select>
-      </div>
+    <!-- Filters -->
+    <div class="mb-6">
+      <BaseSelect
+        v-model="filterRank"
+        label="Filtrer par rang"
+        placeholder="Tous les rangs"
+        :options="rankOptions"
+        class="max-w-xs"
+      />
     </div>
 
-    <div v-if="loading" class="loading">Chargement des agents...</div>
-    <div v-else class="grid">
-      <div v-for="agent in filteredAgents" :key="agent.id" class="card agent-card">
-        <div class="agent-header">
-          <h3>{{ agent.username }}</h3>
-          <span class="badge rank-badge">{{ agent.rank || 'Unranked' }}</span>
-        </div>
-        <p class="riot-id">{{ agent.riot_id || 'ID Masqué' }}</p>
-        <p class="bio">{{ agent.bio || 'Aucune description.' }}</p>
-        <div class="roles">
-           <span v-for="role in agent.preferred_roles" :key="role" class="badge role-tag">{{ role }}</span>
-        </div>
-        <div class="card-footer">
-          <button v-if="authStore.profile?.is_captain && agent.id !== authStore.user?.id" 
-                  @click="recruitPlayer(agent)" 
-                  class="btn btn-primary btn-sm"
-                  :disabled="isInvited(agent)">
-            {{ isInvited(agent) ? 'Invité' : 'Recruter' }}
-          </button>
-          <RouterLink :to="'/profile/' + agent.id" class="btn btn-secondary btn-sm">Voir Profil</RouterLink>
-        </div>
-      </div>
+    <BaseSpinner v-if="loading" />
+    <BaseEmptyState
+      v-else-if="filteredAgents.length === 0"
+      :icon="UserSearch"
+      title="Aucun agent libre"
+      description="Aucun joueur ne correspond a vos criteres."
+    />
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <TransitionGroup name="list">
+        <PlayerCard
+          v-for="agent in filteredAgents"
+          :key="agent.id"
+          :player="agent"
+          :show-recruit="canRecruit(agent)"
+          :recruiting="recruitingId === agent.id"
+          @recruit="openInvite(agent)"
+        />
+      </TransitionGroup>
     </div>
+
+    <!-- Invite Modal -->
+    <InviteModal
+      v-model="showInvite"
+      :player-name="selectedAgent?.username || ''"
+      :loading="inviting"
+      @submit="sendInvite"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/auth'
+import { UserSearch } from 'lucide-vue-next'
 import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import { LOL_RANKS } from '../lib/constants'
+import type { Agent } from '../types'
+import PageHeader from '../components/layout/PageHeader.vue'
+import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseSelect from '../components/ui/BaseSelect.vue'
+import PlayerCard from '../components/domain/PlayerCard.vue'
+import InviteModal from '../components/forms/InviteModal.vue'
 
 const authStore = useAuthStore()
-const agents = ref<any[]>([])
+const notificationStore = useNotificationStore()
+const agents = ref<Agent[]>([])
 const myTeamOffers = ref<any[]>([])
 const loading = ref(true)
 const filterRank = ref('')
+const showInvite = ref(false)
+const selectedAgent = ref<Agent | null>(null)
+const inviting = ref(false)
+const recruitingId = ref<string | null>(null)
+
+const rankOptions = LOL_RANKS.map(r => ({ value: r, label: r }))
 
 onMounted(async () => {
   await fetchData()
@@ -68,13 +78,10 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    const data = await api.get('/social/agents')
-    agents.value = data
-
+    agents.value = await api.get('/social/agents')
     if (authStore.user && authStore.profile?.is_captain) {
-      const { data: { session } } = await supabase.auth.getSession()
-      const inbox = await api.get('/social/inbox', session?.access_token)
-      // On filtre les interactions de type 'offer' envoyées par notre équipe
+      const token = await getToken()
+      const inbox = await api.get('/social/inbox', token)
       myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
     }
   } catch (e) {
@@ -83,87 +90,42 @@ async function fetchData() {
   loading.value = false
 }
 
-function isInvited(agent: any) {
+function canRecruit(agent: Agent) {
+  return authStore.profile?.is_captain && agent.id !== authStore.user?.id && !isInvited(agent)
+}
+
+function isInvited(agent: Agent) {
   return myTeamOffers.value.some(o => o.sender_id === agent.id)
 }
 
-async function recruitPlayer(agent: any) {
+function openInvite(agent: Agent) {
+  selectedAgent.value = agent
+  showInvite.value = true
+}
+
+async function sendInvite(message: string) {
+  if (!selectedAgent.value) return
+  inviting.value = true
+  recruitingId.value = selectedAgent.value.id
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-
-    // Route backend : POST /api/v1/recruitment/invite/:playerId
-    await api.post(`/recruitment/invite/${agent.id}`, {
+    const token = await getToken()
+    await api.post(`/recruitment/invite/${selectedAgent.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: `L'équipe ${authStore.profile?.team?.name} souhaite vous recruter.`
+      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
-
-    alert(`Invitation envoyée à ${agent.username} !`)
+    notificationStore.show(`Invitation envoyee a ${selectedAgent.value.username} !`, 'success')
+    showInvite.value = false
     await fetchData()
   } catch (err: any) {
-    alert('Erreur: ' + (err.message || "Impossible d'envoyer l'invitation"))
+    notificationStore.show(err.message || "Impossible d'envoyer l'invitation", 'error')
+  } finally {
+    inviting.value = false
+    recruitingId.value = null
   }
 }
 
 const filteredAgents = computed(() => {
   if (!filterRank.value) return agents.value
-  return agents.value.filter(a => a.rank?.includes(filterRank.value))
+  return agents.value.filter(a => a.rank?.toUpperCase().includes(filterRank.value))
 })
 </script>
-
-<style scoped>
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.filters {
-  margin-bottom: 2rem;
-  padding: 1rem;
-}
-
-.agent-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.agent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.riot-id {
-  font-size: 0.85rem;
-  color: var(--accent-color);
-  margin-bottom: 1rem;
-}
-
-.bio {
-  font-size: 0.9rem;
-  color: #ccc;
-  flex-grow: 1;
-  margin-bottom: 1rem;
-}
-
-.roles {
-  margin-bottom: 1rem;
-}
-
-.role-tag {
-  background: rgba(11, 198, 227, 0.1);
-  border-color: rgba(11, 198, 227, 0.3);
-}
-
-.card-footer {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  flex: 1;
-}
-</style>

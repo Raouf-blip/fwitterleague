@@ -3,10 +3,11 @@ import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
 import { api } from '../lib/api'
 import type { User } from '@supabase/supabase-js'
+import type { Profile } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const profile = ref<any | null>(null)
+  const profile = ref<Profile | null>(null)
   const loading = ref(true)
 
   async function fetchProfile() {
@@ -18,7 +19,6 @@ export const useAuthStore = defineStore('auth', () => {
         const data = await api.get('/profiles/me', token)
         profile.value = data
       } catch (e: any) {
-        // Si le profil n'existe pas, on le crée (cas d'un nouvel utilisateur)
         if (e.message.includes('Profil non existant') || e.message.includes('404')) {
           const username = user.value.user_metadata?.username || user.value.email?.split('@')[0]
           await api.patch('/profiles/me', { username }, token)
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (user.value) {
       await fetchProfile()
     }
-    
+
     supabase.auth.onAuthStateChange(async (_event, session) => {
       user.value = session?.user ?? null
       if (user.value) {
