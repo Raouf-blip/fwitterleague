@@ -1,44 +1,62 @@
 <template>
-  <div class="teams-view">
-    <header class="page-header">
-      <h1>Équipes</h1>
-      <p>Découvrez les structures engagées dans la ligue.</p>
-    </header>
+  <div>
+    <PageHeader title="Equipes" subtitle="Decouvrez les structures engagees dans la ligue." />
 
-    <div v-if="loading" class="loading">Chargement des équipes...</div>
-    <div v-else-if="teams.length === 0" class="no-data">Aucune équipe n'a été créée pour le moment.</div>
-    <div v-else class="grid">
-      <div v-for="team in teams" :key="team.id" class="card team-card">
-        <div class="team-header">
-          <div class="logo-placeholder">
-             {{ team.name?.[0]?.toUpperCase() }}
-          </div>
-          <div class="team-meta">
-            <h3>{{ team.name }} [{{ team.tag }}]</h3>
-          </div>
-        </div>
-        <p class="description">{{ team.description || 'Pas de description.' }}</p>
-        <div class="card-footer">
-          <button v-if="canApply(team)" @click="applyToTeam(team)" class="btn btn-primary btn-sm" :disabled="isPending(team)">
-            {{ isPending(team) ? 'En attente...' : 'Postuler' }}
-          </button>
-          <RouterLink :to="'/teams/' + team.id" class="btn btn-secondary btn-sm">Voir Détails</RouterLink>
-        </div>
-      </div>
+    <BaseSpinner v-if="loading" />
+    <BaseEmptyState
+      v-else-if="teams.length === 0"
+      :icon="ShieldOff"
+      title="Aucune equipe"
+      description="Aucune equipe n'a ete creee pour le moment."
+    />
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <TransitionGroup name="list">
+        <TeamCard
+          v-for="team in teams"
+          :key="team.id"
+          :team="team"
+          :member-count="team.members?.length"
+          :show-apply="canApply(team)"
+          :is-pending="isPending(team)"
+          :applying="applyingTeamId === team.id"
+          @apply="openApply(team)"
+        />
+      </TransitionGroup>
     </div>
+
+    <!-- Apply Modal -->
+    <ApplyModal
+      v-model="showApply"
+      :team-name="selectedTeam?.name || ''"
+      :loading="applying"
+      @submit="sendApplication"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/auth'
+import { ShieldOff } from 'lucide-vue-next'
 import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import type { Team } from '../types'
+import PageHeader from '../components/layout/PageHeader.vue'
+import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import TeamCard from '../components/domain/TeamCard.vue'
+import ApplyModal from '../components/forms/ApplyModal.vue'
 
 const authStore = useAuthStore()
-const teams = ref<any[]>([])
+const notificationStore = useNotificationStore()
+const teams = ref<Team[]>([])
 const myApplications = ref<any[]>([])
 const loading = ref(true)
+const showApply = ref(false)
+const selectedTeam = ref<Team | null>(null)
+const applying = ref(false)
+const applyingTeamId = ref<string | null>(null)
 
 onMounted(async () => {
   await fetchData()
@@ -46,13 +64,16 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    const data = await api.get('/teams')
-    teams.value = data
-
     if (authStore.user) {
-      const { data: { session } } = await supabase.auth.getSession()
-      const myApps = await api.get('/profiles/me/applications', session?.access_token)
-      myApplications.value = myApps
+      const token = await getToken()
+      const [t, apps] = await Promise.all([
+        api.get('/teams'),
+        api.get('/profiles/me/applications', token),
+      ])
+      teams.value = t
+      myApplications.value = apps
+    } else {
+      teams.value = await api.get('/teams')
     }
   } catch (e) {
     console.error(e)
@@ -60,76 +81,36 @@ async function fetchData() {
   loading.value = false
 }
 
-function canApply(team: any) {
-  // Un joueur peut postuler s'il est connecté et n'a pas encore d'équipe
-  return authStore.user && !authStore.profile?.team && authStore.profile?.id !== team.captain_id
+function canApply(team: Team) {
+  return !!(authStore.user && !authStore.profile?.team && authStore.profile?.id !== team.captain_id)
 }
 
-function isPending(team: any) {
-  return myApplications.value.some(app => app.team_id === team.id && app.status === 'pending')
+function isPending(team: Team) {
+  return myApplications.value.some((app: any) => app.team_id === team.id && app.status === 'pending')
 }
 
-async function applyToTeam(team: any) {
+function openApply(team: Team) {
+  selectedTeam.value = team
+  showApply.value = true
+}
+
+async function sendApplication(message: string) {
+  if (!selectedTeam.value) return
+  applying.value = true
+  applyingTeamId.value = selectedTeam.value.id
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    // Route backend : POST /api/v1/recruitment/apply/:teamId
-    await api.post(`/recruitment/apply/${team.id}`, { message: "Je souhaite rejoindre votre équipe !" }, session?.access_token)
-    alert('Candidature envoyée !')
+    const token = await getToken()
+    await api.post(`/recruitment/apply/${selectedTeam.value.id}`, {
+      message: message || 'Je souhaite rejoindre votre equipe !',
+    }, token)
+    notificationStore.show('Candidature envoyee !', 'success')
+    showApply.value = false
     await fetchData()
   } catch (err: any) {
-    alert(err.message)
+    notificationStore.show(err.message, 'error')
+  } finally {
+    applying.value = false
+    applyingTeamId.value = null
   }
 }
 </script>
-
-<style scoped>
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.team-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.team-header {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.logo-placeholder {
-  width: 60px;
-  height: 60px;
-  background: var(--accent-color);
-  color: var(--bg-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.team-meta h3 {
-  margin: 0;
-}
-
-.description {
-  font-size: 0.9rem;
-  color: #ccc;
-  margin-bottom: 1.5rem;
-  flex-grow: 1;
-}
-
-.card-footer {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  flex: 1;
-}
-</style>

@@ -1,227 +1,206 @@
 <template>
-  <div v-if="loading" class="loading-container">
-    <div class="loading">Chargement du profil...</div>
-  </div>
-  <div v-else-if="profile" class="profile-detail profile-detail-view">
-    <header class="profile-header card">
-      <div class="profile-main">
-        <div class="avatar-placeholder">
-          {{ profile.username?.[0]?.toUpperCase() }}
-        </div>
-        <div class="profile-info">
-          <h2>{{ profile.username }}</h2>
-          <div class="riot-id-row">
-            <p class="riot-id">{{ profile.riot_id || 'Riot ID non configuré' }}</p>
-            <a v-if="profile.riot_id" :href="opggUrl" target="_blank" class="opgg-link">
-               <img src="https://s-lol-light.op.gg/static/images/site/common/favicon.py" width="16" height="16" /> OP.GG
+  <BaseSpinner v-if="loading" />
+
+  <div v-else-if="profile">
+    <!-- Profile Header -->
+    <BaseCard :hoverable="false" class="!p-6 mb-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <BaseAvatar :name="profile.username" :src="profile.avatar_url" size="xl" />
+        <div class="flex-1">
+          <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
+          <div class="flex items-center gap-3 mt-1 flex-wrap">
+            <span class="text-sm text-gold">{{ profile.riot_id || 'Riot ID non configure' }}</span>
+            <a
+              v-if="opggUrl"
+              :href="opggUrl"
+              target="_blank"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur OP.GG"
+            >
+              <ExternalLink :size="12" />
+              OP.GG
             </a>
+            <a
+              v-if="dpmUrl"
+              :href="dpmUrl"
+              target="_blank"
+              class="text-[10px] text-cyan hover:underline flex items-center gap-1 bg-cyan/5 px-1.5 py-0.5 rounded border border-cyan/10"
+              title="Voir sur DPM.LOL"
+            >
+              <ExternalLink :size="12" />
+              DPM.LOL
+            </a>
+            <span v-if="profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
+              <DiscordIcon :size="14" class="text-[#5865F2]" />
+              {{ profile.discord }}
+            </span>
           </div>
-          <div class="stats">
-            <div class="stat-item">
-              <span class="label">Rang</span>
-              <span class="value">{{ profile.rank || 'Unranked' }}</span>
+          <div class="flex items-center gap-4 mt-3">
+            <RankBadge :rank="profile.rank" />
+            <div v-if="profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
+              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
+              <div class="flex items-center gap-2">
+                <BaseTooltip
+                  v-for="role in profile.preferred_roles"
+                  :key="role"
+                  :content="role"
+                >
+                  <div class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
+                    <LolRoleIcon :role="role" :size="16" class="text-cyan" />
+                  </div>
+                </BaseTooltip>
+              </div>
             </div>
-            <div class="stat-item">
-              <span class="label">Winrate</span>
-              <span class="value">{{ profile.winrate }}%</span>
+            <span class="text-sm text-text-secondary">
+              Winrate: <strong class="text-text-primary">{{ profile.winrate }}%</strong>
+            </span>
+          </div>
+          <BaseBadge v-if="profile.is_looking_for_team" variant="success" size="md" class="mt-3">
+            Cherche une equipe
+          </BaseBadge>
+        </div>
+        <BaseButton
+          v-if="canRecruit"
+          :variant="isInvited ? 'secondary' : 'primary'"
+          :loading="recruiting"
+          :disabled="isInvited"
+          @click="showInvite = true"
+        >
+          <template #icon><UserPlus :size="16" /></template>
+          {{ isInvited ? 'Déjà invité' : 'Recruter' }}
+        </BaseButton>
+      </div>
+    </BaseCard>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Bio -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Bio</h2>
+        <p class="text-sm text-text-secondary leading-relaxed">
+          {{ profile.bio || "Cet utilisateur n'a pas encore de bio." }}
+        </p>
+      </BaseCard>
+
+      <!-- Team -->
+      <BaseCard :hoverable="false">
+        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Equipe</h2>
+        <div v-if="team">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-sm font-bold text-gold">
+              {{ team.tag }}
+            </div>
+            <div>
+              <h3 class="font-bold text-text-primary text-sm">{{ team.name }} [{{ team.tag }}]</h3>
             </div>
           </div>
+          <BaseButton variant="secondary" size="sm" :to="'/teams/' + team.id">Voir l'equipe</BaseButton>
         </div>
-      </div>
-      <div class="header-actions" v-if="authStore.profile?.is_captain && !hasTeam">
-         <button @click="recruitPlayer" class="btn btn-primary">Recruter</button>
-      </div>
-    </header>
-
-    <div class="profile-content grid">
-      <div class="bio-card card">
-        <h3>Bio</h3>
-        <p class="bio-text">{{ profile.bio || 'Cet utilisateur n\'a pas encore de bio.' }}</p>
-      </div>
-
-      <div class="team-card card">
-        <h3>Équipe</h3>
-        <div v-if="team" class="team-info">
-          <h4>{{ team.name }} [{{ team.tag }}]</h4>
-          <p>{{ team.description }}</p>
-          <RouterLink :to="'/teams/' + team.id" class="btn btn-secondary">Voir l'équipe</RouterLink>
+        <div v-else class="text-center py-4">
+          <p class="text-sm text-text-muted">Ce joueur n'a pas encore d'equipe.</p>
         </div>
-        <div v-else class="no-team">
-          <p>Ce joueur n'a pas encore d'équipe.</p>
-          <span v-if="profile.is_looking_for_team" class="badge open">Cherche une équipe</span>
-        </div>
-      </div>
+      </BaseCard>
     </div>
   </div>
-  <div v-else class="error-container">
-    <p>Profil non trouvé.</p>
-    <RouterLink to="/agents" class="btn btn-primary">Retour aux agents</RouterLink>
-  </div>
+
+  <BaseEmptyState v-else :icon="UserX" title="Profil introuvable" description="Ce joueur n'existe pas.">
+    <template #action>
+      <BaseButton to="/agents">Retour aux agents</BaseButton>
+    </template>
+  </BaseEmptyState>
+
+  <!-- Invite Modal -->
+  <InviteModal
+    v-if="profile"
+    v-model="showInvite"
+    :player-name="profile.username"
+    :loading="recruiting"
+    @submit="sendInvite"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/auth'
-
+import DiscordIcon from '../components/icons/DiscordIcon.vue'
+import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
+import { UserPlus, UserX, ExternalLink } from 'lucide-vue-next'
 import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
+import { getOpggUrl, getDpmUrl } from '../lib/formatters'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import type { Profile } from '../types'
+import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseTooltip from '../components/ui/BaseTooltip.vue'
+import BaseCard from '../components/ui/BaseCard.vue'
+import BaseBadge from '../components/ui/BaseBadge.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseAvatar from '../components/ui/BaseAvatar.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import RankBadge from '../components/domain/RankBadge.vue'
+import InviteModal from '../components/forms/InviteModal.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
-const profile = ref<any>(null)
+const notificationStore = useNotificationStore()
+
+const profile = ref<Profile | null>(null)
 const team = ref<any>(null)
 const loading = ref(true)
+const recruiting = ref(false)
+const showInvite = ref(false)
+const myTeamOffers = ref<any[]>([])
 
-const opggUrl = computed(() => {
-  if (!profile.value?.riot_id || !profile.value.riot_id.includes('#')) return null
-  const [name, tag] = profile.value.riot_id.split('#')
-  return `https://www.op.gg/summoners/euw/${encodeURIComponent(name)}-${encodeURIComponent(tag)}`
+const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
+const dpmUrl = computed(() => profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null)
+const canRecruit = computed(() => {
+  return authStore.profile?.is_captain && 
+         profile.value?.id !== authStore.user?.id && 
+         !team.value && 
+         profile.value?.is_looking_for_team
 })
 
-const hasTeam = computed(() => !!team.value)
+const isInvited = computed(() => {
+  if (!profile.value) return false
+  return myTeamOffers.value.some((o: any) => o.sender_id === profile.value!.id)
+})
 
 onMounted(async () => {
   try {
     const data = await api.get(`/profiles/${route.params.id}`)
     profile.value = data
     team.value = data.team
+    
+    if (authStore.user && authStore.profile?.is_captain) {
+      const token = await getToken()
+      const inbox = await api.get('/social/inbox', token)
+      myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
+    }
   } catch (e) {
     console.error(e)
   }
   loading.value = false
 })
 
-async function recruitPlayer() {
-  if (!authStore.profile?.is_captain || !profile.value) return
-
+async function sendInvite(message: string) {
+  if (!profile.value) return
+  recruiting.value = true
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-    
-    // Route backend : POST /api/v1/recruitment/invite/:playerId
+    const token = await getToken()
     await api.post(`/recruitment/invite/${profile.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: `L'équipe ${authStore.profile?.team?.name} souhaite vous recruter.`
+      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
-
-    alert('Offre de recrutement envoyée !')
+    notificationStore.show('Offre de recrutement envoyee !', 'success')
+    showInvite.value = false
+    
+    // Refresh inbox
+    const inbox = await api.get('/social/inbox', token)
+    myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
   } catch (err: any) {
-    alert('Erreur: ' + (err.message || "Impossible d'envoyer l'invitation"))
+    notificationStore.show(err.message || "Impossible d'envoyer l'invitation", 'error')
+  } finally {
+    recruiting.value = false
   }
 }
 </script>
-
-<style scoped>
-.profile-detail {
-  padding-bottom: 4rem;
-}
-
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding: 2rem;
-}
-
-.profile-main {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.avatar-placeholder {
-  width: 100px;
-  height: 100px;
-  background: var(--accent-color);
-  color: var(--bg-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 3rem;
-  font-weight: bold;
-  border-radius: 50%;
-}
-
-.riot-id-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.riot-id {
-  color: var(--accent-color);
-  font-weight: bold;
-  margin: 0;
-}
-
-.opgg-link {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  color: #ccc;
-  text-decoration: none;
-  background: rgba(255,255,255,0.05);
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-.opgg-link:hover {
-  background: rgba(11, 198, 227, 0.1);
-  color: var(--accent-color);
-}
-
-.stats {
-  display: flex;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-item .label {
-  font-size: 0.8rem;
-  color: #888;
-  text-transform: uppercase;
-}
-
-.stat-item .value {
-  font-size: 1.2rem;
-  color: var(--accent-color);
-  font-weight: bold;
-}
-
-h3 {
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
-}
-
-.bio-text {
-  line-height: 1.6;
-  color: #ccc;
-}
-
-.badge.open {
-  color: #4dff4d;
-  border: 1px solid #4dff4d;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.loading-container, .error-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50vh;
-  flex-direction: column;
-  gap: 1rem;
-}
-</style>

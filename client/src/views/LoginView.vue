@@ -1,162 +1,55 @@
 <template>
-  <div class="login-container">
-    <div class="login-card card">
-      <h2>{{ isSignUp ? 'Inscription' : 'Connexion' }}</h2>
-      <form @submit.prevent="handleAuth">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="email" required />
-        </div>
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" v-model="password" required />
-        </div>
-        <div v-if="isSignUp" class="form-group">
-          <label for="username">Nom d'utilisateur</label>
-          <input type="text" id="username" v-model="username" required />
-        </div>
-        <div class="auth-buttons">
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'Chargement...' : (isSignUp ? "S'inscrire" : 'Se connecter') }}
-          </button>
-        </div>
-      </form>
-      <div class="switch-auth">
-        <p v-if="!isSignUp">
-          Pas de compte ? <a href="#" @click.prevent="isSignUp = true">Inscrivez-vous</a>
-        </p>
-        <p v-else>
-          Déjà un compte ? <a href="#" @click.prevent="isSignUp = false">Connectez-vous</a>
-        </p>
+  <div class="min-h-[70vh] flex items-center justify-center">
+    <div class="w-full max-w-md">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <Trophy :size="48" class="text-gold mx-auto mb-3" />
+        <h1 class="text-3xl font-extrabold text-text-primary">
+          Fwitter<span class="text-gold">League</span>
+        </h1>
+        <p class="text-sm text-text-secondary mt-1">Plateforme de tournois League of Legends</p>
       </div>
-      <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-      <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+
+      <BaseCard :hoverable="false" class="!p-6">
+        <BaseTabs
+          :tabs="[
+            { key: 'login', label: 'Connexion' },
+            { key: 'register', label: 'Inscription' },
+          ]"
+          v-model="activeTab"
+        />
+
+        <div class="mt-6">
+          <Transition name="fade" mode="out-in">
+            <LoginForm v-if="activeTab === 'login'" :key="'login'" @success="onSuccess" />
+            <RegisterForm v-else :key="'register'" @success="onRegisterSuccess" />
+          </Transition>
+        </div>
+      </BaseCard>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { supabase } from '../lib/supabase'
 import { useRouter } from 'vue-router'
+import { Trophy } from 'lucide-vue-next'
+import { useNotificationStore } from '../stores/notifications'
+import BaseCard from '../components/ui/BaseCard.vue'
+import BaseTabs from '../components/ui/BaseTabs.vue'
+import LoginForm from '../components/forms/LoginForm.vue'
+import RegisterForm from '../components/forms/RegisterForm.vue'
 
-const email = ref('')
-const password = ref('')
-const username = ref('')
-const isSignUp = ref(false)
-const loading = ref(false)
-const errorMsg = ref('')
-const successMsg = ref('')
 const router = useRouter()
+const notificationStore = useNotificationStore()
+const activeTab = ref('login')
 
-async function handleAuth() {
-  loading.value = true
-  errorMsg.value = ''
-  successMsg.value = ''
-  
-  try {
-    if (isSignUp.value) {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.value,
-        password: password.value,
-        options: {
-          data: {
-            username: username.value
-          }
-        }
-      })
-      if (error) throw error
-      if (data.user && data.session) {
-        router.push('/profile')
-      } else {
-        successMsg.value = "Inscription réussie ! (Vérifiez vos emails si la confirmation est activée)"
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
-      })
-      if (error) throw error
-      router.push('/profile')
-    }
-  } catch (err: any) {
-    if (err.message.includes('rate limit')) {
-      errorMsg.value = "Trop de tentatives. Veuillez attendre quelques minutes ou désactivez 'Confirm Email' dans le dashboard Supabase."
-    } else {
-      errorMsg.value = err.message
-    }
-  } finally {
-    loading.value = false
-  }
+function onSuccess() {
+  router.push('/profile')
+}
+
+function onRegisterSuccess() {
+  notificationStore.show('Inscription reussie !', 'success')
+  router.push('/profile')
 }
 </script>
-
-<style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 60vh;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-}
-
-h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: var(--accent-color);
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #ccc;
-}
-
-input {
-  width: 100%;
-  padding: 0.8rem;
-  background: #121921;
-  border: 1px solid var(--border-color);
-  color: white;
-  box-sizing: border-box;
-}
-
-.auth-buttons {
-  margin-top: 2rem;
-}
-
-.btn {
-  width: 100%;
-}
-
-.switch-auth {
-  margin-top: 1.5rem;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.switch-auth a {
-  color: var(--accent-color);
-  text-decoration: none;
-}
-
-.error-msg {
-  color: #ff4d4d;
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.success-msg {
-  color: #4dff4d;
-  margin-top: 1rem;
-  text-align: center;
-}
-</style>

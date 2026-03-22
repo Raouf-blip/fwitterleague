@@ -38,19 +38,6 @@ router.post('/apply/:teamId', authenticate, async (req: any, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Notify Captain
-  const { data: team } = await supabase.from('teams').select('captain_id, name').eq('id', team_id).single();
-  const { data: profile } = await supabase.from('profiles').select('username').eq('id', sender_id).single();
-
-  if (team && profile) {
-    await supabase.from('notifications').insert({
-      user_id: team.captain_id,
-      title: 'Nouvelle candidature',
-      message: `${profile.username} souhaite rejoindre votre équipe ${team.name}`,
-      type: 'application'
-    });
-  }
-
   res.json(app);
 });
 
@@ -92,14 +79,6 @@ router.post('/invite/:playerId', authenticate, async (req: any, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Notify Player
-  await supabase.from('notifications').insert({
-    user_id: player_id,
-    title: 'Offre de recrutement',
-    message: `L'équipe ${team.name} souhaite vous recruter !`,
-    type: 'offer'
-  });
-
   res.json(app);
 });
 
@@ -139,20 +118,32 @@ router.patch('/:id/respond', authenticate, async (req: any, res) => {
     await supabase.from('team_members').insert({ team_id: app.team_id, profile_id: app.sender_id, role: 'Member' });
     await supabase.from('profiles').update({ is_looking_for_team: false }).eq('id', app.sender_id);
     
-    // Case 8: Auto-clean other pending applications/offers for this player
+    // Auto-clean other pending applications/offers for THIS specific player
+    // This prevents them from being in multiple teams and cleans up the UI for other captains
     await supabase.from('applications')
       .update({ status: 'rejected' })
       .eq('sender_id', app.sender_id)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .neq('id', appId); // Don't reject the one we just accepted
   }
 
-  const { data: updated } = await supabase.from('applications').update({ status }).eq('id', appId).select().single();
+  const { data: updated, error: updateError } = await supabase.from('applications').update({ status }).eq('id', appId).select().single();
+  if (updateError) return res.status(400).json({ error: updateError.message });
+
+  // Cleanup related "System" notifications for the recipient so the bell goes away
+  // This helps when multiple notifications were sent or to just clean up.
+  await supabase.from('notifications')
+    .delete()
+    .eq('user_id', userId)
+    .or(`message.ilike.%${app.team.name}%`);
 
   const targetId = (app.type === 'application') ? app.sender_id : app.team.captain_id;
   await supabase.from('notifications').insert({
     user_id: targetId,
     title: status === 'accepted' ? 'Félicitations !' : 'Réponse reçue',
-    message: `La demande pour l'équipe ${app.team.name} a été ${status === 'accepted' ? 'acceptée' : 'refusée'}.`,
+    message: status === 'accepted' 
+      ? `Votre demande pour rejoindre l'équipe ${app.team.name} a été acceptée !`
+      : `L'équipe ${app.team.name} a décliné votre candidature.`,
     type: 'system'
   });
 

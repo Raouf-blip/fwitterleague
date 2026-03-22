@@ -1,89 +1,167 @@
 <template>
-  <div v-if="team" class="team-detail">
-    <header class="team-header card">
-      <div class="team-main">
-        <div class="logo-placeholder">
-          {{ team.name?.[0]?.toUpperCase() }}
-        </div>
-        <div class="team-info">
-          <h1>{{ team.name }} [{{ team.tag }}]</h1>
-          <p class="description">{{ team.description }}</p>
-        </div>
-      </div>
-      <div v-if="isCaptain" class="header-actions">
-         <button @click="editing = true" class="btn btn-secondary">Modifier</button>
-      </div>
-      <div v-else-if="authStore.user && !isMember" class="header-actions">
-         <button @click="applyToTeam" class="btn btn-primary" :disabled="applying">
-           {{ applying ? 'Envoi...' : 'Postuler' }}
-         </button>
-      </div>
-    </header>
+  <BaseSpinner v-if="loading" />
 
-    <div class="team-content grid">
-      <section class="roster-section card">
-        <h3>Roster ({{ members.length }}/6)</h3>
-        <div class="member-list">
-          <div v-for="member in members" :key="member.id" class="member-item">
-            <div class="member-info">
-              <span class="role-icon">{{ getRoleIcon(member.role) }}</span>
-              <span class="username">{{ member.profile?.username }}</span>
-              <span class="rank">{{ member.profile?.rank || 'Unranked' }}</span>
-            </div>
-            <div v-if="isCaptain && member.profile_id !== authStore.profile.id" class="member-actions">
-               <button @click="kickMember(member)" class="btn btn-secondary btn-sm">Renvoyer</button>
-            </div>
-          </div>
-          <div v-for="i in (6 - members.length)" :key="'empty-'+i" class="member-item empty">
-            <span class="placeholder">Emplacement libre</span>
-          </div>
+  <div v-else-if="team">
+    <!-- Team Header -->
+    <BaseCard :hoverable="false" class="!p-6 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        <div v-if="team.logo_url" class="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+          <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
         </div>
-      </section>
+        <div v-else class="w-16 h-16 rounded-xl bg-gold-muted border border-border-gold flex items-center justify-center text-2xl font-black text-gold shrink-0">
+          {{ team.tag }}
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-extrabold text-text-primary">{{ team.name }}</h1>
+            <BaseBadge variant="gold">[{{ team.tag }}]</BaseBadge>
+            <BaseBadge v-if="team.is_locked" variant="danger" size="md">Roster verrouille</BaseBadge>
+          </div>
+          <p v-if="team.description" class="text-sm text-text-secondary mt-2">{{ team.description }}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <BaseButton v-if="canApply" variant="cyan" :loading="applying" @click="openApplyModal">
+            <template #icon><Send :size="16" /></template>
+            Postuler
+          </BaseButton>
+          <BaseButton v-if="isCaptain" variant="secondary" size="sm" @click="showEdit = true">
+            <template #icon><Edit :size="14" /></template>
+            Modifier
+          </BaseButton>
+          <BaseButton v-if="isMember && !isCaptain" variant="danger" size="sm" @click="leaveTeam">
+            Quitter
+          </BaseButton>
+          <BaseButton v-if="isCaptain" variant="danger" size="sm" @click="showDisband = true">
+            <template #icon><Trash2 :size="14" /></template>
+            Dissoudre
+          </BaseButton>
+        </div>
+      </div>
+    </BaseCard>
 
-      <section class="stats-section card">
-        <h3>Statistiques d'Équipe</h3>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="label">Matchs Joués</span>
-            <span class="value">0</span>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Roster -->
+      <div class="lg:col-span-2">
+        <h2 class="text-lg font-bold text-text-primary mb-4">
+          Roster ({{ members.length }}/6)
+        </h2>
+        <RosterTable
+          :members="members"
+          :is-captain="isCaptain"
+          :is-locked="team.is_locked"
+          @kick="confirmKick"
+        />
+      </div>
+
+      <!-- Stats -->
+      <div>
+        <h2 class="text-lg font-bold text-text-primary mb-4">Statistiques</h2>
+        <BaseCard :hoverable="false">
+          <div class="grid grid-cols-2 gap-4">
+            <StatBlock label="Matchs" value="0" />
+            <StatBlock label="Victoires" value="0" />
+            <StatBlock label="Winrate" value="0%" />
+            <StatBlock label="Joueurs" :value="members.length" />
           </div>
-          <div class="stat-item">
-            <span class="label">Victoires</span>
-            <span class="value">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="label">Winrate</span>
-            <span class="value">0%</span>
-          </div>
-        </div>
-      </section>
+        </BaseCard>
+      </div>
     </div>
+
+    <!-- Confirm Kick -->
+    <ConfirmDialog
+      v-model="showKickConfirm"
+      title="Renvoyer un joueur"
+      :message="`Voulez-vous renvoyer ${kickTarget?.profile?.username} de l'equipe ?`"
+      confirm-label="Renvoyer"
+      variant="danger"
+      :loading="kicking"
+      @confirm="doKick"
+    />
+
+    <!-- Disband Confirm -->
+    <ConfirmDialog
+      v-model="showDisband"
+      title="Dissoudre l'equipe ?"
+      :message="`Voulez-vous vraiment dissoudre ${team?.name} [${team?.tag}] ? Tous les membres seront retires et cette action est irreversible.`"
+      confirm-label="Dissoudre l'equipe"
+      variant="danger"
+      :loading="disbanding"
+      @confirm="disbandTeam"
+    />
+
+    <!-- Apply Modal -->
+    <ApplyModal
+      v-model="showApply"
+      :team-name="team.name"
+      :loading="applying"
+      @submit="doApply"
+    />
+
+    <!-- Edit Team Modal -->
+    <BaseModal v-model="showEdit" title="Modifier l'equipe" size="md">
+      <TeamCreateForm
+        :initial-name="team.name"
+        :initial-tag="team.tag"
+        :initial-logo-url="team.logo_url || ''"
+        :initial-description="team.description || ''"
+        :loading="updating"
+        submit-label="Enregistrer"
+        @submit="updateTeam"
+        @cancel="showEdit = false"
+      />
+    </BaseModal>
   </div>
-  <div v-else-if="loading" class="loading">Chargement de l'équipe...</div>
+
+  <BaseEmptyState v-else :icon="ShieldOff" title="Equipe introuvable" description="Cette equipe n'existe pas ou a ete dissoute.">
+    <template #action>
+      <BaseButton to="/teams">Retour aux equipes</BaseButton>
+    </template>
+  </BaseEmptyState>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/auth'
+import { Send, ShieldOff, Trash2, Edit } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import type { Team, TeamMember } from '../types'
+import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseCard from '../components/ui/BaseCard.vue'
+import BaseBadge from '../components/ui/BaseBadge.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseModal from '../components/ui/BaseModal.vue'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
+import RosterTable from '../components/domain/RosterTable.vue'
+import StatBlock from '../components/domain/StatBlock.vue'
+import ApplyModal from '../components/forms/ApplyModal.vue'
+import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
-const team = ref<any>(null)
-const members = ref<any[]>([])
+const notificationStore = useNotificationStore()
+
+const team = ref<Team | null>(null)
+const members = ref<TeamMember[]>([])
 const loading = ref(true)
 const applying = ref(false)
-const editing = ref(false)
+const showApply = ref(false)
+const showKickConfirm = ref(false)
+const kickTarget = ref<TeamMember | null>(null)
+const kicking = ref(false)
+const showDisband = ref(false)
+const disbanding = ref(false)
+const showEdit = ref(false)
+const updating = ref(false)
 
-const isCaptain = computed(() => {
-  return authStore.profile && team.value && team.value.captain_id === authStore.profile.id
-})
-
-const isMember = computed(() => {
-  return members.value.some(m => m.profile_id === authStore.profile?.id)
-})
+const isCaptain = computed(() => !!(authStore.profile && team.value && team.value.captain_id === authStore.profile.id))
+const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
+const canApply = computed(() => authStore.user && !authStore.profile?.team && !isMember.value)
 
 onMounted(async () => {
   await fetchTeamData()
@@ -95,147 +173,93 @@ async function fetchTeamData() {
     team.value = data
     members.value = data.members || []
   } catch (e) {
-    console.error('FetchTeamData error:', e)
+    console.error(e)
   }
   loading.value = false
 }
 
-function getRoleIcon(role: string) {
-  const roles: any = {
-    'Top': '🛡️',
-    'Jungle': '⚔️',
-    'Mid': '🔮',
-    'ADC': '🏹',
-    'Support': '⛑️',
-    'Captain': '👑'
-  }
-  return roles[role] || '👤'
+function openApplyModal() {
+  showApply.value = true
 }
 
-async function applyToTeam() {
-  if (!authStore.user) return
+async function doApply(message: string) {
   applying.value = true
-  
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    // Route backend : POST /api/v1/recruitment/apply/:teamId
-    await api.post(`/recruitment/apply/${team.value.id}`, {
-      message: `${authStore.profile.username} souhaite rejoindre votre équipe.`
-    }, session?.access_token)
-
-    alert('Candidature envoyée !')
+    const token = await getToken()
+    await api.post(`/recruitment/apply/${team.value!.id}`, {
+      message: message || `${authStore.profile?.username} souhaite rejoindre votre equipe.`,
+    }, token)
+    notificationStore.show('Candidature envoyee !', 'success')
+    showApply.value = false
   } catch (e: any) {
-    alert(e.message)
+    notificationStore.show(e.message, 'error')
   } finally {
     applying.value = false
   }
 }
 
-async function kickMember(member: any) {
-  if (!confirm(`Renvoyer ${member.profile?.username} ?`)) return
-  
+async function updateTeam(data: { name: string; tag: string; description: string; logo_url: string }) {
+  updating.value = true
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    // Route backend : DELETE /api/v1/teams/:id/members/:profileId
-    await api.delete(`/teams/${team.value.id}/members/${member.profile_id}`, session?.access_token)
-    await fetchTeamData()
-    alert('Joueur expulsé.')
+    const token = await getToken()
+    const updated = await api.patch(`/teams/${team.value!.id}`, data, token)
+    team.value = { ...team.value!, ...updated }
+    notificationStore.show('Equipe mise a jour !', 'success')
+    showEdit.value = false
+    // Refresh auth store to sync profile's team info if needed
+    await authStore.fetchProfile()
   } catch (e: any) {
-    alert(e.message)
+    notificationStore.show(e.message || 'Erreur lors de la mise a jour', 'error')
+  } finally {
+    updating.value = false
+  }
+}
+
+function confirmKick(member: TeamMember) {
+  kickTarget.value = member
+  showKickConfirm.value = true
+}
+
+async function doKick() {
+  if (!kickTarget.value) return
+  kicking.value = true
+  try {
+    const token = await getToken()
+    await api.delete(`/teams/${team.value!.id}/members/${kickTarget.value.profile_id}`, token)
+    notificationStore.show('Joueur expulse.', 'success')
+    showKickConfirm.value = false
+    await fetchTeamData()
+  } catch (e: any) {
+    notificationStore.show(e.message, 'error')
+  } finally {
+    kicking.value = false
+  }
+}
+
+async function disbandTeam() {
+  disbanding.value = true
+  try {
+    const token = await getToken()
+    await api.delete(`/teams/${team.value!.id}`, token)
+    notificationStore.show('Equipe dissoute.', 'success')
+    await authStore.fetchProfile()
+    router.push('/teams')
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur lors de la dissolution', 'error')
+  } finally {
+    disbanding.value = false
+  }
+}
+
+async function leaveTeam() {
+  try {
+    const token = await getToken()
+    await api.post(`/teams/${team.value!.id}/leave`, {}, token)
+    notificationStore.show('Vous avez quitte l\'equipe.', 'success')
+    await authStore.fetchProfile()
+    await fetchTeamData()
+  } catch (e: any) {
+    notificationStore.show(e.message, 'error')
   }
 }
 </script>
-
-<style scoped>
-.team-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2rem;
-  margin-bottom: 2rem;
-}
-
-.team-main {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-
-.logo-placeholder {
-  width: 100px;
-  height: 100px;
-  background: var(--accent-color);
-  color: var(--bg-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 3rem;
-  font-weight: bold;
-}
-
-.member-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.member-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-.member-item.empty {
-  border: 1px dashed rgba(255,255,255,0.2);
-  background: transparent;
-  color: #666;
-  justify-content: center;
-}
-
-.member-info {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.role-icon {
-  font-size: 1.2rem;
-}
-
-.username {
-  font-weight: bold;
-}
-
-.rank {
-  color: var(--accent-color);
-  font-size: 0.9rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-item .label {
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.stat-item .value {
-  font-size: 1.5rem;
-  color: var(--primary-color);
-  font-weight: bold;
-}
-</style>

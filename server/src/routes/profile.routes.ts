@@ -1,9 +1,40 @@
 import { Router } from 'express';
 import { supabase } from '../config/supabase';
 import { authenticate } from '../middlewares/auth';
-import { authorizeSuperAdmin } from '../middlewares/admin';
+import { authorizeAdmin, authorizeSuperAdmin } from '../middlewares/admin';
 
 const router = Router();
+
+// Admin: List all profiles
+router.get('/', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data || []);
+});
+
+// SuperAdmin: Delete a user account
+router.delete('/:id', authenticate, authorizeSuperAdmin, async (req: any, res) => {
+  const targetId = req.params.id;
+  if (targetId === req.user.id) {
+    return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte via cette route.' });
+  }
+
+  // If user is captain, disband their team
+  const { data: team } = await supabase.from('teams').select('id').eq('captain_id', targetId).maybeSingle();
+  if (team) {
+    await supabase.from('teams').delete().eq('id', team.id);
+  }
+
+  // Delete auth user (cascades profile via RLS/trigger)
+  const { error: authError } = await supabase.auth.admin.deleteUser(targetId);
+  if (authError) return res.status(400).json({ error: authError.message });
+
+  await supabase.from('profiles').delete().eq('id', targetId);
+  res.json({ message: 'Utilisateur supprime.' });
+});
 
 // Private: Get my profile
 router.get('/me', authenticate, async (req: any, res) => {

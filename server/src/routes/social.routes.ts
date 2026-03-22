@@ -4,11 +4,25 @@ import { authenticate } from '../middlewares/auth';
 
 const router = Router();
 
-// Public: List all free agents (filtered to exclude players already in a team)
+// Public: List all players (Free Agents prioritized in frontend)
 router.get('/agents', async (req, res) => {
-  const { data, error } = await supabase.from('free_agents').select('*').order('created_at', { ascending: false });
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('*, team_members(team_id, team:team_id(name, tag))')
+    .order('created_at', { ascending: false });
+
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+
+  // Flatten the response to include team info directly
+  const result = profiles.map((p: any) => {
+    const memberInfo = p.team_members && p.team_members.length > 0 ? p.team_members[0] : null;
+    return {
+      ...p,
+      team: memberInfo ? memberInfo.team : null
+    };
+  });
+
+  res.json(result);
 });
 
 // Private: Get full inbox & outbox data
@@ -49,6 +63,13 @@ router.patch('/notifications/:id', authenticate, async (req: any, res) => {
   const { data, error } = await supabase.from('notifications').update({ is_read: true }).eq('id', req.params.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
+});
+
+// Private: Mark all notifications as read
+router.post('/notifications/read-all', authenticate, async (req: any, res) => {
+  const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', req.user.id).eq('is_read', false);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Toutes les notifications ont été marquées comme lues.' });
 });
 
 export default router;

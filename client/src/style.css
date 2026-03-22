@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  --color-body: #101012;
+  --color-surface: #18181b;
+  --color-surface-elevated: #222225;
+  --color-surface-overlay: #27272a;
+
+  --color-gold: #c8aa6e;
+  --color-gold-light: #f0c75e;
+  --color-gold-dark: #8c6e3a;
+  --color-gold-muted: rgba(200, 170, 110, 0.15);
+
+  --color-cyan: #0ac8b9;
+  --color-cyan-light: #4dd9cd;
+  --color-cyan-dark: #068b80;
+  --color-cyan-muted: rgba(10, 200, 185, 0.15);
+
+  --color-text-primary: #f0e6d2;
+  --color-text-secondary: #a09b8c;
+  --color-text-muted: #5b5a56;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-gold: rgba(200, 170, 110, 0.3);
+  --color-border-cyan: rgba(10, 200, 185, 0.2);
+
+  --color-success: #27ae60;
+  --color-success-muted: rgba(39, 174, 96, 0.15);
+  --color-danger: #e74c3c;
+  --color-danger-muted: rgba(231, 76, 60, 0.15);
+  --color-warning: #f39c12;
+  --color-warning-muted: rgba(243, 156, 18, 0.15);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Base */
+body {
+  background-color: var(--color-body);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Radial gold glow background */
+#app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 120% 50% at 50% -5%, rgba(200, 170, 110, 0.10) 0%, rgba(200, 170, 110, 0.03) 40%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(240, 199, 94, 0.05) 0%, transparent 50%),
+    var(--color-body);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-body);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3f4b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4f5b;
+}
+
+/* Selection */
+::selection {
+  background: rgba(200, 170, 110, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* Vue transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* List transitions */
+.list-enter-active {
+  transition: all 0.4s ease;
+}
+
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.list-move {
+  transition: transform 0.3s ease;
+}

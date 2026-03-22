@@ -2,23 +2,26 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
 import { api } from '../lib/api'
+import { clearTokenCache } from '../composables/useAuth'
 import type { User } from '@supabase/supabase-js'
+import type { Profile } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const profile = ref<any | null>(null)
+  const profile = ref<Profile | null>(null)
   const loading = ref(true)
 
-  async function fetchProfile() {
+  async function fetchProfile(token?: string) {
     if (!user.value) return
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      if (!token) {
+        const { data: { session } } = await supabase.auth.getSession()
+        token = session?.access_token
+      }
       try {
         const data = await api.get('/profiles/me', token)
         profile.value = data
       } catch (e: any) {
-        // Si le profil n'existe pas, on le crée (cas d'un nouvel utilisateur)
         if (e.message.includes('Profil non existant') || e.message.includes('404')) {
           const username = user.value.user_metadata?.username || user.value.email?.split('@')[0]
           await api.patch('/profiles/me', { username }, token)
@@ -37,14 +40,16 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user ?? null
-    if (user.value) {
-      await fetchProfile()
+    if (user.value && session) {
+      // Reuse the token we already have - no double getSession()
+      await fetchProfile(session.access_token)
     }
-    
+
     supabase.auth.onAuthStateChange(async (_event, session) => {
+      clearTokenCache()
       user.value = session?.user ?? null
-      if (user.value) {
-        await fetchProfile()
+      if (user.value && session) {
+        await fetchProfile(session.access_token)
       } else {
         profile.value = null
       }
@@ -53,6 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function signOut() {
+    clearTokenCache()
     await supabase.auth.signOut()
     user.value = null
     profile.value = null

@@ -1,66 +1,181 @@
 <template>
-  <div class="agents-view">
-    <header class="page-header">
-      <h1>Agents Libres</h1>
-      <p>Joueurs à la recherche d'une équipe pour la saison.</p>
-    </header>
+  <div>
+    <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
 
-    <div class="filters card">
-      <div class="filter-group">
-        <label>Rang</label>
-        <select v-model="filterRank">
-          <option value="">Tous les rangs</option>
-          <option value="Challenger">Challenger</option>
-          <option value="Grandmaster">Grandmaster</option>
-          <option value="Master">Master</option>
-          <option value="Diamond">Diamond</option>
-          <option value="Emerald">Emerald</option>
-          <option value="Platinum">Platinum</option>
-          <option value="Gold">Gold</option>
-          <option value="Silver">Silver</option>
-          <option value="Bronze">Bronze</option>
-          <option value="Iron">Iron</option>
-        </select>
+    <!-- Filters -->
+    <div class="mb-6 bg-surface p-4 rounded-xl border border-border">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+          <BaseInput
+            v-model="search"
+            placeholder="Rechercher un joueur..."
+            class="w-full sm:w-64"
+          />
+          
+          <!-- Toggle Filter -->
+          <div class="flex items-center gap-3 p-1 bg-white/5 rounded-lg border border-white/5">
+            <button
+              @click="filterOnlyFree = true"
+              class="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all"
+              :class="filterOnlyFree ? 'bg-cyan text-body shadow-lg' : 'text-text-muted hover:text-text-secondary'"
+            >
+              Agents Libres
+            </button>
+            <button
+              @click="filterOnlyFree = false"
+              class="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all"
+              :class="!filterOnlyFree ? 'bg-white/10 text-text-primary' : 'text-text-muted hover:text-text-secondary'"
+            >
+              Tout le monde
+            </button>
+          </div>
+        </div>
+
+        <button
+          @click="resetFilters"
+          class="text-xs font-bold text-text-muted hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <RefreshCw :size="14" />
+          Reinitialiser
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Rangs -->
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Rangs</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="rank in LOL_RANKS"
+              :key="rank"
+              @click="toggleRank(rank)"
+              class="flex items-center gap-1.5 px-2 py-1 rounded border transition-colors cursor-pointer"
+              :class="filterRanks.includes(rank) ? 'bg-cyan/20 border-cyan/50 text-cyan' : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20 hover:text-white'"
+            >
+              <img :src="getRankIconUrl(rank)" :alt="rank" class="w-3.5 h-3.5 object-contain" :class="!filterRanks.includes(rank) && 'opacity-60 grayscale'" />
+              <span class="text-[10px] font-bold">{{ rank }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Roles -->
+        <div>
+          <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Postes</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="role in LOL_ROLES"
+              :key="role.key"
+              @click="toggleRole(role.key)"
+              class="flex items-center gap-1 px-2 py-1 rounded border transition-colors cursor-pointer"
+              :class="filterRoles.includes(role.key) ? 'bg-gold/20 border-gold/50 text-gold' : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20 hover:text-white'"
+            >
+              <LolRoleIcon :role="role.key" :size="12" />
+              <span class="text-[10px] font-bold">{{ role.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Winrate -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-[10px] font-black uppercase tracking-widest text-text-muted">Winrate</label>
+            <span class="text-xs font-bold text-cyan">{{ filterWinrateMin }}% - {{ filterWinrateMax }}%</span>
+          </div>
+          <div class="space-y-3 mt-4">
+            <div class="relative">
+              <span class="absolute -top-3 left-0 text-[9px] text-text-muted">Min</span>
+              <input
+                type="range"
+                v-model.number="filterWinrateMin"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-cyan h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                @input="() => filterWinrateMin > filterWinrateMax ? filterWinrateMax = filterWinrateMin : null"
+              />
+            </div>
+            <div class="relative">
+              <span class="absolute -top-3 left-0 text-[9px] text-text-muted">Max</span>
+              <input
+                type="range"
+                v-model.number="filterWinrateMax"
+                min="0"
+                max="100"
+                step="5"
+                class="w-full accent-gold h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                @input="() => filterWinrateMax < filterWinrateMin ? filterWinrateMin = filterWinrateMax : null"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Chargement des agents...</div>
-    <div v-else class="grid">
-      <div v-for="agent in filteredAgents" :key="agent.id" class="card agent-card">
-        <div class="agent-header">
-          <h3>{{ agent.username }}</h3>
-          <span class="badge rank-badge">{{ agent.rank || 'Unranked' }}</span>
-        </div>
-        <p class="riot-id">{{ agent.riot_id || 'ID Masqué' }}</p>
-        <p class="bio">{{ agent.bio || 'Aucune description.' }}</p>
-        <div class="roles">
-           <span v-for="role in agent.preferred_roles" :key="role" class="badge role-tag">{{ role }}</span>
-        </div>
-        <div class="card-footer">
-          <button v-if="authStore.profile?.is_captain && agent.id !== authStore.user?.id" 
-                  @click="recruitPlayer(agent)" 
-                  class="btn btn-primary btn-sm"
-                  :disabled="isInvited(agent)">
-            {{ isInvited(agent) ? 'Invité' : 'Recruter' }}
-          </button>
-          <RouterLink :to="'/profile/' + agent.id" class="btn btn-secondary btn-sm">Voir Profil</RouterLink>
-        </div>
-      </div>
+    <BaseSpinner v-if="loading" />
+    <BaseEmptyState
+      v-else-if="filteredAgents.length === 0"
+      :icon="UserSearch"
+      title="Aucun agent libre"
+      description="Aucun joueur ne correspond a vos criteres."
+    />
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <TransitionGroup name="list">
+        <PlayerCard
+          v-for="agent in filteredAgents"
+          :key="agent.id"
+          :player="agent"
+          :show-recruit="canRecruit(agent)"
+          :recruiting="recruitingId === agent.id"
+          :invited="isInvited(agent)"
+          @recruit="openInvite(agent)"
+        />
+      </TransitionGroup>
     </div>
+
+    <!-- Invite Modal -->
+    <InviteModal
+      v-model="showInvite"
+      :player-name="selectedAgent?.username || ''"
+      :loading="inviting"
+      @submit="sendInvite"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/auth'
+import { UserSearch, RefreshCw } from 'lucide-vue-next'
 import { api } from '../lib/api'
+import { getToken } from '../composables/useAuth'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import { LOL_RANKS, LOL_ROLES } from '../lib/constants'
+import { getRankIconUrl } from '../lib/formatters'
+import type { Agent } from '../types'
+import PageHeader from '../components/layout/PageHeader.vue'
+import BaseSpinner from '../components/ui/BaseSpinner.vue'
+import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
+import BaseInput from '../components/ui/BaseInput.vue'
+import BaseSelect from '../components/ui/BaseSelect.vue'
+import PlayerCard from '../components/domain/PlayerCard.vue'
+import InviteModal from '../components/forms/InviteModal.vue'
+import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
 
 const authStore = useAuthStore()
-const agents = ref<any[]>([])
+const notificationStore = useNotificationStore()
+const agents = ref<Agent[]>([])
 const myTeamOffers = ref<any[]>([])
 const loading = ref(true)
-const filterRank = ref('')
+const search = ref('')
+const filterOnlyFree = ref(true)
+const filterRanks = ref<string[]>([])
+const filterRoles = ref<string[]>([])
+const filterWinrateMin = ref<number | ''>(0)
+const filterWinrateMax = ref<number | ''>(100)
+const showInvite = ref(false)
+const selectedAgent = ref<Agent | null>(null)
+const inviting = ref(false)
+const recruitingId = ref<string | null>(null)
 
 onMounted(async () => {
   await fetchData()
@@ -68,14 +183,16 @@ onMounted(async () => {
 
 async function fetchData() {
   try {
-    const data = await api.get('/social/agents')
-    agents.value = data
-
     if (authStore.user && authStore.profile?.is_captain) {
-      const { data: { session } } = await supabase.auth.getSession()
-      const inbox = await api.get('/social/inbox', session?.access_token)
-      // On filtre les interactions de type 'offer' envoyées par notre équipe
+      const token = await getToken()
+      const [agentsData, inbox] = await Promise.all([
+        api.get('/social/agents'),
+        api.get('/social/inbox', token),
+      ])
+      agents.value = agentsData
       myTeamOffers.value = inbox.interactions.filter((i: any) => i.type === 'offer' && i.status === 'pending')
+    } else {
+      agents.value = await api.get('/social/agents')
     }
   } catch (e) {
     console.error(e)
@@ -83,87 +200,112 @@ async function fetchData() {
   loading.value = false
 }
 
-function isInvited(agent: any) {
+function canRecruit(agent: Agent) {
+  // On ne peut recruter que si on est capitaine, que ce n'est pas nous-même, 
+  // que le joueur n'a pas déjà d'équipe et qu'il est en recherche active.
+  return authStore.profile?.is_captain && 
+         agent.id !== authStore.user?.id && 
+         !agent.team && 
+         agent.is_looking_for_team
+}
+
+function isInvited(agent: Agent) {
   return myTeamOffers.value.some(o => o.sender_id === agent.id)
 }
 
-async function recruitPlayer(agent: any) {
+function openInvite(agent: Agent) {
+  selectedAgent.value = agent
+  showInvite.value = true
+}
+
+async function sendInvite(message: string) {
+  if (!selectedAgent.value) return
+  inviting.value = true
+  recruitingId.value = selectedAgent.value.id
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-
-    // Route backend : POST /api/v1/recruitment/invite/:playerId
-    await api.post(`/recruitment/invite/${agent.id}`, {
+    const token = await getToken()
+    await api.post(`/recruitment/invite/${selectedAgent.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: `L'équipe ${authStore.profile?.team?.name} souhaite vous recruter.`
+      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
-
-    alert(`Invitation envoyée à ${agent.username} !`)
+    notificationStore.show(`Invitation envoyee a ${selectedAgent.value.username} !`, 'success')
+    showInvite.value = false
     await fetchData()
   } catch (err: any) {
-    alert('Erreur: ' + (err.message || "Impossible d'envoyer l'invitation"))
+    notificationStore.show(err.message || "Impossible d'envoyer l'invitation", 'error')
+  } finally {
+    inviting.value = false
+    recruitingId.value = null
   }
 }
 
+function toggleRank(rank: string) {
+  const i = filterRanks.value.indexOf(rank)
+  if (i === -1) filterRanks.value.push(rank)
+  else filterRanks.value.splice(i, 1)
+}
+
+function toggleRole(role: string) {
+  const i = filterRoles.value.indexOf(role)
+  if (i === -1) filterRoles.value.push(role)
+  else filterRoles.value.splice(i, 1)
+}
+
+function resetFilters() {
+  search.value = ''
+  filterOnlyFree.value = true
+  filterRanks.value = []
+  filterRoles.value = []
+  filterWinrateMin.value = 0
+  filterWinrateMax.value = 100
+}
+
 const filteredAgents = computed(() => {
-  if (!filterRank.value) return agents.value
-  return agents.value.filter(a => a.rank?.includes(filterRank.value))
+  let result = [...agents.value]
+  
+  // 1. Filtre de recherche
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    result = result.filter(a =>
+      a.username.toLowerCase().includes(q) ||
+      a.riot_id?.toLowerCase().includes(q)
+    )
+  }
+
+  // 2. Filtre par rang
+  if (filterRanks.value.length > 0) {
+    result = result.filter(a => a.rank && filterRanks.value.some(r => a.rank!.toUpperCase().includes(r)))
+  }
+
+  // 3. Filtre par rôle
+  if (filterRoles.value.length > 0) {
+    result = result.filter(a => a.preferred_roles && a.preferred_roles.some(r => filterRoles.value.includes(r)))
+  }
+  
+  // 4. Filtre par winrate
+  const minW = typeof filterWinrateMin.value === 'number' ? filterWinrateMin.value : 0
+  const maxW = typeof filterWinrateMax.value === 'number' ? filterWinrateMax.value : 100
+  if (minW > 0 || maxW < 100) {
+    result = result.filter(a => {
+      if (a.winrate === undefined || a.winrate === null) return false
+      return a.winrate >= minW && a.winrate <= maxW
+    })
+  }
+
+  // 5. Filtre par statut (Agents Libres vs Tout le monde)
+  if (filterOnlyFree.value) {
+    result = result.filter(a => a.is_looking_for_team && !a.team)
+  }
+
+  // 6. Tri : Agents Libres en priorité, puis par date de création
+  return result.sort((a, b) => {
+    const aIsFree = a.is_looking_for_team && !a.team;
+    const bIsFree = b.is_looking_for_team && !b.team;
+
+    if (aIsFree && !bIsFree) return -1;
+    if (!aIsFree && bIsFree) return 1;
+    
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  })
 })
 </script>
-
-<style scoped>
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.filters {
-  margin-bottom: 2rem;
-  padding: 1rem;
-}
-
-.agent-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.agent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.riot-id {
-  font-size: 0.85rem;
-  color: var(--accent-color);
-  margin-bottom: 1rem;
-}
-
-.bio {
-  font-size: 0.9rem;
-  color: #ccc;
-  flex-grow: 1;
-  margin-bottom: 1rem;
-}
-
-.roles {
-  margin-bottom: 1rem;
-}
-
-.role-tag {
-  background: rgba(11, 198, 227, 0.1);
-  border-color: rgba(11, 198, 227, 0.3);
-}
-
-.card-footer {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  flex: 1;
-}
-</style>

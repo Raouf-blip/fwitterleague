@@ -1,79 +1,122 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import AgentsView from '../views/AgentsView.vue'
-import TeamsView from '../views/TeamsView.vue'
-import LoginView from '../views/LoginView.vue'
-import ProfileView from '../views/ProfileView.vue'
-import ProfileDetailView from '../views/ProfileDetailView.vue'
-import TeamDetailView from '../views/TeamDetailView.vue'
-import TournamentsView from '../views/TournamentsView.vue'
-import NotificationsView from '../views/NotificationsView.vue'
-import { useAuthStore } from '../stores/auth'
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
+import { useAuthStore } from "../stores/auth";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior() {
+    return { top: 0 };
+  },
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView
+      path: "/",
+      name: "home",
+      component: HomeView,
     },
     {
-      path: '/notifications',
-      name: 'notifications',
-      component: NotificationsView,
-      meta: { requiresAuth: true }
+      path: "/login",
+      name: "login",
+      component: () => import("../views/LoginView.vue"),
     },
     {
-      path: '/tournaments',
-      name: 'tournaments',
-      component: TournamentsView
+      path: "/forgot-password",
+      name: "forgot-password",
+      component: () => import("../views/ForgotPasswordView.vue"),
     },
     {
-      path: '/agents',
-      name: 'agents',
-      component: AgentsView
+      path: "/reset-password",
+      name: "reset-password",
+      component: () => import("../views/ResetPasswordView.vue"),
     },
     {
-      path: '/teams',
-      name: 'teams',
-      component: TeamsView
+      path: "/agents",
+      name: "agents",
+      component: () => import("../views/AgentsView.vue"),
     },
     {
-      path: '/teams/:id',
-      name: 'team-detail',
-      component: TeamDetailView
+      path: "/teams",
+      name: "teams",
+      component: () => import("../views/TeamsView.vue"),
     },
     {
-      path: '/login',
-      name: 'login',
-      component: LoginView
+      path: "/teams/:id",
+      name: "team-detail",
+      component: () => import("../views/TeamDetailView.vue"),
     },
     {
-      path: '/profile',
-      name: 'profile',
-      component: ProfileView,
-      meta: { requiresAuth: true }
+      path: "/tournaments",
+      name: "tournaments",
+      component: () => import("../views/TournamentsView.vue"),
     },
     {
-      path: '/profile/:id',
-      name: 'profile-detail',
-      component: ProfileDetailView
-    }
-  ]
-})
+      path: "/tournaments/:id",
+      name: "tournament-detail",
+      component: () => import("../views/TournamentDetailView.vue"),
+    },
+    {
+      path: "/profile",
+      name: "profile",
+      component: () => import("../views/ProfileView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/profile/:id",
+      name: "profile-detail",
+      component: () => import("../views/ProfileDetailView.vue"),
+    },
+    {
+      path: "/notifications",
+      name: "notifications",
+      component: () => import("../views/NotificationsView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: () => import("../views/AdminDashboardView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: "/admin/tournaments",
+      name: "admin-tournaments",
+      component: () => import("../views/TournamentManageView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: "/contact",
+      name: "contact",
+      component: () => import("../views/ContactView.vue"),
+    },
+    {
+      path: "/rules",
+      name: "rules",
+      component: () => import("../views/RulesView.vue"),
+    },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../views/NotFoundView.vue"),
+    },
+  ],
+});
 
-router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+router.beforeEach(async (to, _from, next) => {
+  const authStore = useAuthStore();
   if (authStore.loading) {
-    await authStore.initialize()
+    await authStore.initialize();
   }
 
   if (to.meta.requiresAuth && !authStore.user) {
-    next('/login')
+    next("/login");
+  } else if (
+    to.meta.requiresAdmin &&
+    authStore.profile?.role !== "admin" &&
+    authStore.profile?.role !== "superadmin"
+  ) {
+    next("/");
   } else {
-    next()
+    next();
   }
-})
+});
 
-export default router
+export default router;

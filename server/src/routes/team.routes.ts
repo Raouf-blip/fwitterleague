@@ -25,10 +25,10 @@ router.get('/:id', async (req, res) => {
 
 // Private: Create a team
 router.post('/', authenticate, async (req: any, res) => {
-  const { name, tag, description } = req.body;
+  const { name, tag, description, logo_url } = req.body;
   if (!name || !tag || tag.length > 4) return res.status(400).json({ error: 'Nom requis et Tag (max 4 car.) requis.' });
 
-  const { data: team, error } = await supabase.from('teams').insert({ name, tag, description, captain_id: req.user.id }).select().single();
+  const { data: team, error } = await supabase.from('teams').insert({ name, tag, description, logo_url, captain_id: req.user.id }).select().single();
   if (error) return res.status(400).json({ error: error.message });
 
   await supabase.from('team_members').insert({ team_id: team.id, profile_id: req.user.id, role: 'Captain' });
@@ -40,13 +40,13 @@ router.post('/', authenticate, async (req: any, res) => {
 router.patch('/:id', authenticate, async (req: any, res) => {
   if (await checkTeamLock(req.params.id)) return res.status(403).json({ error: 'L\'équipe est verrouillée car elle participe à un tournoi en cours.' });
 
-  const { name, tag, description } = req.body;
+  const { name, tag, description, logo_url } = req.body;
   const teamId = req.params.id;
 
   const { data: team } = await supabase.from('teams').select('captain_id').eq('id', teamId).single();
   if (!team || team.captain_id !== req.user.id) return res.status(403).json({ error: 'Seul le capitaine peut modifier l\'équipe.' });
 
-  const { data: updatedTeam, error } = await supabase.from('teams').update({ name, tag, description }).eq('id', teamId).select().single();
+  const { data: updatedTeam, error } = await supabase.from('teams').update({ name, tag, description, logo_url }).eq('id', teamId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(updatedTeam);
 });
