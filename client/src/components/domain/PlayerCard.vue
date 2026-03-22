@@ -21,17 +21,13 @@
           <RankBadge :rank="player.rank" />
           <!-- Preferred Roles -->
           <div v-if="player.preferred_roles?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">
-            <BaseTooltip 
-              v-for="role in player.preferred_roles" 
+            <BaseTooltip
+              v-for="role in player.preferred_roles"
               :key="role"
               :content="role"
             >
               <div class="cursor-pointer flex items-center justify-center">
-                <component 
-                  :is="getRoleIcon(role)" 
-                  :size="14" 
-                  class="text-cyan"
-                />
+                <LolRoleIcon :role="role" :size="14" class="text-cyan" />
               </div>
             </BaseTooltip>
           </div>
@@ -76,16 +72,8 @@
 
 <script setup lang="ts">
 import DiscordIcon from '../icons/DiscordIcon.vue'
-import { 
-  TrendingUp, 
-  UserPlus, 
-  Shield, 
-  Swords, 
-  Sparkles, 
-  Target, 
-  Heart,
-  ExternalLink
-} from 'lucide-vue-next'
+import LolRoleIcon from '../icons/LolRoleIcon.vue'
+import { TrendingUp, UserPlus, ExternalLink } from 'lucide-vue-next'
 import type { Agent } from '../../types'
 import { getOpggUrl } from '../../lib/formatters'
 import BaseCard from '../ui/BaseCard.vue'
@@ -103,15 +91,4 @@ defineProps<{
 defineEmits<{
   recruit: [player: Agent]
 }>()
-
-function getRoleIcon(role: string) {
-  switch (role) {
-    case 'Top': return Shield
-    case 'Jungle': return Swords
-    case 'Mid': return Sparkles
-    case 'ADC': return Target
-    case 'Support': return Heart
-    default: return Target
-  }
-}
 </script>

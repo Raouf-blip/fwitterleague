@@ -28,17 +28,13 @@
             <div v-if="profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
               <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
               <div class="flex items-center gap-2">
-                <BaseTooltip 
-                  v-for="role in profile.preferred_roles" 
+                <BaseTooltip
+                  v-for="role in profile.preferred_roles"
                   :key="role"
                   :content="role"
                 >
                   <div class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
-                    <component 
-                      :is="getRoleIcon(role)" 
-                      :size="16" 
-                      class="text-cyan"
-                    />
+                    <LolRoleIcon :role="role" :size="16" class="text-cyan" />
                   </div>
                 </BaseTooltip>
               </div>
@@ -104,7 +100,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
-import { UserPlus, UserX, Shield, Swords, Sparkles, Target, Heart } from 'lucide-vue-next'
+import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
+import { UserPlus, UserX } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { getOpggUrl } from '../lib/formatters'
@@ -128,17 +125,6 @@ const profile = ref<Profile | null>(null)
 const team = ref<any>(null)
 const loading = ref(true)
 const recruiting = ref(false)
-
-function getRoleIcon(role: string) {
-  switch (role) {
-    case 'Top': return Shield
-    case 'Jungle': return Swords
-    case 'Mid': return Sparkles
-    case 'ADC': return Target
-    case 'Support': return Heart
-    default: return Target
-  }
-}
 
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
 const canRecruit = computed(() => authStore.profile?.is_captain && !team.value)

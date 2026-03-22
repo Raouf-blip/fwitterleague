@@ -28,7 +28,7 @@
               OP.GG
             </a>
             <span v-if="authStore.profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
-              <MessageCircle :size="14" class="text-[#5865F2]" />
+              <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ authStore.profile.discord }}
             </span>
           </div>
@@ -38,17 +38,13 @@
             <div v-if="authStore.profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
               <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
               <div class="flex items-center gap-2">
-                <BaseTooltip 
-                  v-for="role in authStore.profile.preferred_roles" 
+                <BaseTooltip
+                  v-for="role in authStore.profile.preferred_roles"
                   :key="role"
                   :content="role"
                 >
                   <div class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
-                    <component 
-                      :is="getRoleIcon(role)" 
-                      :size="16" 
-                      class="text-cyan"
-                    />
+                    <LolRoleIcon :role="role" :size="16" class="text-cyan" />
                   </div>
                 </BaseTooltip>
               </div>
@@ -298,24 +294,18 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
-  ShieldPlus, 
-  AlertTriangle, 
-  Settings, 
-  LogOut, 
-  Sword, 
-  MessageCircle,
+import {
+  ShieldPlus,
+  AlertTriangle,
+  Settings,
+  LogOut,
   BellOff,
   Check,
   Send,
-  ExternalLink,
   Shield,
-  X,
-  Sparkles,
-  Swords,
-  Target,
-  Heart
 } from 'lucide-vue-next'
+import DiscordIcon from '../components/icons/DiscordIcon.vue'
+import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -348,17 +338,6 @@ const notifications = ref<any[]>([])
 const sentApplications = ref<any[]>([])
 
 const unreadNotifs = computed(() => notifications.value.filter(n => !n.is_read).length)
-
-function getRoleIcon(role: string) {
-  switch (role) {
-    case 'Top': return Shield
-    case 'Jungle': return Swords
-    case 'Mid': return Sparkles
-    case 'ADC': return Target
-    case 'Support': return Heart
-    default: return Target
-  }
-}
 
 watch(() => authStore.profile, (p) => {
   if (p) {
