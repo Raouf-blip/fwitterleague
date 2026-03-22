@@ -4,6 +4,7 @@ import { useAuthStore } from './stores/auth'
 import { useNotificationStore } from './stores/notifications'
 import AppNavbar from './components/layout/AppNavbar.vue'
 import AppFooter from './components/layout/AppFooter.vue'
+
 import BaseSpinner from './components/ui/BaseSpinner.vue'
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-vue-next'
 

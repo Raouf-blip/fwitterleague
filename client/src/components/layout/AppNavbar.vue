@@ -1,13 +1,11 @@
-<template>
+5. Dégradé radial fixe avec glow
+Un halo de couleur (or ou cyan très atténué) centré en haut de la page, comme un spot de lumière qui éclaire le contenu. Simple mais classe.<template>
   <nav class="fixed top-0 left-0 right-0 z-40 bg-body/80 backdrop-blur-xl border-b border-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
-        <RouterLink to="/" class="flex items-center gap-2 group">
-          <Trophy :size="24" class="text-gold group-hover:text-gold-light transition-colors" />
-          <span class="font-extrabold text-lg text-text-primary tracking-tight hidden sm:block">
-            Fwitter<span class="text-gold">League</span>
-          </span>
+        <RouterLink to="/" class="flex items-center gap-2 group shrink-0">
+          <img src="../../assets/logo.png" alt="FwitterLeague" class="h-9 w-auto group-hover:brightness-125 transition-all" />
         </RouterLink>
 
         <!-- Desktop Nav -->
@@ -139,7 +137,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle } from 'lucide-vue-next'
+import { Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 
