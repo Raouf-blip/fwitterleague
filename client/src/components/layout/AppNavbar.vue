@@ -140,7 +140,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords } from 'lucide-vue-next'
+import { Trophy, Bell, User, ChevronDown, LogOut, Menu, Users, Shield, Award, Settings, Swords, MessageCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 
@@ -160,6 +160,7 @@ const navLinks = computed(() => {
     { to: '/tournaments', label: 'Tournois', icon: Award },
     { to: '/agents', label: 'Mercato', icon: Users },
     { to: '/teams', label: 'Equipes', icon: Shield },
+    { to: '/contact', label: 'Contact', icon: MessageCircle },
   ]
   if (isAdmin.value) {
     links.push(
