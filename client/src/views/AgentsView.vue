@@ -126,6 +126,7 @@
           :player="agent"
           :show-recruit="canRecruit(agent)"
           :recruiting="recruitingId === agent.id"
+          :invited="isInvited(agent)"
           @recruit="openInvite(agent)"
         />
       </TransitionGroup>
@@ -205,8 +206,7 @@ function canRecruit(agent: Agent) {
   return authStore.profile?.is_captain && 
          agent.id !== authStore.user?.id && 
          !agent.team && 
-         agent.is_looking_for_team &&
-         !isInvited(agent)
+         agent.is_looking_for_team
 }
 
 function isInvited(agent: Agent) {

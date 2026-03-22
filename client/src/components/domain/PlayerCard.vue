@@ -82,13 +82,14 @@
       </BaseButton>
       <BaseButton
         v-if="showRecruit"
-        variant="primary"
+        :variant="invited ? 'secondary' : 'primary'"
         size="sm"
+        :disabled="invited || recruiting"
         :loading="recruiting"
-        @click="$emit('recruit', player)"
+        @click="!invited && $emit('recruit', player)"
       >
         <template #icon><UserPlus :size="14" /></template>
-        Recruter
+        {{ invited ? 'Déjà invité' : 'Recruter' }}
       </BaseButton>
     </div>
   </BaseCard>
@@ -110,6 +111,7 @@ defineProps<{
   player: Agent
   showRecruit?: boolean
   recruiting?: boolean
+  invited?: boolean
 }>()
 
 defineEmits<{
