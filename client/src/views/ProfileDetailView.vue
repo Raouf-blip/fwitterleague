@@ -9,7 +9,7 @@
         <div class="flex-1">
           <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
           <div class="flex items-center gap-3 mt-1 flex-wrap">
-            <span class="text-sm text-gold">{{ profile.riot_id || 'Riot ID non configure' }}</span>
+            <span class="text-sm text-gold">{{ profile.riot_id || 'Riot ID non configuré' }}</span>
             <a
               v-if="opggUrl"
               :href="opggUrl"
@@ -56,7 +56,7 @@
             </span>
           </div>
           <BaseBadge v-if="profile.is_looking_for_team" variant="success" size="md" class="mt-3">
-            Cherche une equipe
+            Cherche une équipe
           </BaseBadge>
         </div>
         <BaseButton
@@ -83,7 +83,7 @@
 
       <!-- Team -->
       <BaseCard :hoverable="false">
-        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Equipe</h2>
+        <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Équipe</h2>
         <div v-if="team">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-sm font-bold text-gold">
@@ -93,10 +93,10 @@
               <h3 class="font-bold text-text-primary text-sm">{{ team.name }} [{{ team.tag }}]</h3>
             </div>
           </div>
-          <BaseButton variant="secondary" size="sm" :to="'/teams/' + team.id">Voir l'equipe</BaseButton>
+          <BaseButton variant="secondary" size="sm" :to="'/teams/' + team.id">Voir l'équipe</BaseButton>
         </div>
         <div v-else class="text-center py-4">
-          <p class="text-sm text-text-muted">Ce joueur n'a pas encore d'equipe.</p>
+          <p class="text-sm text-text-muted">Ce joueur n'a pas encore d'équipe.</p>
         </div>
       </BaseCard>
     </div>
@@ -188,9 +188,9 @@ async function sendInvite(message: string) {
     const token = await getToken()
     await api.post(`/recruitment/invite/${profile.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
+      message: message || `L'équipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
-    notificationStore.show('Offre de recrutement envoyee !', 'success')
+    notificationStore.show('Offre de recrutement envoyée !', 'success')
     showInvite.value = false
 
     // Refresh inbox

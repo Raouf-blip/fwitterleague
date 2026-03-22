@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Gestion des Tournois" subtitle="Creer, modifier et gerer les tournois et matchs.">
+    <PageHeader title="Gestion des Tournois" subtitle="Créer, modifier et gérer les tournois et matchs.">
       <template #actions>
         <BaseButton variant="primary" @click="openCreateTournament">
           <template #icon><Plus :size="16" /></template>
@@ -14,7 +14,7 @@
     <template v-else>
       <!-- Tournaments List -->
       <div v-if="tournaments.length === 0" class="text-center text-text-muted py-10 text-sm">
-        Aucun tournoi. Creez le premier !
+        Aucun tournoi. Créez le premier !
       </div>
 
       <div v-else class="space-y-4">
@@ -32,10 +32,10 @@
                 :variant="t.status === 'upcoming' ? 'cyan' : t.status === 'ongoing' ? 'gold' : 'muted'"
                 size="sm"
               >
-                {{ t.status === 'upcoming' ? 'A venir' : t.status === 'ongoing' ? 'En cours' : 'Termine' }}
+                {{ t.status === 'upcoming' ? 'À venir' : t.status === 'ongoing' ? 'En cours' : 'Terminé' }}
               </BaseBadge>
               <span class="text-xs text-text-muted">
-                {{ formatDate(t.start_date) }} - {{ formatDate(t.end_date) }} | Max {{ t.max_teams }} equipes
+                {{ formatDate(t.start_date) }} - {{ formatDate(t.end_date) }} | Max {{ t.max_teams }} équipes
               </span>
             </div>
             <div class="flex items-center gap-2">
@@ -60,7 +60,7 @@
           <!-- Registered teams -->
           <div v-if="getRegistrationsForTournament(t.id).length > 0" class="px-5 py-3 border-b border-border">
             <h4 class="text-sm font-semibold text-text-secondary mb-3">
-              Equipes inscrites ({{ getRegistrationsForTournament(t.id).length }})
+              Équipes inscrites ({{ getRegistrationsForTournament(t.id).length }})
             </h4>
             <div class="flex flex-wrap gap-2">
               <div
@@ -68,11 +68,11 @@
                 :key="reg.id"
                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-border/50"
               >
-                <span class="text-sm font-semibold text-text-primary">{{ reg.team?.name || 'Equipe' }}</span>
+                <span class="text-sm font-semibold text-text-primary">{{ reg.team?.name || 'Équipe' }}</span>
                 <span class="text-xs text-text-muted">[{{ reg.team?.tag || '?' }}]</span>
                 <button
                   class="ml-1 p-0.5 text-text-muted hover:text-danger transition-colors cursor-pointer"
-                  title="Retirer cette equipe"
+                  title="Retirer cette équipe"
                   @click="adminUnregister(t.id, reg.team_id, reg.team?.name)"
                 >
                   <UserMinus :size="14" />
@@ -98,7 +98,7 @@
                   <span class="text-text-muted">vs</span>
                   <span v-if="match.score_2 !== null" class="text-gold font-bold">{{ match.score_2 }}</span>
                   <span class="font-semibold text-text-primary">{{ match.team_2?.name || 'TBD' }}</span>
-                  <BaseBadge v-if="match.winner_id" variant="success" size="sm">Termine</BaseBadge>
+                  <BaseBadge v-if="match.winner_id" variant="success" size="sm">Terminé</BaseBadge>
                   <span v-if="match.scheduled_at" class="text-xs text-text-muted ml-2">
                     {{ formatDateTime(match.scheduled_at) }}
                   </span>
@@ -113,7 +113,7 @@
             </div>
           </div>
           <div v-else class="px-5 py-4 text-sm text-text-muted text-center">
-            Aucun match planifie.
+            Aucun match planifié.
           </div>
         </BaseCard>
       </div>
@@ -125,16 +125,16 @@
         <BaseInput v-model="tournamentForm.name" label="Nom du tournoi" placeholder="Coupe FwitterLeague S1" required />
         <BaseTextarea v-model="tournamentForm.description" label="Description" placeholder="Description du tournoi..." :rows="2" />
         <div class="grid grid-cols-2 gap-4">
-          <BaseInput v-model="tournamentForm.start_date" label="Date de debut" type="date" required />
+          <BaseInput v-model="tournamentForm.start_date" label="Date de début" type="date" required />
           <BaseInput v-model="tournamentForm.end_date" label="Date de fin" type="date" required />
         </div>
-        <BaseInput v-model="tournamentForm.max_teams" label="Nombre max d'equipes" type="number" required />
+        <BaseInput v-model="tournamentForm.max_teams" label="Nombre max d'équipes" type="number" required />
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <BaseButton variant="ghost" @click="showTournamentModal = false">Annuler</BaseButton>
           <BaseButton variant="primary" :loading="savingTournament" @click="saveTournament">
-            {{ editingTournament ? 'Enregistrer' : 'Creer' }}
+            {{ editingTournament ? 'Enregistrer' : 'Créer' }}
           </BaseButton>
         </div>
       </template>
@@ -150,9 +150,9 @@
           v-model="newStatus"
           label="Nouveau statut"
           :options="[
-            { value: 'upcoming', label: 'A venir' },
+            { value: 'upcoming', label: 'À venir' },
             { value: 'ongoing', label: 'En cours' },
-            { value: 'finished', label: 'Termine' },
+            { value: 'finished', label: 'Terminé' },
           ]"
         />
       </div>
@@ -170,14 +170,14 @@
         <template v-if="!editingMatch">
           <BaseSelect
             v-model="matchForm.team_1_id"
-            label="Equipe 1"
-            placeholder="Selectionnez une equipe"
+            label="Équipe 1"
+            placeholder="Sélectionnez une équipe"
             :options="teamOptions"
           />
           <BaseSelect
             v-model="matchForm.team_2_id"
-            label="Equipe 2"
-            placeholder="Selectionnez une equipe"
+            label="Équipe 2"
+            placeholder="Sélectionnez une équipe"
             :options="teamOptions"
           />
           <BaseInput v-model="matchForm.scheduled_at" label="Date et heure" type="datetime-local" />
@@ -189,13 +189,13 @@
             <strong class="text-text-primary">{{ editingMatch.team_2?.name }}</strong>
           </p>
           <div class="grid grid-cols-2 gap-4">
-            <BaseInput v-model="matchForm.score_1" label="Score Equipe 1" type="number" />
-            <BaseInput v-model="matchForm.score_2" label="Score Equipe 2" type="number" />
+            <BaseInput v-model="matchForm.score_1" label="Score Équipe 1" type="number" />
+            <BaseInput v-model="matchForm.score_2" label="Score Équipe 2" type="number" />
           </div>
           <BaseSelect
             v-model="matchForm.winner_id"
             label="Vainqueur"
-            placeholder="Selectionnez le vainqueur"
+            placeholder="Sélectionnez le vainqueur"
             :options="winnerOptions"
           />
         </template>
@@ -214,7 +214,7 @@
     <ConfirmDialog
       v-model="showDeleteConfirm"
       title="Supprimer ce tournoi ?"
-      :message="`Voulez-vous vraiment supprimer '${deletingTournament?.name}' ? Tous les matchs et inscriptions seront supprimes.`"
+      :message="`Voulez-vous vraiment supprimer '${deletingTournament?.name}' ? Tous les matchs et inscriptions seront supprimés.`"
       confirm-label="Supprimer"
       variant="danger"
       :loading="deletingLoading"
@@ -294,9 +294,9 @@ const teamOptions = computed(() =>
 const winnerOptions = computed(() => {
   if (!editingMatch.value) return []
   return [
-    { value: '', label: 'Aucun (pas encore joue)' },
-    { value: editingMatch.value.team_1_id, label: editingMatch.value.team_1?.name || 'Equipe 1' },
-    { value: editingMatch.value.team_2_id, label: editingMatch.value.team_2?.name || 'Equipe 2' },
+    { value: '', label: 'Aucun (pas encore joué)' },
+    { value: editingMatch.value.team_1_id, label: editingMatch.value.team_1?.name || 'Équipe 1' },
+    { value: editingMatch.value.team_2_id, label: editingMatch.value.team_2?.name || 'Équipe 2' },
   ]
 })
 
@@ -340,11 +340,11 @@ async function fetchAll() {
 }
 
 async function adminUnregister(tournamentId: string, teamId: string, teamName?: string) {
-  if (!confirm(`Retirer ${teamName || 'cette equipe'} du tournoi ?`)) return
+  if (!confirm(`Retirer ${teamName || 'cette équipe'} du tournoi ?`)) return
   try {
     const token = await getToken()
     await api.delete(`/tournaments/${tournamentId}/registrations/${teamId}`, token)
-    notificationStore.show(`${teamName || 'Equipe'} retiree du tournoi.`, 'success')
+    notificationStore.show(`${teamName || 'Équipe'} retirée du tournoi.`, 'success')
     await fetchAll()
   } catch (e: any) {
     notificationStore.show(e.message || 'Erreur', 'error')
@@ -383,10 +383,10 @@ async function saveTournament() {
     }
     if (editingTournament.value) {
       await api.patch(`/tournaments/${editingTournament.value.id}`, payload, token)
-      notificationStore.show('Tournoi mis a jour', 'success')
+      notificationStore.show('Tournoi mis à jour', 'success')
     } else {
       await api.post('/tournaments', payload, token)
-      notificationStore.show('Tournoi cree !', 'success')
+      notificationStore.show('Tournoi créé !', 'success')
     }
     showTournamentModal.value = false
     await fetchAll()
@@ -409,7 +409,7 @@ async function changeStatus() {
   try {
     const token = await getToken()
     await api.patch(`/tournaments/${statusTournament.value.id}`, { status: newStatus.value }, token)
-    notificationStore.show('Statut mis a jour', 'success')
+    notificationStore.show('Statut mis à jour', 'success')
     showStatusModal.value = false
     await fetchAll()
   } catch (e: any) {
@@ -430,7 +430,7 @@ async function deleteTournament() {
   try {
     const token = await getToken()
     await api.delete(`/tournaments/${deletingTournament.value.id}`, token)
-    notificationStore.show('Tournoi supprime', 'success')
+    notificationStore.show('Tournoi supprimé', 'success')
     showDeleteConfirm.value = false
     await fetchAll()
   } catch (e: any) {
@@ -472,7 +472,7 @@ async function saveMatch() {
       if (matchForm.value.winner_id) payload.winner_id = matchForm.value.winner_id
       else payload.winner_id = null
       await api.patch(`/tournaments/matches/${editingMatch.value.id}`, payload, token)
-      notificationStore.show('Score mis a jour', 'success')
+      notificationStore.show('Score mis à jour', 'success')
     } else {
       await api.post('/tournaments/matches', {
         tournament_id: matchTournamentId.value,
@@ -480,7 +480,7 @@ async function saveMatch() {
         team_2_id: matchForm.value.team_2_id,
         scheduled_at: matchForm.value.scheduled_at || null,
       }, token)
-      notificationStore.show('Match planifie !', 'success')
+      notificationStore.show('Match planifié !', 'success')
     }
     showMatchModal.value = false
     await fetchAll()

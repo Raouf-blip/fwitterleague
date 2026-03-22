@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Administration" subtitle="Gestion complete de la plateforme." />
+    <PageHeader title="Administration" subtitle="Gestion complète de la plateforme." />
 
     <!-- Stats Row -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -14,7 +14,7 @@
     <div class="flex flex-wrap gap-3 mb-8">
       <BaseButton variant="primary" to="/admin/tournaments">
         <template #icon><Trophy :size="16" /></template>
-        Gerer les tournois
+        Gérer les tournois
       </BaseButton>
       <BaseButton variant="secondary" @click="activeSection = 'users'">
         <template #icon><Users :size="16" /></template>
@@ -22,7 +22,7 @@
       </BaseButton>
       <BaseButton variant="secondary" @click="activeSection = 'teams'">
         <template #icon><Shield :size="16" /></template>
-        Equipes
+        Équipes
       </BaseButton>
     </div>
 
@@ -43,14 +43,14 @@
               <BaseSelect
                 v-model="roleFilter"
                 :options="roleOptions"
-                placeholder="Tous les roles"
+                placeholder="Tous les rôles"
                 class="w-40"
               />
             </div>
           </div>
 
           <div v-if="filteredUsers.length === 0" class="text-center text-text-muted py-10 text-sm">
-            Aucun utilisateur trouve.
+            Aucun utilisateur trouvé.
           </div>
 
           <div v-else class="overflow-x-auto">
@@ -60,7 +60,7 @@
                   <th class="px-5 py-3">Joueur</th>
                   <th class="px-5 py-3 hidden sm:table-cell">Riot ID</th>
                   <th class="px-5 py-3 hidden md:table-cell">Discord</th>
-                  <th class="px-5 py-3">Role</th>
+                  <th class="px-5 py-3">Rôle</th>
                   <th class="px-5 py-3 hidden md:table-cell">Rang</th>
                   <th class="px-5 py-3 hidden lg:table-cell">Statut</th>
                   <th class="px-5 py-3 text-right">Actions</th>
@@ -134,23 +134,23 @@
       <div v-if="activeSection === 'teams'">
         <BaseCard :hoverable="false" class="!p-0 overflow-hidden">
           <div class="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="text-lg font-bold text-text-primary">Equipes ({{ teams.length }})</h2>
+            <h2 class="text-lg font-bold text-text-primary">Équipes ({{ teams.length }})</h2>
             <BaseInput
               v-model="teamSearch"
-              placeholder="Rechercher une equipe..."
+              placeholder="Rechercher une équipe..."
               class="w-56"
             />
           </div>
 
           <div v-if="filteredTeams.length === 0" class="text-center text-text-muted py-10 text-sm">
-            Aucune equipe trouvee.
+            Aucune équipe trouvée.
           </div>
 
           <div v-else class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-border text-text-muted text-left">
-                  <th class="px-5 py-3">Equipe</th>
+                  <th class="px-5 py-3">Équipe</th>
                   <th class="px-5 py-3 hidden sm:table-cell">Capitaine</th>
                   <th class="px-5 py-3 text-center">Membres</th>
                   <th class="px-5 py-3 hidden md:table-cell">Statut</th>
@@ -181,7 +181,7 @@
                     {{ t.members?.length || 0 }}/6
                   </td>
                   <td class="px-5 py-3 hidden md:table-cell">
-                    <BaseBadge v-if="t.is_locked" variant="danger" size="sm">Verrouille</BaseBadge>
+                    <BaseBadge v-if="t.is_locked" variant="danger" size="sm">Verrouillé</BaseBadge>
                     <BaseBadge v-else variant="success" size="sm">Ouvert</BaseBadge>
                   </td>
                   <td class="px-5 py-3">
@@ -207,14 +207,14 @@
     </template>
 
     <!-- Role Change Modal -->
-    <BaseModal v-model="showRoleModal" title="Changer le role" size="sm">
+    <BaseModal v-model="showRoleModal" title="Changer le rôle" size="sm">
       <div class="space-y-4">
         <p class="text-sm text-text-secondary">
-          Modifier le role de <strong class="text-text-primary">{{ selectedUser?.username }}</strong>
+          Modifier le rôle de <strong class="text-text-primary">{{ selectedUser?.username }}</strong>
         </p>
         <BaseSelect
           v-model="newRole"
-          label="Nouveau role"
+          label="Nouveau rôle"
           :options="[
             { value: 'user', label: 'Utilisateur' },
             { value: 'admin', label: 'Admin' },
@@ -234,7 +234,7 @@
     <ConfirmDialog
       v-model="showDeleteUserConfirm"
       title="Supprimer cet utilisateur ?"
-      :message="`Voulez-vous vraiment supprimer le compte de ${selectedUser?.username} ? Cette action est irreversible.`"
+      :message="`Voulez-vous vraiment supprimer le compte de ${selectedUser?.username} ? Cette action est irréversible.`"
       confirm-label="Supprimer"
       variant="danger"
       :loading="deletingUser"
@@ -244,8 +244,8 @@
     <!-- Delete Team Confirm -->
     <ConfirmDialog
       v-model="showDeleteTeamConfirm"
-      title="Dissoudre cette equipe ?"
-      :message="`Voulez-vous vraiment dissoudre l'equipe ${selectedTeam?.name} [${selectedTeam?.tag}] ? Tous les membres seront retires.`"
+      title="Dissoudre cette équipe ?"
+      :message="`Voulez-vous vraiment dissoudre l'équipe ${selectedTeam?.name} [${selectedTeam?.tag}] ? Tous les membres seront retirés.`"
       confirm-label="Dissoudre"
       variant="danger"
       :loading="deletingTeam"
@@ -326,7 +326,7 @@ const stats = computed(() => {
     { label: 'Admins', value: admins, color: 'text-gold' },
     { label: 'Capitaines', value: captains, color: 'text-cyan' },
     { label: 'Agents libres', value: agents, color: 'text-success' },
-    { label: 'Equipes', value: totalTeams, color: 'text-text-primary' },
+    { label: 'Équipes', value: totalTeams, color: 'text-text-primary' },
     { label: 'Tournois', value: totalTournaments, color: 'text-gold' },
   ]
 })
@@ -403,11 +403,11 @@ async function changeRole() {
   try {
     const token = await getToken()
     await api.patch(`/profiles/${selectedUser.value.id}/role`, { role: newRole.value }, token)
-    notificationStore.show(`Role de ${selectedUser.value.username} mis a jour`, 'success')
+    notificationStore.show(`Rôle de ${selectedUser.value.username} mis à jour`, 'success')
     showRoleModal.value = false
     await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur changement de role', 'error')
+    notificationStore.show(e.message || 'Erreur changement de rôle', 'error')
   } finally {
     changingRole.value = false
   }
@@ -419,7 +419,7 @@ async function deleteUser() {
   try {
     const token = await getToken()
     await api.delete(`/profiles/${selectedUser.value.id}`, token)
-    notificationStore.show(`Compte de ${selectedUser.value.username} supprime`, 'success')
+    notificationStore.show(`Compte de ${selectedUser.value.username} supprimé`, 'success')
     showDeleteUserConfirm.value = false
     await fetchAll()
   } catch (e: any) {
@@ -441,11 +441,11 @@ async function deleteTeam() {
   try {
     const token = await getToken()
     await api.delete(`/teams/${selectedTeam.value.id}`, token)
-    notificationStore.show(`Equipe ${selectedTeam.value.name} dissoute`, 'success')
+    notificationStore.show(`Équipe ${selectedTeam.value.name} dissoute`, 'success')
     showDeleteTeamConfirm.value = false
     await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur suppression equipe', 'error')
+    notificationStore.show(e.message || 'Erreur suppression équipe', 'error')
   } finally {
     deletingTeam.value = false
   }

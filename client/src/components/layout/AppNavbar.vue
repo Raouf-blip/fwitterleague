@@ -91,7 +91,7 @@ Simple mais classe.
                     @click="handleSignOut"
                   >
                     <LogOut :size="16" />
-                    Deconnexion
+                    Déconnexion
                   </button>
                 </div>
               </Transition>
@@ -188,7 +188,7 @@ const navLinks = computed(() => {
   const links = [
     { to: "/tournaments", label: "Tournois", icon: Award },
     { to: "/agents", label: "Mercato", icon: Users },
-    { to: "/teams", label: "Equipes", icon: Shield },
+    { to: "/teams", label: "Équipes", icon: Shield },
     { to: "/rules", label: "Règlement", icon: BookOpen },
     { to: "/contact", label: "Contact", icon: MessageCircle },
   ];

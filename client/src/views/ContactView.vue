@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Contact" subtitle="Une question, un probleme ou une suggestion ? Contactez l'equipe FwitterLeague sur Discord." />
+    <PageHeader title="Contact" subtitle="Une question, un problème ou une suggestion ? Contactez l'équipe FwitterLeague sur Discord." />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
     <BaseCard v-for="member in team" :key="member.name" :hoverable="false" class="!p-6 text-center">
@@ -27,5 +27,6 @@ const team = [
   { name: 'Raouf', discord: 'raouf_tvtime' },
   { name: 'Cyp', discord: 'itscyp' },
   { name: 'Mathys', discord: 'edouardobrazil' },
+  { name: 'Naasax', discord: 'naasax' },
 ]
 </script>

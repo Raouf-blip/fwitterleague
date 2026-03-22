@@ -18,7 +18,7 @@
             </span>
             <span class="flex items-center gap-1">
               <Users :size="14" />
-              {{ regCount }}/{{ tournament.max_teams }} equipes
+              {{ regCount }}/{{ tournament.max_teams }} équipes
             </span>
           </div>
           <!-- Progress bar -->
@@ -38,7 +38,7 @@
           :loading="registering"
           @click="registerTeam"
         >
-          Inscrire mon equipe
+          Inscrire mon équipe
         </BaseButton>
         <BaseButton
           v-else-if="isAlreadyRegistered && tournament?.status === 'upcoming'"
@@ -46,7 +46,7 @@
           :loading="registering"
           @click="unregisterTeam"
         >
-          Se desinscrire
+          Se désinscrire
         </BaseButton>
       </div>
     </BaseCard>
@@ -54,7 +54,7 @@
     <!-- Tabs -->
     <BaseTabs
       :tabs="[
-        { key: 'teams', label: 'Equipes', count: regCount },
+        { key: 'teams', label: 'Équipes', count: regCount },
         { key: 'matches', label: 'Matchs', count: matches.length },
         { key: 'standings', label: 'Classement' },
       ]"
@@ -67,7 +67,7 @@
         <BaseEmptyState
           v-if="registrations.length === 0"
           :icon="ShieldOff"
-          title="Aucune equipe inscrite"
+          title="Aucune équipe inscrite"
           description="Les inscriptions sont ouvertes, soyez les premiers !"
         />
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -86,7 +86,7 @@
           v-if="tournamentMatches.length === 0"
           :icon="Swords"
           title="Aucun match"
-          description="Les matchs n'ont pas encore ete planifies."
+          description="Les matchs n'ont pas encore été planifiés."
         />
         <div v-else class="space-y-2">
           <MatchCard v-for="match in tournamentMatches" :key="match.id" :match="match" />
@@ -99,14 +99,14 @@
           v-if="standings.length === 0"
           :icon="BarChart3"
           title="Classement indisponible"
-          description="Le classement sera disponible des que les matchs auront commence."
+          description="Le classement sera disponible dès que les matchs auront commencé."
         />
         <div v-else class="bg-surface border border-border rounded-xl overflow-hidden">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border text-text-muted text-left">
                 <th class="px-4 py-3 w-12">#</th>
-                <th class="px-4 py-3">Equipe</th>
+                <th class="px-4 py-3">Équipe</th>
                 <th class="px-4 py-3 text-center">V</th>
                 <th class="px-4 py-3 text-center">D</th>
                 <th class="px-4 py-3 text-center">%</th>
@@ -236,7 +236,7 @@ async function registerTeam() {
   try {
     const token = await getToken()
     await api.post(`/tournaments/${tournament.value!.id}/register`, {}, token)
-    notificationStore.show('Inscription reussie !', 'success')
+    notificationStore.show('Inscription réussie !', 'success')
     const data = await api.get(`/tournaments/${route.params.id}`)
     tournament.value = data
     registrations.value = data.registrations || []
@@ -252,12 +252,12 @@ async function unregisterTeam() {
   try {
     const token = await getToken()
     await api.post(`/tournaments/${tournament.value!.id}/unregister`, {}, token)
-    notificationStore.show('Desinscription reussie.', 'success')
+    notificationStore.show('Désinscription réussie.', 'success')
     const data = await api.get(`/tournaments/${route.params.id}`)
     tournament.value = data
     registrations.value = data.registrations || []
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur lors de la desinscription.', 'error')
+    notificationStore.show(e.message || 'Erreur lors de la désinscription.', 'error')
   } finally {
     registering.value = false
   }

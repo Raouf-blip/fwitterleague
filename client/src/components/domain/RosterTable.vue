@@ -19,6 +19,17 @@
             >
               {{ slot.member.profile.username }}
             </RouterLink>
+            <div v-if="slot.member.profile.preferred_roles?.length" class="flex items-center gap-1">
+              <BaseTooltip
+                v-for="role in slot.member.profile.preferred_roles"
+                :key="role"
+                :content="role"
+              >
+                <div class="flex items-center justify-center">
+                  <LolRoleIcon :role="role" :size="14" class="text-cyan" />
+                </div>
+              </BaseTooltip>
+            </div>
             <BaseBadge v-if="slot.member.role === 'Captain'" variant="gold" size="sm">
               Capitaine
             </BaseBadge>
@@ -62,7 +73,9 @@ import { UserMinus, UserPlus, Eye } from 'lucide-vue-next'
 import type { TeamMember } from '../../types'
 import BaseAvatar from '../ui/BaseAvatar.vue'
 import BaseBadge from '../ui/BaseBadge.vue'
+import BaseTooltip from '../ui/BaseTooltip.vue'
 import RankBadge from './RankBadge.vue'
+import LolRoleIcon from '../icons/LolRoleIcon.vue'
 
 const props = withDefaults(defineProps<{
   members: TeamMember[]

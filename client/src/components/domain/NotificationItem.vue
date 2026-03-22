@@ -37,13 +37,13 @@
         <span v-if="item.sender.rank"> ({{ item.sender.rank }})</span>
       </div>
       <div v-if="item.team && item.type === 'offer' && direction === 'inbox'" class="text-xs text-text-muted mt-1.5">
-        Equipe : <strong class="text-text-secondary">{{ item.team.name }} [{{ item.team.tag }}]</strong>
+        Équipe : <strong class="text-text-secondary">{{ item.team.name }} [{{ item.team.tag }}]</strong>
       </div>
       <div v-if="item.team && item.type === 'application' && direction === 'outbox'" class="text-xs text-text-muted mt-1.5">
         Vers : <strong class="text-text-secondary">{{ item.team.name }}</strong>
       </div>
       <div v-if="item.sender && item.type === 'offer' && direction === 'outbox'" class="text-xs text-text-muted mt-1.5">
-        Joueur invite : <strong class="text-text-secondary">{{ item.sender.username }}</strong>
+        Joueur invité : <strong class="text-text-secondary">{{ item.sender.username }}</strong>
       </div>
 
       <span class="text-[11px] text-text-muted block mt-2">{{ formatRelativeTime(item.created_at) }}</span>

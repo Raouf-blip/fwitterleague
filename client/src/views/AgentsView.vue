@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Mercato" subtitle="Joueurs a la recherche d'une equipe pour la saison." />
+    <PageHeader title="Mercato" subtitle="Joueurs à la recherche d'une équipe pour la saison." />
 
     <!-- Filters -->
     <div class="mb-6 bg-surface p-4 rounded-xl border border-border">
@@ -36,7 +36,7 @@
           class="text-xs font-bold text-text-muted hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <RefreshCw :size="14" />
-          Reinitialiser
+          Réinitialiser
         </button>
       </div>
 
@@ -116,7 +116,7 @@
       v-else-if="filteredAgents.length === 0"
       :icon="UserSearch"
       title="Aucun agent libre"
-      description="Aucun joueur ne correspond a vos criteres."
+      description="Aucun joueur ne correspond à vos critères."
     />
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <TransitionGroup name="list">
@@ -226,9 +226,9 @@ async function sendInvite(message: string) {
     const token = await getToken()
     await api.post(`/recruitment/invite/${selectedAgent.value.id}`, {
       team_id: authStore.profile?.team?.id,
-      message: message || `L'equipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
+      message: message || `L'équipe ${authStore.profile?.team?.name} souhaite vous recruter.`,
     }, token)
-    notificationStore.show(`Invitation envoyee a ${selectedAgent.value.username} !`, 'success')
+    notificationStore.show(`Invitation envoyée à ${selectedAgent.value.username} !`, 'success')
     showInvite.value = false
     await fetchData()
   } catch (err: any) {

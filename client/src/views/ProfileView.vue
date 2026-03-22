@@ -18,7 +18,7 @@
           </div>
 
           <div class="flex items-center gap-3 mt-1 flex-wrap">
-            <span class="text-sm text-gold font-bold">{{ authStore.profile.riot_id || 'Riot ID non configure' }}</span>
+            <span class="text-sm text-gold font-bold">{{ authStore.profile.riot_id || 'Riot ID non configuré' }}</span>
             <a
               v-if="authStore.profile.riot_id"
               :href="getOpggUrl(authStore.profile.riot_id)"
@@ -70,18 +70,18 @@
           </div>
 
           <BaseBadge v-if="authStore.profile.is_looking_for_team && !team" variant="success" size="md" class="mt-3">
-            Cherche une equipe
+            Cherche une équipe
           </BaseBadge>
         </div>
 
         <div class="flex flex-col sm:flex-row md:flex-col gap-2 w-full sm:w-auto">
           <BaseButton variant="secondary" size="md" @click="showSettings = true" class="w-full">
             <template #icon><Settings :size="18" /></template>
-            Parametres
+            Paramètres
           </BaseButton>
           <BaseButton variant="ghost" size="sm" @click="logout" class="w-full text-danger hover:bg-danger/10">
             <template #icon><LogOut :size="16" /></template>
-            Deconnexion
+            Déconnexion
           </BaseButton>
         </div>
       </div>
@@ -93,7 +93,7 @@
         <!-- Bio -->
         <BaseCard :hoverable="false" title="Bio">
           <p class="text-text-secondary leading-relaxed whitespace-pre-wrap">
-            {{ authStore.profile.bio || "Vous n'avez pas encore de bio. Ajoutez-en une dans les parametres pour vous presenter aux autres joueurs !" }}
+            {{ authStore.profile.bio || "Vous n'avez pas encore de bio. Ajoutez-en une dans les paramètres pour vous présenter aux autres joueurs !" }}
           </p>
         </BaseCard>
 
@@ -143,10 +143,10 @@
           </BaseCard>
 
           <!-- Applications -->
-          <BaseCard :hoverable="false" title="Candidatures envoyees">
+          <BaseCard :hoverable="false" title="Candidatures envoyées">
             <div v-if="sentApplications.length === 0" class="text-center py-8">
               <Send :size="32" class="mx-auto text-text-muted/30 mb-2" />
-              <p class="text-sm text-text-muted">Aucune candidature envoyee.</p>
+              <p class="text-sm text-text-muted">Aucune candidature envoyée.</p>
             </div>
             <div v-else class="space-y-3">
               <div
@@ -164,7 +164,7 @@
                   :variant="app.status === 'accepted' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'"
                   size="sm"
                 >
-                  {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepte' : 'Refuse' }}
+                  {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé' }}
                 </BaseBadge>
               </div>
             </div>
@@ -175,7 +175,7 @@
       <!-- Sidebar -->
       <div class="space-y-6">
         <!-- Team Card -->
-        <BaseCard :hoverable="false" title="Mon Equipe">
+        <BaseCard :hoverable="false" title="Mon Équipe">
           <div v-if="team" class="space-y-4">
             <div class="flex items-center gap-4 p-3 rounded-xl bg-gold/5 border border-gold/20">
               <div v-if="team.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
@@ -191,7 +191,7 @@
             </div>
             <div class="flex gap-2">
               <BaseButton variant="secondary" size="md" :to="'/teams/' + team.id" class="flex-1">
-                Gerer l'equipe
+                Gérer l'équipe
               </BaseButton>
               <BaseButton
                 v-if="!authStore.profile?.is_captain"
@@ -207,9 +207,9 @@
           
           <div v-else-if="!creatingTeam" class="text-center py-6">
             <ShieldPlus :size="48" class="mx-auto text-text-muted/20 mb-3" />
-            <p class="text-sm text-text-secondary mb-4">Vous n'avez pas encore d'equipe.</p>
+            <p class="text-sm text-text-secondary mb-4">Vous n'avez pas encore d'équipe.</p>
             <BaseButton variant="primary" size="md" @click="creatingTeam = true" class="w-full">
-              Creer une equipe
+              Créer une équipe
             </BaseButton>
           </div>
 
@@ -250,7 +250,7 @@
                   {{ authStore.profile.is_looking_for_team && !team ? 'Visible' : 'Invisible' }}
                 </span>
                 <span class="text-sm font-bold text-text-primary">
-                  {{ authStore.profile.is_looking_for_team && !team ? 'Je suis Agent Libre' : 'Recherche fermee' }}
+                  {{ authStore.profile.is_looking_for_team && !team ? 'Je suis Agent Libre' : 'Recherche fermée' }}
                 </span>
               </div>
 
@@ -276,7 +276,7 @@
             <div class="px-1">
               <p v-if="team" class="text-[10px] text-gold font-black uppercase tracking-widest flex items-center gap-2">
                 <Shield :size="12" />
-                Statut verrouille (En equipe)
+                Statut verrouillé (En équipe)
               </p>
               <p v-else class="text-[10px] text-text-muted leading-relaxed uppercase font-bold tracking-wider">
                 {{ authStore.profile.is_looking_for_team ? 'Vous apparaissez dans la liste des agents. Cliquez pour vous retirer.' : 'Activez pour que les capitaines puissent vous recruter.' }}
@@ -288,7 +288,7 @@
     </div>
 
     <!-- Settings Modal -->
-    <BaseModal v-model="showSettings" title="Parametres du profil" size="md">
+    <BaseModal v-model="showSettings" title="Paramètres du profil" size="md">
       <ProfileSettingsForm
         :username="authStore.profile.username"
         :initial-bio="authStore.profile.bio || ''"
@@ -307,9 +307,9 @@
     <!-- Leave Team Confirm -->
     <ConfirmDialog
       v-model="showLeaveConfirm"
-      title="Quitter l'equipe"
-      :message="`Voulez-vous vraiment quitter ${team?.name} [${team?.tag}] ? Cette action est irreversible.`"
-      confirm-label="Quitter l'equipe"
+      title="Quitter l'équipe"
+      :message="`Voulez-vous vraiment quitter ${team?.name} [${team?.tag}] ? Cette action est irréversible.`"
+      confirm-label="Quitter l'équipe"
       variant="danger"
       :loading="leavingTeam"
       @confirm="leaveTeam"
@@ -419,7 +419,7 @@ async function toggleRecruitmentStatus() {
     await api.patch('/profiles/me', { is_looking_for_team: newStatus }, token)
     await authStore.fetchProfile()
     notificationStore.show(
-      newStatus ? 'Vous etes maintenant en recherche d\'equipe !' : 'Vous ne recherchez plus d\'equipe.', 
+      newStatus ? 'Vous êtes maintenant en recherche d\'\u00e9quipe !' : 'Vous ne recherchez plus d\'\u00e9quipe.', 
       'success'
     )
   } catch (err: any) {
@@ -470,7 +470,7 @@ async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_u
     // Step 3: Refresh local store
     await authStore.fetchProfile()
     
-    notificationStore.show('Profil mis a jour et synchronise !', 'success')
+    notificationStore.show('Profil mis à jour et synchronisé !', 'success')
     showSettings.value = false
   } catch (err: any) {
     notificationStore.show('Erreur: ' + err.message, 'error')
@@ -488,7 +488,7 @@ async function createTeam(data: { name: string; tag: string; description: string
     creatingTeam.value = false
     await authStore.fetchProfile()
     await fetchData()
-    notificationStore.show('Equipe creee avec succes !', 'success')
+    notificationStore.show('Équipe créée avec succès !', 'success')
   } catch (err: any) {
     notificationStore.show('Erreur: ' + err.message, 'error')
   } finally {
@@ -502,11 +502,11 @@ async function leaveTeam() {
   try {
     const token = await getToken()
     await api.post(`/teams/${team.value.id}/leave`, {}, token)
-    notificationStore.show('Vous avez quitte l\'equipe.', 'success')
+    notificationStore.show('Vous avez quitté l\'\u00e9quipe.', 'success')
     showLeaveConfirm.value = false
     await authStore.fetchProfile()
   } catch (err: any) {
-    notificationStore.show(err.message || 'Erreur lors du depart', 'error')
+    notificationStore.show(err.message || 'Erreur lors du départ', 'error')
   } finally {
     leavingTeam.value = false
   }

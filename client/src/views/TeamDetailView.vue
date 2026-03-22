@@ -15,7 +15,7 @@
           <div class="flex items-center gap-3 flex-wrap">
             <h1 class="text-2xl font-extrabold text-text-primary">{{ team.name }}</h1>
             <BaseBadge variant="gold">[{{ team.tag }}]</BaseBadge>
-            <BaseBadge v-if="team.is_locked" variant="danger" size="md">Roster verrouille</BaseBadge>
+            <BaseBadge v-if="team.is_locked" variant="danger" size="md">Roster verrouillé</BaseBadge>
           </div>
           <p v-if="team.description" class="text-sm text-text-secondary mt-2">{{ team.description }}</p>
         </div>
@@ -71,7 +71,7 @@
     <ConfirmDialog
       v-model="showKickConfirm"
       title="Renvoyer un joueur"
-      :message="`Voulez-vous renvoyer ${kickTarget?.profile?.username} de l'equipe ?`"
+      :message="`Voulez-vous renvoyer ${kickTarget?.profile?.username} de l'équipe ?`"
       confirm-label="Renvoyer"
       variant="danger"
       :loading="kicking"
@@ -81,9 +81,9 @@
     <!-- Disband Confirm -->
     <ConfirmDialog
       v-model="showDisband"
-      title="Dissoudre l'equipe ?"
-      :message="`Voulez-vous vraiment dissoudre ${team?.name} [${team?.tag}] ? Tous les membres seront retires et cette action est irreversible.`"
-      confirm-label="Dissoudre l'equipe"
+      title="Dissoudre l'équipe ?"
+      :message="`Voulez-vous vraiment dissoudre ${team?.name} [${team?.tag}] ? Tous les membres seront retirés et cette action est irréversible.`"
+      confirm-label="Dissoudre l'équipe"
       variant="danger"
       :loading="disbanding"
       @confirm="disbandTeam"
@@ -98,7 +98,7 @@
     />
 
     <!-- Edit Team Modal -->
-    <BaseModal v-model="showEdit" title="Modifier l'equipe" size="md">
+    <BaseModal v-model="showEdit" title="Modifier l'équipe" size="md">
       <TeamCreateForm
         :initial-name="team.name"
         :initial-tag="team.tag"
@@ -112,9 +112,9 @@
     </BaseModal>
   </div>
 
-  <BaseEmptyState v-else :icon="ShieldOff" title="Equipe introuvable" description="Cette equipe n'existe pas ou a ete dissoute.">
+  <BaseEmptyState v-else :icon="ShieldOff" title="Équipe introuvable" description="Cette équipe n'existe pas ou a été dissoute.">
     <template #action>
-      <BaseButton to="/teams">Retour aux equipes</BaseButton>
+      <BaseButton to="/teams">Retour aux équipes</BaseButton>
     </template>
   </BaseEmptyState>
 </template>
@@ -187,9 +187,9 @@ async function doApply(message: string) {
   try {
     const token = await getToken()
     await api.post(`/recruitment/apply/${team.value!.id}`, {
-      message: message || `${authStore.profile?.username} souhaite rejoindre votre equipe.`,
+      message: message || `${authStore.profile?.username} souhaite rejoindre votre équipe.`,
     }, token)
-    notificationStore.show('Candidature envoyee !', 'success')
+    notificationStore.show('Candidature envoyée !', 'success')
     showApply.value = false
   } catch (e: any) {
     notificationStore.show(e.message, 'error')
@@ -204,12 +204,12 @@ async function updateTeam(data: { name: string; tag: string; description: string
     const token = await getToken()
     const updated = await api.patch(`/teams/${team.value!.id}`, data, token)
     team.value = { ...team.value!, ...updated }
-    notificationStore.show('Equipe mise a jour !', 'success')
+    notificationStore.show('Équipe mise à jour !', 'success')
     showEdit.value = false
     // Refresh auth store to sync profile's team info if needed
     await authStore.fetchProfile()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur lors de la mise a jour', 'error')
+    notificationStore.show(e.message || 'Erreur lors de la mise à jour', 'error')
   } finally {
     updating.value = false
   }
@@ -226,7 +226,7 @@ async function doKick() {
   try {
     const token = await getToken()
     await api.delete(`/teams/${team.value!.id}/members/${kickTarget.value.profile_id}`, token)
-    notificationStore.show('Joueur expulse.', 'success')
+    notificationStore.show('Joueur expulsé.', 'success')
     showKickConfirm.value = false
     await fetchTeamData()
   } catch (e: any) {
@@ -241,7 +241,7 @@ async function disbandTeam() {
   try {
     const token = await getToken()
     await api.delete(`/teams/${team.value!.id}`, token)
-    notificationStore.show('Equipe dissoute.', 'success')
+    notificationStore.show('Équipe dissoute.', 'success')
     await authStore.fetchProfile()
     router.push('/teams')
   } catch (e: any) {
@@ -255,7 +255,7 @@ async function leaveTeam() {
   try {
     const token = await getToken()
     await api.post(`/teams/${team.value!.id}/leave`, {}, token)
-    notificationStore.show('Vous avez quitte l\'equipe.', 'success')
+    notificationStore.show('Vous avez quitté l\'\u00e9quipe.', 'success')
     await authStore.fetchProfile()
     await fetchTeamData()
   } catch (e: any) {

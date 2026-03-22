@@ -28,12 +28,12 @@ export const LOL_ROLES = [
 
 export const STATUS_MAP = {
   pending: { label: 'En attente', color: 'warning' },
-  accepted: { label: 'Accepte', color: 'success' },
-  rejected: { label: 'Refuse', color: 'danger' },
+  accepted: { label: 'Accepté', color: 'success' },
+  rejected: { label: 'Refusé', color: 'danger' },
 } as const
 
 export const TOURNAMENT_STATUS_MAP = {
   upcoming: { label: 'Inscriptions ouvertes', color: 'cyan' },
   ongoing: { label: 'En cours', color: 'gold' },
-  finished: { label: 'Termine', color: 'muted' },
+  finished: { label: 'Terminé', color: 'muted' },
 } as const

@@ -1,11 +1,11 @@
 <template>
   <div>
-    <PageHeader title="Centre de Notifications" subtitle="Gerez vos invitations, candidatures et alertes." />
+    <PageHeader title="Centre de Notifications" subtitle="Gérez vos invitations, candidatures et alertes." />
 
     <BaseTabs
       :tabs="[
-        { key: 'inbox', label: 'Boite de reception', count: inbox.length },
-        { key: 'outbox', label: 'Envoyes', count: outbox.length },
+        { key: 'inbox', label: 'Boîte de réception', count: inbox.length },
+        { key: 'outbox', label: 'Envoyés', count: outbox.length },
       ]"
       v-model="activeTab"
     />
@@ -19,8 +19,8 @@
           <BaseEmptyState
             v-if="inbox.length === 0"
             :icon="InboxIcon"
-            title="Rien a signaler"
-            description="Votre boite de reception est vide."
+            title="Rien à signaler"
+            description="Votre boîte de réception est vide."
           />
           <div v-else class="space-y-3">
             <TransitionGroup name="list">
@@ -42,8 +42,8 @@
           <BaseEmptyState
             v-if="outbox.length === 0"
             :icon="Send"
-            title="Aucune demande envoyee"
-            description="Vous n'avez envoye aucune candidature ou invitation."
+            title="Aucune demande envoyée"
+            description="Vous n'avez envoyé aucune candidature ou invitation."
           />
           <div v-else class="space-y-3">
             <NotificationItem
@@ -132,7 +132,7 @@ async function respond(item: any, status: 'accepted' | 'rejected') {
     await api.patch(`/recruitment/${item.id}/respond`, { status }, token)
     await authStore.fetchProfile()
     await fetchData()
-    notificationStore.show('Reponse enregistree !', 'success')
+    notificationStore.show('Réponse enregistrée !', 'success')
   } catch (e: any) {
     notificationStore.show(e.message || 'Une erreur est survenue', 'error')
   }

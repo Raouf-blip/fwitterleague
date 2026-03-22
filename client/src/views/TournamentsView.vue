@@ -1,13 +1,13 @@
 <template>
   <div>
-    <PageHeader title="Tournois & Competitions" subtitle="Suivez les evenements en cours et inscrivez votre equipe." />
+    <PageHeader title="Tournois & Compétitions" subtitle="Suivez les événements en cours et inscrivez votre équipe." />
 
     <BaseSpinner v-if="loading" />
     <BaseEmptyState
       v-else-if="tournaments.length === 0"
       :icon="Trophy"
       title="Aucun tournoi"
-      description="Aucun tournoi n'a ete cree pour le moment."
+      description="Aucun tournoi n'a été créé pour le moment."
     />
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <TransitionGroup name="list">
@@ -26,7 +26,7 @@
 
     <!-- Recent Matches -->
     <section v-if="matches.length > 0" class="mt-12">
-      <h2 class="text-xl font-bold text-text-primary mb-5 pb-3 border-b border-border">Matchs Recents</h2>
+      <h2 class="text-xl font-bold text-text-primary mb-5 pb-3 border-b border-border">Matchs Récents</h2>
       <div class="space-y-2">
         <MatchCard v-for="match in matches" :key="match.id" :match="match" />
       </div>
@@ -103,7 +103,7 @@ async function registerTeam(tournament: Tournament) {
   try {
     const token = await getToken()
     await api.post(`/tournaments/${tournament.id}/register`, {}, token)
-    notificationStore.show('Inscription reussie !', 'success')
+    notificationStore.show('Inscription réussie !', 'success')
     await fetchData()
   } catch (e: any) {
     notificationStore.show(e.message || "Erreur lors de l'inscription.", 'error')
@@ -117,10 +117,10 @@ async function unregisterTeam(tournament: Tournament) {
   try {
     const token = await getToken()
     await api.post(`/tournaments/${tournament.id}/unregister`, {}, token)
-    notificationStore.show('Desinscription reussie.', 'success')
+    notificationStore.show('Désinscription réussie.', 'success')
     await fetchData()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur lors de la desinscription.', 'error')
+    notificationStore.show(e.message || 'Erreur lors de la désinscription.', 'error')
   } finally {
     registeringId.value = null
   }

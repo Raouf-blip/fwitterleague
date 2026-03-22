@@ -1,13 +1,13 @@
 <template>
   <div>
-    <PageHeader title="Equipes" subtitle="Decouvrez les structures engagees dans la ligue." />
+    <PageHeader title="Équipes" subtitle="Découvrez les structures engagées dans la ligue." />
 
     <BaseSpinner v-if="loading" />
     <BaseEmptyState
       v-else-if="teams.length === 0"
       :icon="ShieldOff"
-      title="Aucune equipe"
-      description="Aucune equipe n'a ete creee pour le moment."
+      title="Aucune équipe"
+      description="Aucune équipe n'a été créée pour le moment."
     />
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <TransitionGroup name="list">
@@ -101,9 +101,9 @@ async function sendApplication(message: string) {
   try {
     const token = await getToken()
     await api.post(`/recruitment/apply/${selectedTeam.value.id}`, {
-      message: message || 'Je souhaite rejoindre votre equipe !',
+      message: message || 'Je souhaite rejoindre votre équipe !',
     }, token)
-    notificationStore.show('Candidature envoyee !', 'success')
+    notificationStore.show('Candidature envoyée !', 'success')
     showApply.value = false
     await fetchData()
   } catch (err: any) {
