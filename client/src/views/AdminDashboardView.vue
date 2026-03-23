@@ -190,6 +190,14 @@
                         <template #icon><Eye :size="14" /></template>
                       </BaseButton>
                       <BaseButton
+                        v-if="isSuperAdmin"
+                        variant="secondary"
+                        size="sm"
+                        @click="openManageMembers(t)"
+                      >
+                        <template #icon><UserCog :size="14" /></template>
+                      </BaseButton>
+                      <BaseButton
                         variant="danger"
                         size="sm"
                         @click="confirmDeleteTeam(t)"
@@ -251,12 +259,85 @@
       :loading="deletingTeam"
       @confirm="deleteTeam"
     />
+
+    <!-- Manage Members Modal -->
+    <BaseModal v-model="showMembersModal" :title="`Membres de ${managedTeam?.name || ''}`" size="md">
+      <div class="space-y-5">
+        <!-- Current members -->
+        <div>
+          <h3 class="text-xs font-black uppercase tracking-widest text-text-muted mb-3">Membres actuels</h3>
+          <div v-if="!managedTeam?.members?.length" class="text-sm text-text-muted text-center py-4">Aucun membre.</div>
+          <div v-else class="space-y-2">
+            <div
+              v-for="m in managedTeam?.members"
+              :key="m.profile_id"
+              class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
+            >
+              <div class="flex items-center gap-3">
+                <BaseAvatar :name="m.profile?.username" :src="m.profile?.avatar_url" size="sm" />
+                <div>
+                  <span class="text-sm font-semibold text-text-primary">{{ m.profile?.username }}</span>
+                  <BaseBadge v-if="m.role === 'Captain'" variant="gold" size="sm" class="ml-2">Capitaine</BaseBadge>
+                </div>
+              </div>
+              <BaseButton
+                v-if="m.profile_id !== managedTeam?.captain_id"
+                variant="danger"
+                size="sm"
+                :loading="removingMemberId === m.profile_id"
+                @click="removeMember(m.profile_id)"
+              >
+                <template #icon><UserMinus :size="14" /></template>
+                Retirer
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add a player -->
+        <div>
+          <h3 class="text-xs font-black uppercase tracking-widest text-text-muted mb-3">Ajouter un joueur</h3>
+          <div class="flex gap-2">
+            <BaseInput
+              v-model="addPlayerSearch"
+              placeholder="Rechercher un joueur..."
+              class="flex-1"
+            />
+          </div>
+          <div v-if="addPlayerResults.length > 0" class="mt-2 space-y-1 max-h-48 overflow-y-auto">
+            <div
+              v-for="p in addPlayerResults"
+              :key="p.id"
+              class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+            >
+              <div class="flex items-center gap-3">
+                <BaseAvatar :name="p.username" :src="p.avatar_url" size="sm" />
+                <div>
+                  <span class="text-sm font-semibold text-text-primary">{{ p.username }}</span>
+                  <span v-if="p.riot_id" class="text-xs text-text-muted ml-2">{{ p.riot_id }}</span>
+                </div>
+              </div>
+              <BaseButton
+                variant="primary"
+                size="sm"
+                :loading="addingPlayerId === p.id"
+                @click="addMember(p.id)"
+              >
+                <template #icon><UserPlus :size="14" /></template>
+                Ajouter
+              </BaseButton>
+            </div>
+          </div>
+          <p v-else-if="addPlayerSearch.length >= 2" class="text-xs text-text-muted mt-2">Aucun joueur libre trouvé.</p>
+        </div>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ShieldCheck, Trash2, Eye, Trophy, Users, Shield } from 'lucide-vue-next'
+import { ShieldCheck, Trash2, Eye, Trophy, Users, Shield, UserCog, UserPlus, UserMinus } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -304,6 +385,13 @@ const deletingUser = ref(false)
 const showDeleteTeamConfirm = ref(false)
 const selectedTeam = ref<Team | null>(null)
 const deletingTeam = ref(false)
+
+// Manage members
+const showMembersModal = ref(false)
+const managedTeam = ref<any>(null)
+const addPlayerSearch = ref('')
+const addingPlayerId = ref<string | null>(null)
+const removingMemberId = ref<string | null>(null)
 
 const isSuperAdmin = computed(() => authStore.profile?.role === 'superadmin')
 
@@ -354,6 +442,19 @@ const filteredTeams = computed(() => {
     t.name.toLowerCase().includes(q) ||
     t.tag.toLowerCase().includes(q)
   )
+})
+
+const addPlayerResults = computed(() => {
+  if (addPlayerSearch.value.length < 2 || !managedTeam.value) return []
+  const q = addPlayerSearch.value.toLowerCase()
+  const memberIds = new Set(managedTeam.value.members?.map((m: any) => m.profile_id) || [])
+  return users.value.filter(u => {
+    if (memberIds.has(u.id)) return false
+    // Only show players without a team
+    const inAnyTeam = teams.value.some(t => t.members?.some((m: any) => m.profile_id === u.id))
+    if (inAnyTeam) return false
+    return u.username.toLowerCase().includes(q) || u.riot_id?.toLowerCase().includes(q)
+  }).slice(0, 8)
 })
 
 function getCaptainName(team: Team) {
@@ -448,6 +549,56 @@ async function deleteTeam() {
     notificationStore.show(e.message || 'Erreur suppression équipe', 'error')
   } finally {
     deletingTeam.value = false
+  }
+}
+
+// --- Manage members ---
+async function openManageMembers(team: any) {
+  // Fetch fresh team detail with members
+  try {
+    const data = await api.get(`/teams/${team.id}`)
+    managedTeam.value = data
+    addPlayerSearch.value = ''
+    showMembersModal.value = true
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur chargement équipe', 'error')
+  }
+}
+
+async function addMember(profileId: string) {
+  if (!managedTeam.value) return
+  addingPlayerId.value = profileId
+  try {
+    const token = await getToken()
+    await api.post(`/teams/${managedTeam.value.id}/members`, { profile_id: profileId }, token)
+    notificationStore.show('Joueur ajouté à l\'équipe', 'success')
+    // Refresh
+    const data = await api.get(`/teams/${managedTeam.value.id}`)
+    managedTeam.value = data
+    addPlayerSearch.value = ''
+    await fetchAll()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur ajout joueur', 'error')
+  } finally {
+    addingPlayerId.value = null
+  }
+}
+
+async function removeMember(profileId: string) {
+  if (!managedTeam.value) return
+  removingMemberId.value = profileId
+  try {
+    const token = await getToken()
+    await api.delete(`/teams/${managedTeam.value.id}/members/${profileId}`, token)
+    notificationStore.show('Joueur retiré de l\'équipe', 'success')
+    // Refresh
+    const data = await api.get(`/teams/${managedTeam.value.id}`)
+    managedTeam.value = data
+    await fetchAll()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur retrait joueur', 'error')
+  } finally {
+    removingMemberId.value = null
   }
 }
 </script>
