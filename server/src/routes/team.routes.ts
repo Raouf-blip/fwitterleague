@@ -51,30 +51,41 @@ router.patch('/:id', authenticate, async (req: any, res) => {
   res.json(updatedTeam);
 });
 
-// Private: Disband team
+// Private: Disband team (captain or superadmin)
 router.delete('/:id', authenticate, async (req: any, res) => {
-  if (await checkTeamLock(req.params.id)) return res.status(403).json({ error: 'Impossible de dissoudre une équipe engagée dans un tournoi actif.' });
-
   const teamId = req.params.id;
+  const isSuperAdmin = req.user.role === 'superadmin';
+
+  if (!isSuperAdmin && await checkTeamLock(teamId)) {
+    return res.status(403).json({ error: 'Impossible de dissoudre une équipe engagée dans un tournoi actif.' });
+  }
+
   const { data: team } = await supabase.from('teams').select('captain_id, name').eq('id', teamId).single();
-  if (!team || team.captain_id !== req.user.id) return res.status(403).json({ error: 'Seul le capitaine peut dissoudre l\'équipe.' });
+  if (!team) return res.status(404).json({ error: 'Équipe introuvable.' });
+  if (!isSuperAdmin && team.captain_id !== req.user.id) {
+    return res.status(403).json({ error: 'Seul le capitaine peut dissoudre l\'équipe.' });
+  }
 
   const { data: members } = await supabase.from('team_members').select('profile_id').eq('team_id', teamId);
   const profileIds = members?.map(m => m.profile_id) || [];
 
-  // Notify members (except captain)
+  // Notify all members
+  const notifMessage = isSuperAdmin
+    ? `Votre équipe ${team.name} a été dissoute par un administrateur.`
+    : `Votre équipe ${team.name} a été dissoute par le capitaine.`;
   const notificationPromises = profileIds
     .filter(id => id !== req.user.id)
     .map(id => supabase.from('notifications').insert({
       user_id: id,
       title: 'Équipe dissoute',
-      message: `Votre équipe ${team.name} a été dissoute par le capitaine.`,
+      message: notifMessage,
       type: 'system'
     }));
   await Promise.all(notificationPromises);
 
-  await supabase.from('profiles').update({ is_captain: false, is_looking_for_team: false }).in('id', profileIds);
-  
+  // Reset members: remove captain status, set as free agent
+  await supabase.from('profiles').update({ is_captain: false, is_looking_for_team: true }).in('id', profileIds);
+
   const { error } = await supabase.from('teams').delete().eq('id', teamId);
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: 'Équipe dissoute.' });
