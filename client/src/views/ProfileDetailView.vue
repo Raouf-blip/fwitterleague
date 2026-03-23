@@ -7,7 +7,16 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
         <BaseAvatar :name="profile.username" :src="profile.avatar_url ?? undefined" size="xl" />
         <div class="flex-1">
-          <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
+            <BaseBadge 
+              v-if="profile.role === 'admin' || profile.role === 'superadmin'" 
+              variant="cyan" 
+              size="sm"
+            >
+              Staff
+            </BaseBadge>
+          </div>
           <div class="flex items-center gap-3 mt-1 flex-wrap">
             <span class="text-sm text-gold">{{ profile.riot_id || 'Riot ID non configuré' }}</span>
             <a
@@ -86,7 +95,10 @@
         <h2 class="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">Équipe</h2>
         <div v-if="team">
           <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-sm font-bold text-gold">
+            <div v-if="team.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+              <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+            </div>
+            <div v-else class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-sm font-bold text-gold shrink-0">
               {{ team.tag }}
             </div>
             <div>
