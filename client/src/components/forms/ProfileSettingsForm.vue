@@ -51,9 +51,11 @@
       v-model="riotId"
       label="Riot ID"
       placeholder="Pseudo#TAG"
+      :error="riotError"
+      :class="{ 'border-danger ring-danger/30': riotError }"
     />
     
-    <div v-if="riotId && riotId.includes('#')" class="flex items-center gap-2 -mt-3 mb-2">
+    <div v-if="riotId && riotId.includes('#') && !riotError" class="flex items-center gap-2 -mt-3 mb-2">
       <a
         :href="getOpggUrl(riotId)"
         target="_blank"
@@ -120,7 +122,6 @@ import { supabase } from '../../lib/supabase'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseTextarea from '../ui/BaseTextarea.vue'
 import BaseButton from '../ui/BaseButton.vue'
-import BaseAvatar from '../ui/BaseAvatar.vue'
 import RoleSelector from '../ui/RoleSelector.vue'
 
 const props = defineProps<{
@@ -134,6 +135,7 @@ const props = defineProps<{
   hasTeam?: boolean
   saving?: boolean
   syncing?: boolean
+  riotError?: string
 }>()
 
 const emit = defineEmits<{

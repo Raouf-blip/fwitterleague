@@ -72,6 +72,19 @@
         </div>
 
         <div class="flex flex-col sm:flex-row md:flex-col gap-2 w-full sm:w-auto">
+          <BaseButton
+            v-if="authStore.profile.riot_id"
+            variant="cyan"
+            size="md"
+            class="w-full"
+            :loading="syncingRiot"
+            :disabled="isSyncDisabled"
+            :title="isSyncDisabled ? syncTooltip : 'Synchroniser Riot'"
+            @click="handleSyncRiot"
+          >
+            <template #icon><RefreshCw :size="18" /></template>
+            Sync Riot
+          </BaseButton>
           <BaseButton variant="secondary" size="md" @click="showSettings = true" class="w-full">
             <template #icon><Settings :size="18" /></template>
             Paramètres
@@ -297,6 +310,7 @@
         :has-team="!!team"
         :saving="savingProfile"
         :syncing="fetchingRiot"
+        :riot-error="riotError"
         @save="handleSaveSettings"
       />
     </BaseModal>
@@ -328,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ShieldPlus,
@@ -341,6 +355,7 @@ import {
   Shield,
   ExternalLink,
   DoorOpen,
+  RefreshCw,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -372,6 +387,8 @@ const showSettings = ref(false)
 const savingProfile = ref(false)
 const savingTeam = ref(false)
 const fetchingRiot = ref(false)
+const syncingRiot = ref(false)
+const riotError = ref('')
 const creatingTeam = ref(false)
 const showLeaveConfirm = ref(false)
 const leavingTeam = ref(false)
@@ -392,8 +409,30 @@ watch(() => authStore.profile, (p) => {
   }
 }, { immediate: true })
 
+const now = ref(Date.now())
+let syncTimer: any = null
+
 onMounted(async () => {
+  syncTimer = setInterval(() => { now.value = Date.now() }, 10000)
   await fetchData()
+})
+
+onUnmounted(() => {
+  if (syncTimer) clearInterval(syncTimer)
+})
+
+const isSyncDisabled = computed(() => {
+  if (!authStore.profile?.last_riot_sync) return false
+  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime()
+  return diff < 2 * 60 * 1000 // 2 mins cooldown
+})
+
+const syncTooltip = computed(() => {
+  if (!isSyncDisabled.value || !authStore.profile?.last_riot_sync) return ''
+  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime()
+  const remaining = 2 * 60 * 1000 - diff
+  const mins = Math.ceil(remaining / 60000)
+  return `Prochaine synchronisation dans ${mins} min`
 })
 
 async function silentlyDisableLooking() {
@@ -438,6 +477,24 @@ async function fetchData() {
   }
 }
 
+async function handleSyncRiot() {
+  if (!authStore.profile?.riot_id || isSyncDisabled.value) return
+  syncingRiot.value = true
+  try {
+    const token = await getToken()
+    await api.post('/profiles/sync-riot', { riotId: authStore.profile.riot_id }, token)
+    await authStore.fetchProfile()
+    notificationStore.show('Profil Riot synchronisé avec succès !', 'success')
+  } catch (err: any) {
+    let msg = err.message
+    try { msg = JSON.parse(err.message).error || msg } catch(e) {}
+    notificationStore.show('Riot Sync: ' + msg, 'error')
+  } finally {
+    syncingRiot.value = false
+  }
+}
+
+
 async function markAsRead(id: string) {
   try {
     await inboxStore.markAsRead(id)
@@ -449,25 +506,41 @@ async function markAsRead(id: string) {
 async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
   savingProfile.value = true
   fetchingRiot.value = true
+  riotError.value = ''
+  
   try {
     const token = await getToken()
     
     // Step 1: Update Profile data
     await api.patch('/profiles/me', data, token)
     
-    // Step 2: Auto-sync Riot data if Riot ID is present
-    if (data.riot_id && data.riot_id.includes('#')) {
-      try {
-        await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
-      } catch (syncErr) {
-        console.warn('Riot sync failed, but profile was saved', syncErr)
+    // Step 2: Auto-sync Riot data if Riot ID has changed
+    if (data.riot_id !== authStore.profile?.riot_id) {
+      if (data.riot_id && data.riot_id.includes('#')) {
+        try {
+          await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
+        } catch (syncErr: any) {
+          let msg = syncErr.message
+          try {
+            msg = JSON.parse(syncErr.message).error || msg
+          } catch(e) {}
+          
+          if (msg.includes('introuvable')) {
+            riotError.value = 'Riot ID introuvable. Ce compte n\'existe pas.'
+          } else if (msg.includes('patienter')) {
+            riotError.value = 'Veuillez patienter 2 minutes entre chaque synchronisation.'
+          } else {
+            riotError.value = 'Impossible de lier ce compte Riot.'
+          }
+          return // N'enregistre pas la suite du flow de sauvegarde, garde la pop-up ouverte
+        }
       }
     }
     
     // Step 3: Refresh local store
     await authStore.fetchProfile()
     
-    notificationStore.show('Profil mis à jour et synchronisé !', 'success')
+    notificationStore.show('Profil mis à jour !', 'success')
     showSettings.value = false
   } catch (err: any) {
     notificationStore.show('Erreur: ' + err.message, 'error')

@@ -59,7 +59,15 @@ router.get('/me', authenticate, async (req: any, res) => {
 // Private: Update my profile
 router.patch('/me', authenticate, async (req: any, res) => {
   // On empêche la modification manuelle du rôle via cette route
-  const { role, is_captain, last_riot_sync, ...updateData } = req.body;
+  const { role, is_captain, last_riot_sync, riot_id, ...updateData } = req.body;
+
+  // Autoriser UNIQUEMENT la suppression du riot_id manuelle. L'ajout/modificaiton passe par /sync-riot.
+  if (riot_id === '' || riot_id === null) {
+    updateData.riot_id = null;
+    updateData.rank = 'Unranked';
+    updateData.winrate = 0;
+    updateData.lp = null;
+  }
 
   const { data, error } = await supabase.from('profiles').update(updateData).eq('id', req.user.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
@@ -153,6 +161,15 @@ router.post('/sync-riot', authenticate, async (req: any, res) => {
     return res.status(400).json({ error: 'Format Riot ID invalide (attendu: Nom#TAG)' });
   }
 
+  // Rate Limiter
+  const { data: profile } = await supabase.from('profiles').select('last_riot_sync').eq('id', req.user.id).single();
+  if (profile?.last_riot_sync) {
+    const diff = new Date().getTime() - new Date(profile.last_riot_sync).getTime();
+    if (diff < 2 * 60 * 1000) { // 2 minutes de cooldown
+      return res.status(429).json({ error: 'Veuillez patienter 2 minutes entre chaque synchronisation.' });
+    }
+  }
+
   const RIOT_API_KEY = process.env.VITE_RIOT_API_KEY || process.env.RIOT_API_KEY;
 
   if (!RIOT_API_KEY) {
@@ -177,15 +194,18 @@ router.post('/sync-riot', authenticate, async (req: any, res) => {
     const soloQ = leaData.find((entry: any) => entry.queueType === 'RANKED_SOLO_5x5');
     const rank = soloQ ? `${soloQ.tier} ${soloQ.rank}` : 'Unranked';
     const winrate = !soloQ?.inactive ? Math.round((soloQ.wins / (soloQ.wins + soloQ.losses)) * 100) : 0;
+    const lp = soloQ ? soloQ.leaguePoints : null;
 
-    // Mise à jour du profil
+    // Mise à jour du profil AVEC le Riot ID puisqu'il est validé
     await supabase.from('profiles').update({
+      riot_id: riotId,
       rank,
       winrate,
+      lp,
       last_riot_sync: new Date().toISOString()
     }).eq('id', req.user.id);
 
-    res.json({ rank, winrate });
+    res.json({ rank, winrate, lp });
   } catch (e: any) {
     console.error('[RiotSync Error]:', e.message);
     res.status(400).json({ error: 'Riot Sync Failed: ' + e.message });

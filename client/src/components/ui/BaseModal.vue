@@ -7,7 +7,7 @@
       >
         <!-- Overlay -->
         <div
-          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/80"
           @click="$emit('update:modelValue', false)"
         />
         <!-- Panel -->
@@ -28,7 +28,7 @@
               </button>
             </div>
             <!-- Body -->
-            <div class="px-6 py-5 overflow-y-auto flex-1">
+            <div class="px-6 py-5 overflow-y-auto custom-scrollbar overscroll-contain flex-1">
               <slot />
             </div>
             <!-- Footer -->
