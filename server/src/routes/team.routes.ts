@@ -54,7 +54,8 @@ router.patch('/:id', authenticate, async (req: any, res) => {
 // Private: Disband team (captain or superadmin)
 router.delete('/:id', authenticate, async (req: any, res) => {
   const teamId = req.params.id;
-  const isSuperAdmin = req.user.role === 'superadmin';
+  const { data: userProfile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
+  const isSuperAdmin = userProfile?.role === 'superadmin';
 
   if (!isSuperAdmin && await checkTeamLock(teamId)) {
     return res.status(403).json({ error: 'Impossible de dissoudre une équipe engagée dans un tournoi actif.' });
