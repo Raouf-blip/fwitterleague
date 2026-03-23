@@ -29,7 +29,12 @@
           {{ statusLabel }}
         </BaseBadge>
       </div>
-      <p v-if="item.message" class="text-sm text-text-secondary mt-1 line-clamp-2">{{ item.message }}</p>
+      <div v-if="item.message" class="mt-1">
+        <p class="text-sm text-text-secondary whitespace-pre-wrap break-words" :class="{ 'line-clamp-2': !showFullMessage }">{{ item.message }}</p>
+        <button v-if="item.message.length > 120" @click="showFullMessage = !showFullMessage" class="text-xs text-cyan hover:underline inline-block mt-1">
+          {{ showFullMessage ? 'Voir moins' : 'Lire la suite' }}
+        </button>
+      </div>
 
       <!-- Sender / Team info -->
       <div v-if="item.sender && item.type === 'application' && direction === 'inbox'" class="text-xs text-text-muted mt-1.5">
@@ -66,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { UserPlus, Send, Bell, Check } from 'lucide-vue-next'
 import { formatRelativeTime } from '../../lib/formatters'
 import { STATUS_MAP } from '../../lib/constants'
@@ -83,6 +88,8 @@ defineEmits<{
   reject: [item: any]
   markRead: [item: any]
 }>()
+
+const showFullMessage = ref(false)
 
 const isUnread = computed(() => {
   if (props.item.is_read === false) return true

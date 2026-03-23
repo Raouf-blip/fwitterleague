@@ -1,7 +1,7 @@
 <template>
   <BaseCard class="flex flex-col">
     <div class="flex items-start gap-3">
-      <BaseAvatar :name="player.username" :src="player.avatar_url" size="lg" />
+      <BaseAvatar :name="player.username" :src="player.avatar_url ?? undefined" size="lg" />
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <h3 class="font-bold text-text-primary truncate">{{ player.username }}</h3>
@@ -41,7 +41,7 @@
           </a>
         </div>
         <div class="mt-2 flex items-center gap-3">
-          <RankBadge :rank="player.rank" />
+          <RankBadge :rank="player.rank" :lp="player.lp" />
           
           <!-- Preferred Roles -->
           <div v-if="player.preferred_roles?.length" class="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">

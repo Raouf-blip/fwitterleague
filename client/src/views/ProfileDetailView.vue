@@ -5,7 +5,7 @@
     <!-- Profile Header -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <BaseAvatar :name="profile.username" :src="profile.avatar_url" size="xl" />
+        <BaseAvatar :name="profile.username" :src="profile.avatar_url ?? undefined" size="xl" />
         <div class="flex-1">
           <h1 class="text-2xl font-extrabold text-text-primary">{{ profile.username }}</h1>
           <div class="flex items-center gap-3 mt-1 flex-wrap">
@@ -36,7 +36,7 @@
             </span>
           </div>
           <div class="flex items-center gap-4 mt-3">
-            <RankBadge :rank="profile.rank" />
+            <RankBadge :rank="profile.rank" :lp="profile.lp" />
             <div v-if="profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
               <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
               <div class="flex items-center gap-2">

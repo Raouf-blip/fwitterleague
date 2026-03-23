@@ -23,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import BaseModal from '../ui/BaseModal.vue'
 import BaseTextarea from '../ui/BaseTextarea.vue'
 import BaseButton from '../ui/BaseButton.vue'
 
-defineProps<{
+const props = defineProps<{
   modelValue: boolean
   teamName: string
   loading?: boolean
@@ -40,4 +40,10 @@ defineEmits<{
 }>()
 
 const message = ref('')
+
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen) {
+    message.value = ''
+  }
+})
 </script>

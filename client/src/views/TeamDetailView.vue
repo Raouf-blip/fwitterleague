@@ -20,9 +20,9 @@
           <p v-if="team.description" class="text-sm text-text-secondary mt-2">{{ team.description }}</p>
         </div>
         <div class="flex gap-2 shrink-0">
-          <BaseButton v-if="canApply" variant="cyan" :loading="applying" @click="openApplyModal">
+          <BaseButton v-if="canApply" variant="cyan" :loading="applying" :disabled="isApplied" @click="openApplyModal">
             <template #icon><Send :size="16" /></template>
-            Postuler
+            {{ isApplied ? 'Déjà postulé' : 'Postuler' }}
           </BaseButton>
           <BaseButton v-if="isCaptain" variant="secondary" size="sm" @click="showEdit = true">
             <template #icon><Edit :size="14" /></template>
@@ -128,6 +128,7 @@ import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
+import { useInboxStore } from '../stores/inbox'
 import type { Team, TeamMember } from '../types'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
 import BaseCard from '../components/ui/BaseCard.vue'
@@ -145,6 +146,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const inboxStore = useInboxStore()
 
 const team = ref<Team | null>(null)
 const members = ref<TeamMember[]>([])
@@ -163,7 +165,18 @@ const isCaptain = computed(() => !!(authStore.profile && team.value && team.valu
 const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
 const canApply = computed(() => authStore.user && !authStore.profile?.team && !isMember.value)
 
+const isApplied = computed(() => {
+  return inboxStore.applications.some((app: any) => 
+    app.type === 'application' && 
+    app.team_id === team.value?.id && 
+    app.status === 'pending'
+  )
+})
+
 onMounted(async () => {
+  if (authStore.user) {
+    inboxStore.fetchInbox();
+  }
   await fetchTeamData()
 })
 
@@ -191,6 +204,7 @@ async function doApply(message: string) {
     }, token)
     notificationStore.show('Candidature envoyée !', 'success')
     showApply.value = false
+    await inboxStore.fetchInbox()
   } catch (e: any) {
     notificationStore.show(e.message, 'error')
   } finally {

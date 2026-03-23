@@ -50,6 +50,8 @@ export interface TeamMember {
     avatar_url: string | null
     rank: string | null
     winrate: number
+    lp?: number
+    preferred_roles?: string[]
   }
 }
 

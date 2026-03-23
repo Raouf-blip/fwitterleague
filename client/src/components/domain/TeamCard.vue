@@ -38,7 +38,7 @@
 
     <div class="mt-auto pt-4 flex items-center gap-2">
       <BaseButton variant="ghost" size="sm" :to="`/teams/${team.id}`">
-        Voir details
+        Voir détails
       </BaseButton>
       <BaseButton
         v-if="showApply"
@@ -49,7 +49,7 @@
         @click="$emit('apply', team)"
       >
         <template #icon><Send :size="14" /></template>
-        {{ isPending ? 'Deja postule' : 'Postuler' }}
+        {{ isPending ? 'Déjà postulé' : 'Postuler' }}
       </BaseButton>
     </div>
   </BaseCard>

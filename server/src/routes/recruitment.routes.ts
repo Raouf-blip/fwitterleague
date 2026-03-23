@@ -22,13 +22,19 @@ router.post('/apply/:teamId', authenticate, async (req: any, res) => {
   // Check for duplicate pending application
   const { data: existing } = await supabase
     .from('applications')
-    .select('id')
+    .select('id, status')
     .eq('team_id', team_id)
     .eq('sender_id', sender_id)
-    .eq('status', 'pending')
     .maybeSingle();
 
-  if (existing) return res.status(400).json({ error: 'Une candidature est déjà en attente pour cette équipe.' });
+  if (existing) {
+    if (existing.status === 'pending') {
+      return res.status(400).json({ error: 'Une candidature est déjà en attente pour cette équipe.' });
+    }
+    if (existing.status === 'rejected') {
+      await supabase.from('applications').delete().eq('id', existing.id);
+    }
+  }
 
   const { data: app, error } = await supabase
     .from('applications')
@@ -107,7 +113,12 @@ router.patch('/:id/respond', authenticate, async (req: any, res) => {
 
   if (status === 'accepted') {
     const { data: member } = await supabase.from('team_members').select('id').eq('profile_id', app.sender_id).maybeSingle();
-    if (member) return res.status(400).json({ error: 'Le joueur a déjà rejoint une équipe.' });
+    if (member) {
+      // Auto-cancel this application since the player is already in a team
+      await supabase.from('applications').delete().eq('sender_id', app.sender_id).eq('team_id', app.team_id).eq('status', 'rejected');
+      await supabase.from('applications').update({ status: 'rejected' }).eq('id', appId);
+      return res.status(400).json({ error: 'Le joueur a déjà rejoint une équipe. La candidature a été annulée.' });
+    }
 
     // Case 5: Team Member Limit (Max 7)
     const { count } = await supabase.from('team_members').select('*', { count: 'exact', head: true }).eq('team_id', app.team_id);
@@ -117,14 +128,21 @@ router.patch('/:id/respond', authenticate, async (req: any, res) => {
 
     await supabase.from('team_members').insert({ team_id: app.team_id, profile_id: app.sender_id, role: 'Member' });
     await supabase.from('profiles').update({ is_looking_for_team: false }).eq('id', app.sender_id);
-    
+
     // Auto-clean other pending applications/offers for THIS specific player
     // This prevents them from being in multiple teams and cleans up the UI for other captains
+    // But first, delete any existing rejected ones for this user across all teams to avoid unique constraint violations
+    await supabase.from('applications').delete().eq('sender_id', app.sender_id).eq('status', 'rejected');
     await supabase.from('applications')
       .update({ status: 'rejected' })
       .eq('sender_id', app.sender_id)
       .eq('status', 'pending')
       .neq('id', appId); // Don't reject the one we just accepted
+  }
+
+  if (status === 'rejected') {
+    // Delete any existing rejected application for this specific team/player combo to avoid unique constraint violation on the upcoming update
+    await supabase.from('applications').delete().eq('sender_id', app.sender_id).eq('team_id', app.team_id).eq('status', 'rejected');
   }
 
   const { data: updated, error: updateError } = await supabase.from('applications').update({ status }).eq('id', appId).select().single();
@@ -141,7 +159,7 @@ router.patch('/:id/respond', authenticate, async (req: any, res) => {
   await supabase.from('notifications').insert({
     user_id: targetId,
     title: status === 'accepted' ? 'Félicitations !' : 'Réponse reçue',
-    message: status === 'accepted' 
+    message: status === 'accepted'
       ? `Votre demande pour rejoindre l'équipe ${app.team.name} a été acceptée !`
       : `L'équipe ${app.team.name} a décliné votre candidature.`,
     type: 'system'

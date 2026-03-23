@@ -3,7 +3,7 @@
     <!-- Profile Header (Aligned with ProfileDetailView) -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <BaseAvatar :name="authStore.profile.username" :src="authStore.profile.avatar_url" size="xl" />
+        <BaseAvatar :name="authStore.profile.username" :src="authStore.profile.avatar_url ?? undefined" size="xl" />
         
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
@@ -46,7 +46,7 @@
           </div>
 
           <div class="flex items-center gap-4 mt-3">
-            <RankBadge :rank="authStore.profile.rank" />
+            <RankBadge :rank="authStore.profile.rank" :lp="authStore.profile.lp" />
             <div v-if="authStore.profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
               <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
               <div class="flex items-center gap-2">
@@ -63,9 +63,6 @@
             </div>
             <span class="text-sm text-text-secondary">
               Winrate: <strong class="text-text-primary">{{ authStore.profile.winrate }}%</strong>
-            </span>
-            <span v-if="authStore.profile.lp" class="text-sm text-text-secondary">
-              LP: <strong class="text-text-primary">{{ authStore.profile.lp }}</strong>
             </span>
           </div>
 
