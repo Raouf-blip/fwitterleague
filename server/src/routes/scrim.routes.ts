@@ -96,6 +96,12 @@ router.post("/", authenticate, async (req: any, res) => {
       .status(400)
       .json({ error: "Champs manquants (type, scheduled_at)" });
 
+  if (new Date(scheduled_at) < new Date()) {
+    return res
+      .status(400)
+      .json({ error: "La date du scrim doit être ultérieure à maintenant." });
+  }
+
   if (type === "team") {
     if (!challenger_team_id || !challenged_team_id)
       return res.status(400).json({
@@ -275,6 +281,14 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
     return res.status(400).json({ error: "Statut invalide." });
   }
 
+  // Check admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+  const isAdmin = profile?.role === "admin" || profile?.role === "superadmin";
+
   // Check generic rights (Creator or Host Captain)
   const { data: scrim } = await supabase
     .from("scrims")
@@ -288,7 +302,7 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
   const isChallengerCaptain =
     (scrim.challenger_team as any)?.captain_id === userId;
 
-  if (!isCreator && !isChallengerCaptain) {
+  if (!isCreator && !isChallengerCaptain && !isAdmin) {
     return res.status(403).json({ error: "Non autorisé." });
   }
 
@@ -395,11 +409,9 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
     (scrim.challenger_team as any)?.captain_id === userId;
 
   if (!isCreator && !isChallengerCaptain && !isAdmin) {
-    return res
-      .status(403)
-      .json({
-        error: "Seul l'organisateur ou un admin peut soumettre les résultats.",
-      });
+    return res.status(403).json({
+      error: "Seul l'organisateur ou un admin peut soumettre les résultats.",
+    });
   }
 
   // Update scrim status

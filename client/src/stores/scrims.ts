@@ -184,6 +184,7 @@ export const useScrimStore = defineStore("scrims", () => {
     joinScrim,
     leaveScrim,
     respondToChallenge,
+    markAsCompleted,
     submitResults,
   };
 });

@@ -186,9 +186,16 @@ async function handleSubmit() {
   loading.value = true;
   try {
     const dateTimeString = `${form.value.date}T${form.value.time}:00`;
+    const scheduledDate = new Date(dateTimeString);
+    if (scheduledDate < new Date()) {
+      alert("La date du scrim doit être ultérieure à maintenant.");
+      loading.value = false;
+      return;
+    }
+
     const payload: any = {
       type: form.value.type,
-      scheduled_at: new Date(dateTimeString).toISOString(),
+      scheduled_at: scheduledDate.toISOString(),
     };
 
     if (form.value.type === "team") {

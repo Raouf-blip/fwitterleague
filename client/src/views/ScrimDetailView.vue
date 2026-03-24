@@ -64,6 +64,15 @@
                 : "Soumettre Résultats"
             }}
           </BaseButton>
+          <BaseButton
+            v-if="scrim.status !== 'completed'"
+            variant="ghost"
+            class="text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
+            @click="confirmFinish"
+            :loading="loadingAction"
+          >
+            Terminer sans stats
+          </BaseButton>
         </template>
       </div>
 
