@@ -81,7 +81,6 @@
 
     <div class="mt-auto pt-4 flex items-center gap-2">
       <BaseButton
-        v-if="player.riot_id"
         variant="ghost"
         size="sm"
         :to="`/profile/${player.id}`"
