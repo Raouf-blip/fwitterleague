@@ -182,13 +182,13 @@
           </div>
 
           <!-- Match Info -->
-          <div class="flex-1 flex items-center justify-center">
+          <div class="flex-1 flex items-center justify-start md:pl-50">
             <div
               v-if="scrim.type === 'team'"
-              class="flex items-center gap-4 text-sm md:text-base w-full justify-center md:justify-start lg:justify-center"
+              class="flex items-center gap-4 text-sm md:text-base w-full justify-start"
             >
               <div
-                class="flex items-center gap-2 text-right w-1/3 justify-end"
+                class="flex items-center gap-2"
                 :class="
                   scrim.winner_id &&
                   scrim.challenger_team?.id &&
@@ -201,7 +201,7 @@
               </div>
               <span class="text-text-muted font-bold text-xs shrink-0">VS</span>
               <div
-                class="flex items-center gap-2 w-1/3 justify-start"
+                class="flex items-center gap-2"
                 :class="
                   scrim.winner_id &&
                   scrim.challenged_team?.id &&
@@ -213,7 +213,7 @@
                 {{ scrim.challenged_team?.tag || scrim.challenged_team?.name }}
               </div>
             </div>
-            <div v-else class="flex items-center gap-2">
+            <div v-else class="flex items-center gap-2 w-full justify-start">
               <span class="text-text-primary font-medium">Scrim Open</span>
               <span class="text-xs text-text-muted"
                 >par {{ scrim.creator?.username }}</span
