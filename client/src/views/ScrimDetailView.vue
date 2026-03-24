@@ -482,7 +482,10 @@
                 </td>
                 <td class="p-3 text-right font-mono">
                   {{ stat.cs }}
-                  <span v-if="scrim.game_duration" class="text-xs text-text-muted ml-1">
+                  <span
+                    v-if="scrim.game_duration"
+                    class="text-xs text-text-muted ml-1"
+                  >
                     ({{ (stat.cs / (scrim.game_duration / 60)).toFixed(1) }})
                   </span>
                 </td>
