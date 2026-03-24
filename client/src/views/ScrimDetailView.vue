@@ -458,7 +458,7 @@
                 <th class="p-3">Role</th>
                 <th class="p-3">Champion</th>
                 <th class="p-3 text-right">K / D / A</th>
-                <th class="p-3 text-right">CS</th>
+                <th class="p-3 text-right">CS (min)</th>
                 <th class="p-3 text-center">Résultat</th>
               </tr>
             </thead>
@@ -480,7 +480,12 @@
                 <td class="p-3 text-right font-mono">
                   {{ stat.kills }}/{{ stat.deaths }}/{{ stat.assists }}
                 </td>
-                <td class="p-3 text-right font-mono">{{ stat.cs }}</td>
+                <td class="p-3 text-right font-mono">
+                  {{ stat.cs }}
+                  <span v-if="scrim.game_duration" class="text-xs text-text-muted ml-1">
+                    ({{ (stat.cs / (scrim.game_duration / 60)).toFixed(1) }})
+                  </span>
+                </td>
                 <td class="p-3 text-center">
                   <BaseBadge
                     :variant="stat.win ? 'success' : 'destructive'"
