@@ -16,6 +16,13 @@ export type Profile = {
   last_riot_sync: string | null;
   created_at: string;
   team: TeamSummary | null;
+  scrim_stats: {
+    games_played: number;
+    wins: number;
+    losses: number;
+    kda: string;
+    avg_cs: string;
+  } | null;
 };
 
 export type TeamSummary = {

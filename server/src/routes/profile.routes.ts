@@ -23,12 +23,10 @@ router.delete(
   async (req: any, res) => {
     const targetId = req.params.id;
     if (targetId === req.user.id) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Vous ne pouvez pas supprimer votre propre compte via cette route.",
-        });
+      return res.status(400).json({
+        error:
+          "Vous ne pouvez pas supprimer votre propre compte via cette route.",
+      });
     }
 
     // If user is captain, disband their team
@@ -83,7 +81,44 @@ router.get("/me", authenticate, async (req: any, res) => {
       team = { ...teamData, member_count: count || 0 };
     }
   }
-  res.json({ ...profile, team });
+
+  // Get Scrim Stats
+  const { data: stats } = await supabase
+    .from("scrim_stats_individual")
+    .select("kills, deaths, assists, cs, win, champion_name")
+    .eq("user_id", req.user.id);
+
+  const scrim_stats =
+    stats && stats.length > 0
+      ? {
+          games_played: stats.length,
+          wins: stats.filter((s: any) => s.win).length,
+          losses: stats.filter((s: any) => !s.win).length,
+          kda:
+            stats.length > 0
+              ? (
+                  stats.reduce(
+                    (acc: number, s: any) =>
+                      acc + (s.kills || 0) + (s.assists || 0),
+                    0,
+                  ) /
+                  Math.max(
+                    1,
+                    stats.reduce(
+                      (acc: number, s: any) => acc + (s.deaths || 0),
+                      0,
+                    ),
+                  )
+                ).toFixed(2)
+              : "0.00",
+          avg_cs: (
+            stats.reduce((acc: number, s: any) => acc + (s.cs || 0), 0) /
+            Math.max(1, stats.length)
+          ).toFixed(1),
+        }
+      : null;
+
+  res.json({ ...profile, team, scrim_stats });
 });
 
 // Private: Update my profile
@@ -122,12 +157,10 @@ router.delete("/me", authenticate, async (req: any, res) => {
     // Check if team is locked (active tournament)
     const { checkTeamLock } = await import("../utils/team-lock");
     if (await checkTeamLock(team.id)) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Impossible de supprimer votre compte : votre équipe est engagée dans un tournoi actif.",
-        });
+      return res.status(403).json({
+        error:
+          "Impossible de supprimer votre compte : votre équipe est engagée dans un tournoi actif.",
+      });
     }
 
     const { data: members } = await supabase
@@ -280,11 +313,9 @@ router.post("/sync-riot", authenticate, async (req: any, res) => {
       new Date().getTime() - new Date(profile.last_riot_sync).getTime();
     if (diff < 2 * 60 * 1000) {
       // 2 minutes de cooldown
-      return res
-        .status(429)
-        .json({
-          error: "Veuillez patienter 2 minutes entre chaque synchronisation.",
-        });
+      return res.status(429).json({
+        error: "Veuillez patienter 2 minutes entre chaque synchronisation.",
+      });
     }
   }
 
@@ -292,11 +323,9 @@ router.post("/sync-riot", authenticate, async (req: any, res) => {
     process.env.VITE_RIOT_API_KEY || process.env.RIOT_API_KEY;
 
   if (!RIOT_API_KEY) {
-    return res
-      .status(500)
-      .json({
-        error: "La clé API Riot est manquante dans le fichier .env du serveur.",
-      });
+    return res.status(500).json({
+      error: "La clé API Riot est manquante dans le fichier .env du serveur.",
+    });
   }
 
   try {

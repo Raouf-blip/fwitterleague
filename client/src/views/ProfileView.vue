@@ -3,14 +3,23 @@
     <!-- Profile Header (Aligned with ProfileDetailView) -->
     <BaseCard :hoverable="false" class="!p-6 mb-8">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <BaseAvatar :name="authStore.profile.username" :src="authStore.profile.avatar_url ?? undefined" size="xl" />
-        
+        <BaseAvatar
+          :name="authStore.profile.username"
+          :src="authStore.profile.avatar_url ?? undefined"
+          size="xl"
+        />
+
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-2xl font-extrabold text-text-primary">{{ authStore.profile.username }}</h1>
-            <BaseBadge 
-              v-if="authStore.profile.role === 'admin' || authStore.profile.role === 'superadmin'" 
-              variant="cyan" 
+            <h1 class="text-2xl font-extrabold text-text-primary">
+              {{ authStore.profile.username }}
+            </h1>
+            <BaseBadge
+              v-if="
+                authStore.profile.role === 'admin' ||
+                authStore.profile.role === 'superadmin'
+              "
+              variant="cyan"
               size="sm"
             >
               Staff
@@ -18,7 +27,9 @@
           </div>
 
           <div class="flex items-center gap-3 mt-1 flex-wrap">
-            <span class="text-sm text-gold font-bold">{{ authStore.profile.riot_id || 'Riot ID non configuré' }}</span>
+            <span class="text-sm text-gold font-bold">{{
+              authStore.profile.riot_id || "Riot ID non configuré"
+            }}</span>
             <a
               v-if="authStore.profile.riot_id"
               :href="getOpggUrl(authStore.profile.riot_id)"
@@ -39,39 +50,63 @@
               <ExternalLink :size="12" />
               DPM.LOL
             </a>
-            <span v-if="authStore.profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
+            <span
+              v-if="authStore.profile.discord"
+              class="flex items-center gap-1 text-sm text-text-secondary"
+            >
               <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ authStore.profile.discord }}
             </span>
           </div>
 
           <div class="flex items-center gap-4 mt-3">
-            <RankBadge :rank="authStore.profile.rank" :lp="authStore.profile.lp" />
-            <div v-if="authStore.profile.preferred_roles?.length" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
-              <span class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Postes:</span>
+            <RankBadge
+              :rank="authStore.profile.rank"
+              :lp="authStore.profile.lp"
+            />
+            <div
+              v-if="authStore.profile.preferred_roles?.length"
+              class="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner"
+            >
+              <span
+                class="text-[10px] font-black text-text-muted uppercase tracking-widest mr-1"
+                >Postes:</span
+              >
               <div class="flex items-center gap-2">
                 <BaseTooltip
                   v-for="role in authStore.profile.preferred_roles"
                   :key="role"
                   :content="role"
                 >
-                  <div class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center">
+                  <div
+                    class="hover:scale-110 transition-transform cursor-pointer flex items-center justify-center"
+                  >
                     <LolRoleIcon :role="role" :size="16" class="text-cyan" />
                   </div>
                 </BaseTooltip>
               </div>
             </div>
             <span class="text-sm text-text-secondary">
-              Winrate: <strong class="text-text-primary">{{ authStore.profile.winrate }}%</strong>
+              Winrate:
+              <strong class="text-text-primary"
+                >{{ authStore.profile.winrate }}%</strong
+              >
             </span>
           </div>
 
-          <BaseBadge v-if="authStore.profile.is_looking_for_team && !team" variant="success" size="md" class="mt-3">
+          <BaseBadge
+            v-if="authStore.profile.is_looking_for_team && !team"
+            variant="success"
+            size="md"
+            class="mt-3"
+          >
             Cherche une équipe
           </BaseBadge>
         </div>
 
-        <div class="flex flex-col sm:flex-row md:flex-col gap-2 w-full sm:w-auto">
+        <div
+          class="flex flex-col sm:flex-row md:flex-col gap-2 w-full sm:w-auto"
+        >
           <BaseButton
             v-if="authStore.profile.riot_id"
             variant="cyan"
@@ -85,11 +120,21 @@
             <template #icon><RefreshCw :size="18" /></template>
             Sync Riot
           </BaseButton>
-          <BaseButton variant="secondary" size="md" @click="showSettings = true" class="w-full">
+          <BaseButton
+            variant="secondary"
+            size="md"
+            @click="showSettings = true"
+            class="w-full"
+          >
             <template #icon><Settings :size="18" /></template>
             Paramètres
           </BaseButton>
-          <BaseButton variant="ghost" size="sm" @click="logout" class="w-full text-danger hover:bg-danger/10">
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            @click="logout"
+            class="w-full text-danger hover:bg-danger/10"
+          >
             <template #icon><LogOut :size="16" /></template>
             Déconnexion
           </BaseButton>
@@ -103,8 +148,56 @@
         <!-- Bio -->
         <BaseCard :hoverable="false" title="Bio">
           <p class="text-text-secondary leading-relaxed whitespace-pre-wrap">
-            {{ authStore.profile.bio || "Vous n'avez pas encore de bio. Ajoutez-en une dans les paramètres pour vous présenter aux autres joueurs !" }}
+            {{
+              authStore.profile.bio ||
+              "Vous n'avez pas encore de bio. Ajoutez-en une dans les paramètres pour vous présenter aux autres joueurs !"
+            }}
           </p>
+        </BaseCard>
+
+        <!-- Stats -->
+        <BaseCard
+          v-if="authStore.profile.scrim_stats"
+          :hoverable="false"
+          class="border border-cyan/20 bg-cyan/[0.03] shadow-[0_0_15px_-5px_rgba(34,211,238,0.2)]"
+        >
+          <div
+            class="flex items-center gap-3 border-b border-cyan/10 pb-3 mb-4"
+          >
+            <h2 class="text-lg font-bold text-text-primary">
+              Statistiques Scrims
+            </h2>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatBlock
+              label="Matchs Joués"
+              :value="authStore.profile.scrim_stats.games_played"
+            />
+            <StatBlock
+              label="Winrate"
+              :value="
+                Math.round(
+                  (authStore.profile.scrim_stats.wins /
+                    authStore.profile.scrim_stats.games_played) *
+                    100,
+                ) + '%'
+              "
+              class="text-cyan font-mono"
+            />
+            <StatBlock
+              label="KDA"
+              :value="authStore.profile.scrim_stats.kda"
+              :class="
+                parseFloat(authStore.profile.scrim_stats.kda) > 3
+                  ? 'text-gold'
+                  : 'text-text-primary'
+              "
+            />
+            <StatBlock
+              label="CS/min"
+              :value="authStore.profile.scrim_stats.avg_cs"
+            />
+          </div>
         </BaseCard>
 
         <!-- Private Panel: Notifications & Applications -->
@@ -114,12 +207,15 @@
             <template #title>
               <div class="flex items-center justify-between w-full">
                 <span>Notifications</span>
-                <span v-if="unreadNotifs > 0" class="text-[10px] px-2 py-0.5 bg-cyan text-white rounded-full">
+                <span
+                  v-if="unreadNotifs > 0"
+                  class="text-[10px] px-2 py-0.5 bg-cyan text-white rounded-full"
+                >
                   {{ unreadNotifs }}
                 </span>
               </div>
             </template>
-            
+
             <div v-if="notifications.length === 0" class="text-center py-8">
               <BellOff :size="32" class="mx-auto text-text-muted/30 mb-2" />
               <p class="text-sm text-text-muted">Aucune notification.</p>
@@ -128,13 +224,26 @@
               <div
                 v-for="notif in notifications.slice(0, 4)"
                 :key="notif.id"
-                :class="['p-3 rounded-lg border transition-all', !notif.is_read ? 'bg-cyan/5 border-cyan/20' : 'bg-white/5 border-transparent opacity-60']"
+                :class="[
+                  'p-3 rounded-lg border transition-all',
+                  !notif.is_read
+                    ? 'bg-cyan/5 border-cyan/20'
+                    : 'bg-white/5 border-transparent opacity-60',
+                ]"
               >
                 <div class="flex justify-between items-start gap-3">
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-text-primary truncate">{{ notif.title }}</p>
-                    <p class="text-xs text-text-secondary mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                    <p class="text-[10px] text-text-muted mt-2 uppercase font-bold">{{ formatRelativeTime(notif.created_at) }}</p>
+                    <p class="text-sm font-bold text-text-primary truncate">
+                      {{ notif.title }}
+                    </p>
+                    <p class="text-xs text-text-secondary mt-0.5 line-clamp-2">
+                      {{ notif.message }}
+                    </p>
+                    <p
+                      class="text-[10px] text-text-muted mt-2 uppercase font-bold"
+                    >
+                      {{ formatRelativeTime(notif.created_at) }}
+                    </p>
                   </div>
                   <button
                     v-if="!notif.is_read"
@@ -146,7 +255,12 @@
                   </button>
                 </div>
               </div>
-              <BaseButton variant="ghost" size="sm" to="/notifications" class="w-full mt-2">
+              <BaseButton
+                variant="ghost"
+                size="sm"
+                to="/notifications"
+                class="w-full mt-2"
+              >
                 Voir toutes les notifications
               </BaseButton>
             </div>
@@ -166,15 +280,32 @@
               >
                 <div class="min-w-0">
                   <p class="text-sm font-bold text-text-primary truncate">
-                    {{ app.team?.name }} <span class="text-gold">[{{ app.team?.tag }}]</span>
+                    {{ app.team?.name }}
+                    <span class="text-gold">[{{ app.team?.tag }}]</span>
                   </p>
-                  <p class="text-[10px] text-text-muted mt-1 uppercase font-bold">{{ formatDate(app.created_at) }}</p>
+                  <p
+                    class="text-[10px] text-text-muted mt-1 uppercase font-bold"
+                  >
+                    {{ formatDate(app.created_at) }}
+                  </p>
                 </div>
                 <BaseBadge
-                  :variant="app.status === 'accepted' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'"
+                  :variant="
+                    app.status === 'accepted'
+                      ? 'success'
+                      : app.status === 'rejected'
+                        ? 'danger'
+                        : 'warning'
+                  "
                   size="sm"
                 >
-                  {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé' }}
+                  {{
+                    app.status === "pending"
+                      ? "En attente"
+                      : app.status === "accepted"
+                        ? "Accepté"
+                        : "Refusé"
+                  }}
                 </BaseBadge>
               </div>
             </div>
@@ -187,20 +318,43 @@
         <!-- Team Card -->
         <BaseCard :hoverable="false" title="Mon Équipe">
           <div v-if="team" class="space-y-4">
-            <div class="flex items-center gap-4 p-3 rounded-xl bg-gold/5 border border-gold/20">
-              <div v-if="team.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <img :src="team.logo_url" :alt="team.name" class="w-full h-full object-cover" />
+            <div
+              class="flex items-center gap-4 p-3 rounded-xl bg-gold/5 border border-gold/20"
+            >
+              <div
+                v-if="team.logo_url"
+                class="w-12 h-12 rounded-lg overflow-hidden shrink-0"
+              >
+                <img
+                  :src="team.logo_url"
+                  :alt="team.name"
+                  class="w-full h-full object-cover"
+                />
               </div>
-              <div v-else class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-black text-gold shrink-0">
+              <div
+                v-else
+                class="w-12 h-12 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xl font-black text-gold shrink-0"
+              >
                 {{ team.tag }}
               </div>
               <div class="min-w-0">
-                <h3 class="font-bold text-text-primary truncate">{{ team.name }}</h3>
-                <p class="text-xs text-gold uppercase tracking-widest font-bold">Membre actif</p>
+                <h3 class="font-bold text-text-primary truncate">
+                  {{ team.name }}
+                </h3>
+                <p
+                  class="text-xs text-gold uppercase tracking-widest font-bold"
+                >
+                  Membre actif
+                </p>
               </div>
             </div>
             <div class="flex gap-2">
-              <BaseButton variant="secondary" size="md" :to="'/teams/' + team.id" class="flex-1">
+              <BaseButton
+                variant="secondary"
+                size="md"
+                :to="'/teams/' + team.id"
+                class="flex-1"
+              >
                 Gérer l'équipe
               </BaseButton>
               <BaseButton
@@ -214,11 +368,18 @@
               </BaseButton>
             </div>
           </div>
-          
+
           <div v-else-if="!creatingTeam" class="text-center py-6">
             <ShieldPlus :size="48" class="mx-auto text-text-muted/20 mb-3" />
-            <p class="text-sm text-text-secondary mb-4">Vous n'avez pas encore d'équipe.</p>
-            <BaseButton variant="primary" size="md" @click="creatingTeam = true" class="w-full">
+            <p class="text-sm text-text-secondary mb-4">
+              Vous n'avez pas encore d'équipe.
+            </p>
+            <BaseButton
+              variant="primary"
+              size="md"
+              @click="creatingTeam = true"
+              class="w-full"
+            >
               Créer une équipe
             </BaseButton>
           </div>
@@ -235,61 +396,93 @@
         <!-- Statut de recrutement -->
         <BaseCard :hoverable="false" title="Statut de recrutement">
           <div class="space-y-4">
-            <button 
+            <button
               :disabled="!!team || togglingStatus"
               @click="toggleRecruitmentStatus"
               class="w-full relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 group overflow-hidden"
               :class="[
-                authStore.profile.is_looking_for_team && !team 
-                  ? 'bg-success/5 border-success/30 hover:border-success/60 shadow-[0_0_20px_-10px_rgba(40,167,69,0.2)]' 
+                authStore.profile.is_looking_for_team && !team
+                  ? 'bg-success/5 border-success/30 hover:border-success/60 shadow-[0_0_20px_-10px_rgba(40,167,69,0.2)]'
                   : 'bg-white/5 border-white/10 hover:border-white/20',
-                team ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'
+                team
+                  ? 'opacity-50 cursor-not-allowed grayscale'
+                  : 'cursor-pointer',
               ]"
             >
               <!-- Background Glow for Active State -->
-              <div 
+              <div
                 v-if="authStore.profile.is_looking_for_team && !team"
                 class="absolute inset-0 bg-gradient-to-r from-success/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
               />
 
               <div class="relative z-10 flex flex-col items-start text-left">
-                <span 
+                <span
                   class="text-xs uppercase tracking-widest font-black mb-1 transition-colors"
-                  :class="authStore.profile.is_looking_for_team && !team ? 'text-success' : 'text-text-muted'"
+                  :class="
+                    authStore.profile.is_looking_for_team && !team
+                      ? 'text-success'
+                      : 'text-text-muted'
+                  "
                 >
-                  {{ authStore.profile.is_looking_for_team && !team ? 'Visible' : 'Invisible' }}
+                  {{
+                    authStore.profile.is_looking_for_team && !team
+                      ? "Visible"
+                      : "Invisible"
+                  }}
                 </span>
                 <span class="text-sm font-bold text-text-primary">
-                  {{ authStore.profile.is_looking_for_team && !team ? 'Je suis Agent Libre' : 'Recherche fermée' }}
+                  {{
+                    authStore.profile.is_looking_for_team && !team
+                      ? "Je suis Agent Libre"
+                      : "Recherche fermée"
+                  }}
                 </span>
               </div>
 
               <!-- Visual Switch -->
               <div class="relative z-10">
-                <div 
+                <div
                   class="w-12 h-6 rounded-full transition-colors duration-300 flex items-center px-1"
-                  :class="authStore.profile.is_looking_for_team && !team ? 'bg-success' : 'bg-white/10'"
+                  :class="
+                    authStore.profile.is_looking_for_team && !team
+                      ? 'bg-success'
+                      : 'bg-white/10'
+                  "
                 >
-                  <div 
+                  <div
                     class="w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 transform"
-                    :class="authStore.profile.is_looking_for_team && !team ? 'translate-x-6' : 'translate-x-0'"
+                    :class="
+                      authStore.profile.is_looking_for_team && !team
+                        ? 'translate-x-6'
+                        : 'translate-x-0'
+                    "
                   >
-                    <div 
-                      v-if="togglingStatus" 
-                      class="w-full h-full border-2 border-cyan/30 border-t-cyan rounded-full animate-spin" 
+                    <div
+                      v-if="togglingStatus"
+                      class="w-full h-full border-2 border-cyan/30 border-t-cyan rounded-full animate-spin"
                     />
                   </div>
                 </div>
               </div>
             </button>
-            
+
             <div class="px-1">
-              <p v-if="team" class="text-[10px] text-gold font-black uppercase tracking-widest flex items-center gap-2">
+              <p
+                v-if="team"
+                class="text-[10px] text-gold font-black uppercase tracking-widest flex items-center gap-2"
+              >
                 <Shield :size="12" />
                 Statut verrouillé (En équipe)
               </p>
-              <p v-else class="text-[10px] text-text-muted leading-relaxed uppercase font-bold tracking-wider">
-                {{ authStore.profile.is_looking_for_team ? 'Vous apparaissez dans la liste des agents. Cliquez pour vous retirer.' : 'Activez le statut "Agent Libre" pour que les capitaines puissent vous recruter, sinon vous serez invisible.' }}
+              <p
+                v-else
+                class="text-[10px] text-text-muted leading-relaxed uppercase font-bold tracking-wider"
+              >
+                {{
+                  authStore.profile.is_looking_for_team
+                    ? "Vous apparaissez dans la liste des agents. Cliquez pour vous retirer."
+                    : 'Activez le statut "Agent Libre" pour que les capitaines puissent vous recruter, sinon vous serez invisible.'
+                }}
               </p>
             </div>
           </div>
@@ -328,7 +521,7 @@
   </div>
 
   <BaseSpinner v-else-if="authStore.loading" />
-  
+
   <BaseEmptyState
     v-else
     :icon="AlertTriangle"
@@ -342,8 +535,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import {
   ShieldPlus,
   AlertTriangle,
@@ -356,234 +549,270 @@ import {
   ExternalLink,
   DoorOpen,
   RefreshCw,
-} from 'lucide-vue-next'
-import DiscordIcon from '../components/icons/DiscordIcon.vue'
-import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
-import { api } from '../lib/api'
-import { getToken } from '../composables/useAuth'
-import { useAuthStore } from '../stores/auth'
-import { useNotificationStore } from '../stores/notifications'
-import { useInboxStore } from '../stores/inbox'
-import { getOpggUrl, getDpmUrl, formatRelativeTime, formatDate } from '../lib/formatters'
-import BaseCard from '../components/ui/BaseCard.vue'
-import BaseButton from '../components/ui/BaseButton.vue'
-import BaseBadge from '../components/ui/BaseBadge.vue'
-import BaseAvatar from '../components/ui/BaseAvatar.vue'
-import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
-import BaseModal from '../components/ui/BaseModal.vue'
-import BaseSpinner from '../components/ui/BaseSpinner.vue'
-import BaseTooltip from '../components/ui/BaseTooltip.vue'
-import RankBadge from '../components/domain/RankBadge.vue'
-import ProfileSettingsForm from '../components/forms/ProfileSettingsForm.vue'
-import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
-import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
+} from "lucide-vue-next";
+import DiscordIcon from "../components/icons/DiscordIcon.vue";
+import LolRoleIcon from "../components/icons/LolRoleIcon.vue";
+import { api } from "../lib/api";
+import { getToken } from "../composables/useAuth";
+import { useAuthStore } from "../stores/auth";
+import { useNotificationStore } from "../stores/notifications";
+import { useInboxStore } from "../stores/inbox";
+import {
+  getOpggUrl,
+  getDpmUrl,
+  formatRelativeTime,
+  formatDate,
+} from "../lib/formatters";
+import BaseCard from "../components/ui/BaseCard.vue";
+import BaseButton from "../components/ui/BaseButton.vue";
+import BaseBadge from "../components/ui/BaseBadge.vue";
+import BaseAvatar from "../components/ui/BaseAvatar.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import BaseModal from "../components/ui/BaseModal.vue";
+import BaseSpinner from "../components/ui/BaseSpinner.vue";
+import BaseTooltip from "../components/ui/BaseTooltip.vue";
+import RankBadge from "../components/domain/RankBadge.vue";
+import StatBlock from "../components/domain/StatBlock.vue";
+import ProfileSettingsForm from "../components/forms/ProfileSettingsForm.vue";
+import TeamCreateForm from "../components/forms/TeamCreateForm.vue";
+import ConfirmDialog from "../components/ui/ConfirmDialog.vue";
 
-const authStore = useAuthStore()
-const notificationStore = useNotificationStore()
-const inboxStore = useInboxStore()
-const router = useRouter()
+const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
+const inboxStore = useInboxStore();
+const router = useRouter();
 
-const showSettings = ref(false)
-const savingProfile = ref(false)
-const savingTeam = ref(false)
-const fetchingRiot = ref(false)
-const syncingRiot = ref(false)
-const riotError = ref('')
-const creatingTeam = ref(false)
-const showLeaveConfirm = ref(false)
-const leavingTeam = ref(false)
-const togglingStatus = ref(false)
-const team = ref<any>(null)
-const sentApplications = ref<any[]>([])
+const showSettings = ref(false);
+const savingProfile = ref(false);
+const savingTeam = ref(false);
+const fetchingRiot = ref(false);
+const syncingRiot = ref(false);
+const riotError = ref("");
+const creatingTeam = ref(false);
+const showLeaveConfirm = ref(false);
+const leavingTeam = ref(false);
+const togglingStatus = ref(false);
+const team = ref<any>(null);
+const sentApplications = ref<any[]>([]);
 
-const notifications = computed(() => inboxStore.notifications)
-const unreadNotifs = computed(() => inboxStore.unreadCount)
+const notifications = computed(() => inboxStore.notifications);
+const unreadNotifs = computed(() => inboxStore.unreadCount);
 
-watch(() => authStore.profile, (p) => {
-  if (p) {
-    team.value = p.team
-    // Auto-disable looking for team if user has a team
-    if (p.team && p.is_looking_for_team) {
-      silentlyDisableLooking()
+watch(
+  () => authStore.profile,
+  (p) => {
+    if (p) {
+      team.value = p.team;
+      // Auto-disable looking for team if user has a team
+      if (p.team && p.is_looking_for_team) {
+        silentlyDisableLooking();
+      }
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+);
 
-const now = ref(Date.now())
-let syncTimer: any = null
+const now = ref(Date.now());
+let syncTimer: any = null;
 
 onMounted(async () => {
-  syncTimer = setInterval(() => { now.value = Date.now() }, 10000)
-  await fetchData()
-})
+  syncTimer = setInterval(() => {
+    now.value = Date.now();
+  }, 10000);
+  await fetchData();
+});
 
 onUnmounted(() => {
-  if (syncTimer) clearInterval(syncTimer)
-})
+  if (syncTimer) clearInterval(syncTimer);
+});
 
 const isSyncDisabled = computed(() => {
-  if (!authStore.profile?.last_riot_sync) return false
-  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime()
-  return diff < 2 * 60 * 1000 // 2 mins cooldown
-})
+  if (!authStore.profile?.last_riot_sync) return false;
+  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime();
+  return diff < 2 * 60 * 1000; // 2 mins cooldown
+});
 
 const syncTooltip = computed(() => {
-  if (!isSyncDisabled.value || !authStore.profile?.last_riot_sync) return ''
-  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime()
-  const remaining = 2 * 60 * 1000 - diff
-  const mins = Math.ceil(remaining / 60000)
-  return `Prochaine synchronisation dans ${mins} min`
-})
+  if (!isSyncDisabled.value || !authStore.profile?.last_riot_sync) return "";
+  const diff = now.value - new Date(authStore.profile.last_riot_sync).getTime();
+  const remaining = 2 * 60 * 1000 - diff;
+  const mins = Math.ceil(remaining / 60000);
+  return `Prochaine synchronisation dans ${mins} min`;
+});
 
 async function silentlyDisableLooking() {
-  const token = await getToken()
+  const token = await getToken();
   try {
-    await api.patch('/profiles/me', { is_looking_for_team: false }, token)
-    await authStore.fetchProfile()
+    await api.patch("/profiles/me", { is_looking_for_team: false }, token);
+    await authStore.fetchProfile();
   } catch (e) {
-    console.error('Failed to auto-disable recruitment status', e)
+    console.error("Failed to auto-disable recruitment status", e);
   }
 }
 
 async function toggleRecruitmentStatus() {
-  if (team.value || togglingStatus.value) return
-  
-  togglingStatus.value = true
+  if (team.value || togglingStatus.value) return;
+
+  togglingStatus.value = true;
   try {
-    const token = await getToken()
-    const newStatus = !authStore.profile?.is_looking_for_team
-    await api.patch('/profiles/me', { is_looking_for_team: newStatus }, token)
-    await authStore.fetchProfile()
+    const token = await getToken();
+    const newStatus = !authStore.profile?.is_looking_for_team;
+    await api.patch("/profiles/me", { is_looking_for_team: newStatus }, token);
+    await authStore.fetchProfile();
     notificationStore.show(
-      newStatus ? 'Vous êtes maintenant en recherche d\'\u00e9quipe !' : 'Vous ne recherchez plus d\'\u00e9quipe.', 
-      'success'
-    )
+      newStatus
+        ? "Vous êtes maintenant en recherche d'\u00e9quipe !"
+        : "Vous ne recherchez plus d'\u00e9quipe.",
+      "success",
+    );
   } catch (err: any) {
-    notificationStore.show('Erreur: ' + err.message, 'error')
+    notificationStore.show("Erreur: " + err.message, "error");
   } finally {
-    togglingStatus.value = false
+    togglingStatus.value = false;
   }
 }
 
 async function fetchData() {
-  if (!authStore.user) return
-  const token = await getToken()
+  if (!authStore.user) return;
+  const token = await getToken();
   try {
-    const apps = await api.get('/profiles/me/applications', token)
-    sentApplications.value = apps
-    await inboxStore.fetchInbox()
+    const apps = await api.get("/profiles/me/applications", token);
+    sentApplications.value = apps;
+    await inboxStore.fetchInbox();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
 async function handleSyncRiot() {
-  if (!authStore.profile?.riot_id || isSyncDisabled.value) return
-  syncingRiot.value = true
+  if (!authStore.profile?.riot_id || isSyncDisabled.value) return;
+  syncingRiot.value = true;
   try {
-    const token = await getToken()
-    await api.post('/profiles/sync-riot', { riotId: authStore.profile.riot_id }, token)
-    await authStore.fetchProfile()
-    notificationStore.show('Profil Riot synchronisé avec succès !', 'success')
+    const token = await getToken();
+    await api.post(
+      "/profiles/sync-riot",
+      { riotId: authStore.profile.riot_id },
+      token,
+    );
+    await authStore.fetchProfile();
+    notificationStore.show("Profil Riot synchronisé avec succès !", "success");
   } catch (err: any) {
-    let msg = err.message
-    try { msg = JSON.parse(err.message).error || msg } catch(e) {}
-    notificationStore.show('Riot Sync: ' + msg, 'error')
+    let msg = err.message;
+    try {
+      msg = JSON.parse(err.message).error || msg;
+    } catch (e) {}
+    notificationStore.show("Riot Sync: " + msg, "error");
   } finally {
-    syncingRiot.value = false
+    syncingRiot.value = false;
   }
 }
-
 
 async function markAsRead(id: string) {
   try {
-    await inboxStore.markAsRead(id)
+    await inboxStore.markAsRead(id);
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }
 
-async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
-  savingProfile.value = true
-  fetchingRiot.value = true
-  riotError.value = ''
-  
+async function handleSaveSettings(data: {
+  bio: string;
+  riot_id: string;
+  avatar_url: string;
+  discord: string;
+  is_looking_for_team: boolean;
+  preferred_roles: string[];
+}) {
+  savingProfile.value = true;
+  fetchingRiot.value = true;
+  riotError.value = "";
+
   try {
-    const token = await getToken()
-    
+    const token = await getToken();
+
     // Step 1: Update Profile data
-    await api.patch('/profiles/me', data, token)
-    
+    await api.patch("/profiles/me", data, token);
+
     // Step 2: Auto-sync Riot data if Riot ID has changed
     if (data.riot_id !== authStore.profile?.riot_id) {
-      if (data.riot_id && data.riot_id.includes('#')) {
+      if (data.riot_id && data.riot_id.includes("#")) {
         try {
-          await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
+          await api.post(
+            "/profiles/sync-riot",
+            { riotId: data.riot_id },
+            token,
+          );
         } catch (syncErr: any) {
-          let msg = syncErr.message
+          let msg = syncErr.message;
           try {
-            msg = JSON.parse(syncErr.message).error || msg
-          } catch(e) {}
-          
-          if (msg.includes('introuvable')) {
-            riotError.value = 'Riot ID introuvable. Ce compte n\'existe pas.'
-          } else if (msg.includes('patienter')) {
-            riotError.value = 'Veuillez patienter 2 minutes entre chaque synchronisation.'
+            msg = JSON.parse(syncErr.message).error || msg;
+          } catch (e) {}
+
+          if (msg.includes("introuvable")) {
+            riotError.value = "Riot ID introuvable. Ce compte n'existe pas.";
+          } else if (msg.includes("patienter")) {
+            riotError.value =
+              "Veuillez patienter 2 minutes entre chaque synchronisation.";
           } else {
-            riotError.value = 'Impossible de lier ce compte Riot.'
+            riotError.value = "Impossible de lier ce compte Riot.";
           }
-          return // N'enregistre pas la suite du flow de sauvegarde, garde la pop-up ouverte
+          return; // N'enregistre pas la suite du flow de sauvegarde, garde la pop-up ouverte
         }
       }
     }
-    
+
     // Step 3: Refresh local store
-    await authStore.fetchProfile()
-    
-    notificationStore.show('Profil mis à jour !', 'success')
-    showSettings.value = false
+    await authStore.fetchProfile();
+
+    notificationStore.show("Profil mis à jour !", "success");
+    showSettings.value = false;
   } catch (err: any) {
-    notificationStore.show('Erreur: ' + err.message, 'error')
+    notificationStore.show("Erreur: " + err.message, "error");
   } finally {
-    savingProfile.value = false
-    fetchingRiot.value = false
+    savingProfile.value = false;
+    fetchingRiot.value = false;
   }
 }
 
-async function createTeam(data: { name: string; tag: string; description: string; logo_url: string }) {
-  savingTeam.value = true
+async function createTeam(data: {
+  name: string;
+  tag: string;
+  description: string;
+  logo_url: string;
+}) {
+  savingTeam.value = true;
   try {
-    const token = await getToken()
-    await api.post('/teams', data, token)
-    creatingTeam.value = false
-    await authStore.fetchProfile()
-    await fetchData()
-    notificationStore.show('Équipe créée avec succès !', 'success')
+    const token = await getToken();
+    await api.post("/teams", data, token);
+    creatingTeam.value = false;
+    await authStore.fetchProfile();
+    await fetchData();
+    notificationStore.show("Équipe créée avec succès !", "success");
   } catch (err: any) {
-    notificationStore.show('Erreur: ' + err.message, 'error')
+    notificationStore.show("Erreur: " + err.message, "error");
   } finally {
-    savingTeam.value = false
+    savingTeam.value = false;
   }
 }
 
 async function leaveTeam() {
-  if (!team.value) return
-  leavingTeam.value = true
+  if (!team.value) return;
+  leavingTeam.value = true;
   try {
-    const token = await getToken()
-    await api.post(`/teams/${team.value.id}/leave`, {}, token)
-    notificationStore.show('Vous avez quitté l\'\u00e9quipe.', 'success')
-    showLeaveConfirm.value = false
-    await authStore.fetchProfile()
+    const token = await getToken();
+    await api.post(`/teams/${team.value.id}/leave`, {}, token);
+    notificationStore.show("Vous avez quitté l'\u00e9quipe.", "success");
+    showLeaveConfirm.value = false;
+    await authStore.fetchProfile();
   } catch (err: any) {
-    notificationStore.show(err.message || 'Erreur lors du départ', 'error')
+    notificationStore.show(err.message || "Erreur lors du départ", "error");
   } finally {
-    leavingTeam.value = false
+    leavingTeam.value = false;
   }
 }
 
 async function logout() {
-  await authStore.signOut()
-  router.push('/')
+  await authStore.signOut();
+  router.push("/");
 }
 </script>
