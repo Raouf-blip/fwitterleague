@@ -74,62 +74,128 @@
       <!-- Participants Display (Team Scrim) -->
       <div v-if="scrim.type === 'team'" class="grid md:grid-cols-2 gap-8">
         <!-- Challenger (Blue) -->
-        <div class="bg-surface border border-border rounded-xl p-4 flex flex-col">
-          <div class="flex items-center gap-3 mb-4 border-b border-blue-500/30 pb-3">
-             <div v-if="scrim.challenger_team?.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <img :src="scrim.challenger_team.logo_url" class="w-full h-full object-cover" />
-             </div>
-             <div v-else class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center font-bold text-cyan">
-                {{ scrim.challenger_team?.tag }}
-             </div>
-             <div>
-                <h3 class="font-bold text-cyan text-lg">{{ scrim.challenger_team?.name }}</h3>
-                <span class="text-xs text-text-muted">CHALLENGER (BLUE)</span>
-             </div>
+        <div
+          class="bg-surface border border-border rounded-xl p-4 flex flex-col"
+        >
+          <div
+            class="flex items-center gap-3 mb-4 border-b border-blue-500/30 pb-3"
+          >
+            <div
+              v-if="scrim.challenger_team?.logo_url"
+              class="w-12 h-12 rounded-lg overflow-hidden shrink-0"
+            >
+              <img
+                :src="scrim.challenger_team.logo_url"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center font-bold text-cyan"
+            >
+              {{ scrim.challenger_team?.tag }}
+            </div>
+            <div>
+              <h3 class="font-bold text-cyan text-lg">
+                {{ scrim.challenger_team?.name }}
+              </h3>
+              <span class="text-xs text-text-muted">CHALLENGER (BLUE)</span>
+            </div>
           </div>
-          
-          <div v-if="loadingMembers" class="py-4 flex justify-center"><BaseSpinner /></div>
+
+          <div v-if="loadingMembers" class="py-4 flex justify-center">
+            <BaseSpinner />
+          </div>
           <div v-else class="space-y-2">
-             <div v-for="member in blueTeamMembers" :key="member.id" class="flex items-center gap-3 p-2 rounded bg-surface-elevated">
-                <BaseAvatar :src="member.profile?.avatar_url" :name="member.profile?.username" size="sm" />
-                <div class="flex flex-col">
-                   <span class="font-bold text-sm">{{ member.profile?.username }}</span>
-                   <span class="text-[10px] text-text-muted uppercase">{{ member.role }}</span>
-                </div>
-                <div class="ml-auto">
-                   <RankBadge v-if="member.profile?.rank" :rank="member.profile.rank" size="sm" />
-                </div>
-             </div>
+            <div
+              v-for="member in blueTeamMembers"
+              :key="member.id"
+              class="flex items-center gap-3 p-2 rounded bg-surface-elevated"
+            >
+              <BaseAvatar
+                :src="member.profile?.avatar_url"
+                :name="member.profile?.username"
+                size="sm"
+              />
+              <div class="flex flex-col">
+                <span class="font-bold text-sm">{{
+                  member.profile?.username
+                }}</span>
+                <span class="text-[10px] text-text-muted uppercase">{{
+                  member.role
+                }}</span>
+              </div>
+              <div class="ml-auto">
+                <RankBadge
+                  v-if="member.profile?.rank"
+                  :rank="member.profile.rank"
+                  size="sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Challenged (Red) -->
-        <div class="bg-surface border border-border rounded-xl p-4 flex flex-col">
-          <div class="flex items-center gap-3 mb-4 border-b border-red-500/30 pb-3">
-             <div v-if="scrim.challenged_team?.logo_url" class="w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <img :src="scrim.challenged_team.logo_url" class="w-full h-full object-cover" />
-             </div>
-             <div v-else class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center font-bold text-danger">
-                {{ scrim.challenged_team?.tag }}
-             </div>
-             <div>
-                <h3 class="font-bold text-danger text-lg">{{ scrim.challenged_team?.name }}</h3>
-                <span class="text-xs text-text-muted">CHALLENGED (RED)</span>
-             </div>
+        <div
+          class="bg-surface border border-border rounded-xl p-4 flex flex-col"
+        >
+          <div
+            class="flex items-center gap-3 mb-4 border-b border-red-500/30 pb-3"
+          >
+            <div
+              v-if="scrim.challenged_team?.logo_url"
+              class="w-12 h-12 rounded-lg overflow-hidden shrink-0"
+            >
+              <img
+                :src="scrim.challenged_team.logo_url"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center font-bold text-danger"
+            >
+              {{ scrim.challenged_team?.tag }}
+            </div>
+            <div>
+              <h3 class="font-bold text-danger text-lg">
+                {{ scrim.challenged_team?.name }}
+              </h3>
+              <span class="text-xs text-text-muted">CHALLENGED (RED)</span>
+            </div>
           </div>
-          
-          <div v-if="loadingMembers" class="py-4 flex justify-center"><BaseSpinner /></div>
+
+          <div v-if="loadingMembers" class="py-4 flex justify-center">
+            <BaseSpinner />
+          </div>
           <div v-else class="space-y-2">
-             <div v-for="member in redTeamMembers" :key="member.id" class="flex items-center gap-3 p-2 rounded bg-surface-elevated">
-                <BaseAvatar :src="member.profile?.avatar_url" :name="member.profile?.username" size="sm" />
-                <div class="flex flex-col">
-                   <span class="font-bold text-sm">{{ member.profile?.username }}</span>
-                   <span class="text-[10px] text-text-muted uppercase">{{ member.role }}</span>
-                </div>
-                <div class="ml-auto">
-                   <RankBadge v-if="member.profile?.rank" :rank="member.profile.rank" size="sm" />
-                </div>
-             </div>
+            <div
+              v-for="member in redTeamMembers"
+              :key="member.id"
+              class="flex items-center gap-3 p-2 rounded bg-surface-elevated"
+            >
+              <BaseAvatar
+                :src="member.profile?.avatar_url"
+                :name="member.profile?.username"
+                size="sm"
+              />
+              <div class="flex flex-col">
+                <span class="font-bold text-sm">{{
+                  member.profile?.username
+                }}</span>
+                <span class="text-[10px] text-text-muted uppercase">{{
+                  member.role
+                }}</span>
+              </div>
+              <div class="ml-auto">
+                <RankBadge
+                  v-if="member.profile?.rank"
+                  :rank="member.profile.rank"
+                  size="sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -145,8 +211,15 @@
           }"
         >
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-cyan truncate" :title="scrim.challenger_team?.name">
-              {{ scrim.type === 'team' && scrim.challenger_team ? (scrim.challenger_team.tag || scrim.challenger_team.name) : 'Équipe Bleue' }}
+            <h3
+              class="font-bold text-cyan truncate"
+              :title="scrim.challenger_team?.name"
+            >
+              {{
+                scrim.type === "team" && scrim.challenger_team
+                  ? scrim.challenger_team.tag || scrim.challenger_team.name
+                  : "Équipe Bleue"
+              }}
             </h3>
             <span class="text-xs text-text-muted">{{ blueSide.length }}/5</span>
           </div>
@@ -189,8 +262,10 @@
             >
               {{
                 mySide
-                  ? "Changer pour " + (scrim.type === 'team' ? "cette équipe" : "l'équipe Bleue")
-                  : "Rejoindre " + (scrim.type === 'team' ? "cette équipe" : "l'équipe Bleue")
+                  ? "Changer pour " +
+                    (scrim.type === "team" ? "cette équipe" : "l'équipe Bleue")
+                  : "Rejoindre " +
+                    (scrim.type === "team" ? "cette équipe" : "l'équipe Bleue")
               }}
             </BaseButton>
             <div v-else class="text-center text-xs text-cyan font-bold py-2">
@@ -208,8 +283,15 @@
           }"
         >
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-danger truncate" :title="scrim.challenged_team?.name">
-               {{ scrim.type === 'team' && scrim.challenged_team ? (scrim.challenged_team.tag || scrim.challenged_team.name) : 'Équipe Rouge' }}
+            <h3
+              class="font-bold text-danger truncate"
+              :title="scrim.challenged_team?.name"
+            >
+              {{
+                scrim.type === "team" && scrim.challenged_team
+                  ? scrim.challenged_team.tag || scrim.challenged_team.name
+                  : "Équipe Rouge"
+              }}
             </h3>
             <span class="text-xs text-text-muted">{{ redSide.length }}/5</span>
           </div>
@@ -252,8 +334,10 @@
             >
               {{
                 mySide
-                  ? "Changer pour " + (scrim.type === 'team' ? "cette équipe" : "l'équipe Rouge")
-                  : "Rejoindre " + (scrim.type === 'team' ? "cette équipe" : "l'équipe Rouge")
+                  ? "Changer pour " +
+                    (scrim.type === "team" ? "cette équipe" : "l'équipe Rouge")
+                  : "Rejoindre " +
+                    (scrim.type === "team" ? "cette équipe" : "l'équipe Rouge")
               }}
             </BaseButton>
             <div v-else class="text-center text-xs text-danger font-bold py-2">
@@ -305,7 +389,7 @@
             v-if="scrim.status === 'scheduled'"
             class="mt-4 pt-4 border-t border-border"
           >
-             <!-- Allow reserve join for everyone -->
+            <!-- Allow reserve join for everyone -->
             <BaseButton
               v-if="mySide && ['blue', 'red'].includes(mySide)"
               variant="ghost"
@@ -338,10 +422,7 @@
 
       <!-- User Action: Leave -->
       <div
-        v-if="
-          amIParticipant &&
-          scrim.status === 'scheduled'
-        "
+        v-if="amIParticipant && scrim.status === 'scheduled'"
         class="mt-8 text-center"
       >
         <BaseButton
@@ -474,53 +555,62 @@ const me = computed(() => authStore.user?.id);
 // Fetch members logic
 async function fetchTeamMembers() {
   if (!scrim.value || scrim.value.type !== "team") return;
-  
+
   loadingMembers.value = true;
   try {
     // Challenger = Blue
     if (scrim.value.challenger_team_id) {
-        const { data } = await supabase.from('team_members')
-            .select('*, profile:profile_id(*)')
-            .eq('team_id', scrim.value.challenger_team_id);
-        blueTeamMembers.value = data || [];
+      const { data } = await supabase
+        .from("team_members")
+        .select("*, profile:profile_id(*)")
+        .eq("team_id", scrim.value.challenger_team_id);
+      blueTeamMembers.value = data || [];
     }
     // Challenged = Red
     if (scrim.value.challenged_team_id) {
-        const { data } = await supabase.from('team_members')
-            .select('*, profile:profile_id(*)')
-            .eq('team_id', scrim.value.challenged_team_id);
-        redTeamMembers.value = data || [];
+      const { data } = await supabase
+        .from("team_members")
+        .select("*, profile:profile_id(*)")
+        .eq("team_id", scrim.value.challenged_team_id);
+      redTeamMembers.value = data || [];
     }
-  } catch(e) { console.error(e); }
-  finally { loadingMembers.value = false; }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    loadingMembers.value = false;
+  }
 }
 
 // Watch scrim to fetch members
-watch(() => scrim.value, (newVal) => {
-    if (newVal && newVal.type === 'team') {
-        fetchTeamMembers();
+watch(
+  () => scrim.value,
+  (newVal) => {
+    if (newVal && newVal.type === "team") {
+      fetchTeamMembers();
     }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 // Participant list for Result Form
 const formParticipants = computed(() => {
-    if (scrim.value?.type === 'open') {
-        return scrim.value.participants || [];
-    }
-    // For Team, map members to participant shape
-    const pBlue = blueTeamMembers.value.map((m: any) => ({
-        user_id: m.profile_id,
-        side: 'blue',
-        profile: m.profile,
-        role: m.role
-    }));
-    const pRed = redTeamMembers.value.map((m: any) => ({
-        user_id: m.profile_id,
-        side: 'red',
-        profile: m.profile,
-        role: m.role
-    }));
-    return [...pBlue, ...pRed];
+  if (scrim.value?.type === "open") {
+    return scrim.value.participants || [];
+  }
+  // For Team, map members to participant shape
+  const pBlue = blueTeamMembers.value.map((m: any) => ({
+    user_id: m.profile_id,
+    side: "blue",
+    profile: m.profile,
+    role: m.role,
+  }));
+  const pRed = redTeamMembers.value.map((m: any) => ({
+    user_id: m.profile_id,
+    side: "red",
+    profile: m.profile,
+    role: m.role,
+  }));
+  return [...pBlue, ...pRed];
 });
 
 // Roles

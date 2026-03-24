@@ -559,7 +559,7 @@ async function handleSubmit() {
         cs: Number(s.cs) || 0,
         win: s.win,
         role: s.role, // Ensure we send role
-    })),
+      })),
   });
 }
 </script>

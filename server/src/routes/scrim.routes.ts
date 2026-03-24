@@ -219,27 +219,37 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
       .select("team_id")
       .eq("profile_id", userId)
       .in("team_id", [scrim.challenger_team_id, scrim.challenged_team_id]); // Returns array
-    
+
     // Check if user is in one of the teams
-    const userTeamId = membership && membership.length > 0 ? membership[0].team_id : null;
+    const userTeamId =
+      membership && membership.length > 0 ? membership[0].team_id : null;
 
     if (!userTeamId) {
-       return res.status(403).json({ error: "Vous ne faites pas partie d'une équipe participant à ce scrim." });
+      return res
+        .status(403)
+        .json({
+          error:
+            "Vous ne faites pas partie d'une équipe participant à ce scrim.",
+        });
     }
 
     // Enforce Side
     // Challenger = Blue (Host), Challenged = Red (Guest)
     if (userTeamId === scrim.challenger_team_id) {
-        if (normalizedSide && normalizedSide !== 'blue') {
-             // S'ils essaient dec joindre Red
-             return res.status(400).json({ error: "Votre équipe joue coté Bleu (Challenger)." });
-        }
-        if (!normalizedSide) normalizedSide = 'blue';
+      if (normalizedSide && normalizedSide !== "blue") {
+        // S'ils essaient dec joindre Red
+        return res
+          .status(400)
+          .json({ error: "Votre équipe joue coté Bleu (Challenger)." });
+      }
+      if (!normalizedSide) normalizedSide = "blue";
     } else if (userTeamId === scrim.challenged_team_id) {
-        if (normalizedSide && normalizedSide !== 'red') {
-             return res.status(400).json({ error: "Votre équipe joue coté Rouge (Challenged)." });
-        }
-         if (!normalizedSide) normalizedSide = 'red';
+      if (normalizedSide && normalizedSide !== "red") {
+        return res
+          .status(400)
+          .json({ error: "Votre équipe joue coté Rouge (Challenged)." });
+      }
+      if (!normalizedSide) normalizedSide = "red";
     }
   } else if (scrim.type !== "open") {
     return res.status(400).json({
@@ -324,7 +334,9 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
   // Check generic rights (Creator or Host Captain or Guest Captain)
   const { data: scrim } = await supabase
     .from("scrims")
-    .select("*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)")
+    .select(
+      "*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)",
+    )
     .eq("id", id)
     .single();
 
@@ -431,7 +443,9 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
 
   const { data: scrim } = await supabase
     .from("scrims")
-    .select("*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)")
+    .select(
+      "*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)",
+    )
     .eq("id", id)
     .single();
 
@@ -524,12 +538,15 @@ router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
 
     if (scrim.type === "team") {
       // For Team Scrims, fetch all members from both teams
-      const teamIds = [scrim.challenger_team_id, scrim.challenged_team_id].filter(Boolean);
+      const teamIds = [
+        scrim.challenger_team_id,
+        scrim.challenged_team_id,
+      ].filter(Boolean);
       const { data: members } = await supabase
         .from("team_members")
         .select("team_id, profile_id, profile:profile_id(id, username)")
         .in("team_id", teamIds);
-      
+
       // Normalize to match scrim_participants structure (user_id instead of profile_id)
       participants = (members || []).map((m: any) => ({
         user_id: m.profile_id,
@@ -543,7 +560,7 @@ router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
         .eq("scrim_id", id);
       participants = openParticipants || [];
     }
-    
+
     // Extract unique usernames (just in case)
     const participantNames = participants
       .map((p: any) => p.profile?.username)
