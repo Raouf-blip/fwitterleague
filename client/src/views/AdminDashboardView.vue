@@ -43,8 +43,14 @@
               <BaseSelect
                 v-model="roleFilter"
                 :options="roleOptions"
-                placeholder="Tous les rôles"
-                class="w-40"
+                placeholder="Rôle"
+                class="w-32"
+              />
+              <BaseSelect
+                v-model="statusFilter"
+                :options="statusOptions"
+                placeholder="Statut"
+                class="w-36"
               />
             </div>
           </div>
@@ -76,7 +82,12 @@
                     <div class="flex items-center gap-3">
                       <BaseAvatar :name="user.username" :src="user.avatar_url ?? undefined" size="sm" />
                       <div>
-                        <div class="font-semibold text-text-primary">{{ user.username }}</div>
+                        <RouterLink
+                          :to="`/profile/${user.id}`"
+                          class="font-semibold text-text-primary hover:text-gold transition-colors"
+                        >
+                          {{ user.username }}
+                        </RouterLink>
                         <div class="text-xs text-text-muted">{{ formatDate(user.created_at) }}</div>
                       </div>
                     </div>
@@ -98,6 +109,7 @@
                     <div class="flex flex-wrap gap-1">
                       <BaseBadge v-if="user.is_captain" variant="gold" size="sm">Capitaine</BaseBadge>
                       <BaseBadge v-if="user.is_looking_for_team" variant="success" size="sm">Agent libre</BaseBadge>
+                      <BaseBadge v-if="user.is_caster" variant="purple" size="sm">Caster</BaseBadge>
                     </div>
                   </td>
                   <td class="px-5 py-3">
@@ -106,7 +118,7 @@
                         <template #icon><Eye :size="14" /></template>
                       </BaseButton>
                       <BaseButton
-                        v-if="isSuperAdmin && user.id !== authStore.user?.id"
+                        v-if="isSuperAdmin"
                         variant="ghost"
                         size="sm"
                         @click="openRoleModal(user)"
@@ -169,13 +181,25 @@
                         {{ t.tag }}
                       </div>
                       <div>
-                        <div class="font-semibold text-text-primary">{{ t.name }}</div>
+                        <RouterLink
+                          :to="`/teams/${t.id}`"
+                          class="font-bold text-text-primary hover:text-gold transition-colors"
+                        >
+                          {{ t.name }}
+                        </RouterLink>
                         <div class="text-xs text-text-muted">[{{ t.tag }}]</div>
                       </div>
                     </div>
                   </td>
                   <td class="px-5 py-3 hidden sm:table-cell">
-                    <span class="text-text-secondary">{{ getCaptainName(t) }}</span>
+                    <RouterLink
+                      v-if="getCaptainId(t)"
+                      :to="`/profile/${getCaptainId(t)}`"
+                      class="font-semibold text-text-primary hover:text-gold transition-colors"
+                    >
+                      {{ getCaptainName(t) }}
+                    </RouterLink>
+                    <span v-else class="text-text-secondary">{{ getCaptainName(t) }}</span>
                   </td>
                   <td class="px-5 py-3 text-center text-text-primary font-semibold">
                     {{ t.members?.length || 0 }}/6
@@ -229,6 +253,23 @@
             { value: 'superadmin', label: 'Super Admin' },
           ]"
         />
+        <BaseSelect
+          v-model="newStatus"
+          label="Statut du joueur"
+          :options="[
+            { value: 'none', label: 'Aucun' },
+            { value: 'captain', label: 'Capitaine' },
+            { value: 'lft', label: 'Agent libre' },
+          ]"
+        />
+        <BaseSelect
+          v-model="isCaster"
+          label="Caster Officiel"
+          :options="[
+            { value: 'no', label: 'Non' },
+            { value: 'yes', label: 'Oui' },
+          ]"
+        />
       </div>
       <template #footer>
         <div class="flex justify-end gap-3">
@@ -274,9 +315,14 @@
               class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
             >
               <div class="flex items-center gap-3">
-                <BaseAvatar :name="m.profile?.username" :src="m.profile?.avatar_url" size="sm" />
+                <BaseAvatar :name="m.profile?.username" :src="m.profile?.avatar_url ?? undefined" size="sm" />
                 <div>
-                  <span class="text-sm font-semibold text-text-primary">{{ m.profile?.username }}</span>
+                  <RouterLink
+                    :to="`/profile/${m.profile_id}`"
+                    class="text-sm font-semibold text-text-primary hover:text-gold transition-colors"
+                  >
+                    {{ m.profile?.username }}
+                  </RouterLink>
                   <BaseBadge v-if="m.role === 'Captain'" variant="gold" size="sm" class="ml-2">Capitaine</BaseBadge>
                 </div>
               </div>
@@ -311,9 +357,14 @@
               class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
             >
               <div class="flex items-center gap-3">
-                <BaseAvatar :name="p.username" :src="p.avatar_url" size="sm" />
+                <BaseAvatar :name="p.username" :src="p.avatar_url ?? undefined" size="sm" />
                 <div>
-                  <span class="text-sm font-semibold text-text-primary">{{ p.username }}</span>
+                  <RouterLink
+                    :to="`/profile/${p.id}`"
+                    class="text-sm font-semibold text-text-primary hover:text-gold transition-colors"
+                  >
+                    {{ p.username }}
+                  </RouterLink>
                   <span v-if="p.riot_id" class="text-xs text-text-muted ml-2">{{ p.riot_id }}</span>
                 </div>
               </div>
@@ -369,12 +420,15 @@ const activeSection = ref<'users' | 'teams'>('users')
 // User filters
 const userSearch = ref('')
 const roleFilter = ref('')
+const statusFilter = ref('')
 const teamSearch = ref('')
 
 // Role modal
 const showRoleModal = ref(false)
 const selectedUser = ref<Profile | null>(null)
 const newRole = ref('user')
+const newStatus = ref<'none' | 'captain' | 'lft'>('none')
+const isCaster = ref('no')
 const changingRole = ref(false)
 
 // Delete user
@@ -396,10 +450,17 @@ const removingMemberId = ref<string | null>(null)
 const isSuperAdmin = computed(() => authStore.profile?.role === 'superadmin')
 
 const roleOptions = [
-  { value: '', label: 'Tous' },
+  { value: '', label: 'Tous les rôles' },
   { value: 'user', label: 'Utilisateur' },
   { value: 'admin', label: 'Admin' },
   { value: 'superadmin', label: 'Super Admin' },
+]
+
+const statusOptions = [
+  { value: '', label: 'Tous les statuts' },
+  { value: 'captain', label: 'Capitaine' },
+  { value: 'lft', label: 'Agent libre' },
+  { value: 'caster', label: 'Caster' },
 ]
 
 const stats = computed(() => {
@@ -432,6 +493,11 @@ const filteredUsers = computed(() => {
   if (roleFilter.value) {
     result = result.filter(u => u.role === roleFilter.value)
   }
+  if (statusFilter.value) {
+    if (statusFilter.value === 'captain') result = result.filter(u => u.is_captain)
+    else if (statusFilter.value === 'lft') result = result.filter(u => u.is_looking_for_team)
+    else if (statusFilter.value === 'caster') result = result.filter(u => u.is_caster)
+  }
   return result
 })
 
@@ -462,6 +528,11 @@ function getCaptainName(team: Team) {
   return captain?.profile?.username || '-'
 }
 
+function getCaptainId(team: Team) {
+  const captain = team.members?.find(m => m.role === 'Captain')
+  return captain?.profile_id
+}
+
 onMounted(async () => {
   await fetchAll()
 })
@@ -490,6 +561,12 @@ async function fetchAll() {
 function openRoleModal(user: Profile) {
   selectedUser.value = user
   newRole.value = user.role
+  
+  if (user.is_captain) newStatus.value = 'captain'
+  else if (user.is_looking_for_team) newStatus.value = 'lft'
+  else newStatus.value = 'none'
+
+  isCaster.value = user.is_caster ? 'yes' : 'no'
   showRoleModal.value = true
 }
 
@@ -503,12 +580,37 @@ async function changeRole() {
   changingRole.value = true
   try {
     const token = await getToken()
-    await api.patch(`/profiles/${selectedUser.value.id}/role`, { role: newRole.value }, token)
-    notificationStore.show(`Rôle de ${selectedUser.value.username} mis à jour`, 'success')
+    
+    const promises = []
+    
+    // Update role if changed
+    if (newRole.value !== selectedUser.value.role) {
+      promises.push(api.patch(`/profiles/${selectedUser.value.id}/role`, { role: newRole.value }, token))
+    }
+    
+    // Update status
+    const isCaptain = newStatus.value === 'captain'
+    const isLFT = newStatus.value === 'lft'
+    const newIsCaster = isCaster.value === 'yes'
+    const casterChanged = newIsCaster !== selectedUser.value.is_caster
+    
+    if (isCaptain !== selectedUser.value.is_captain || isLFT !== selectedUser.value.is_looking_for_team || casterChanged) {
+      promises.push(api.patch(`/profiles/${selectedUser.value.id}/status`, { 
+        is_captain: isCaptain, 
+        is_looking_for_team: isLFT,
+        is_caster: newIsCaster
+      }, token))
+    }
+
+    if (promises.length > 0) {
+      await Promise.all(promises)
+      notificationStore.show(`Utilisateur ${selectedUser.value.username} mis à jour`, 'success')
+      await fetchAll()
+    }
+    
     showRoleModal.value = false
-    await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur changement de rôle', 'error')
+    notificationStore.show(e.message || 'Erreur mise à jour utilisateur', 'error')
   } finally {
     changingRole.value = false
   }

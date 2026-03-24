@@ -47,6 +47,7 @@ Stocke les informations publiques et de jeu des utilisateurs.
 - `role` (text) : 'user', 'admin', ou 'superadmin'.
 - `is_captain` (boolean) : True si l'utilisateur possède une équipe.
 - `is_looking_for_team` (boolean) : Statut de recherche de joueur (Free Agent).
+- `is_caster` (boolean) : True si l'utilisateur est un caster officiel.
 - `bio` (text) : Biographie de l'utilisateur.
 - `rank` (text) : Rang LoL synchronisé (ex: "PLATINUM I").
 - `winrate` (integer) : Pourcentage de victoire.

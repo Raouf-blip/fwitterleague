@@ -7,9 +7,24 @@ const router = Router();
 
 // Public: List all teams
 router.get('/', async (req, res) => {
-  const { data, error } = await supabase.from('teams').select('*').order('created_at', { ascending: false });
+  const { data: teams, error } = await supabase.from('teams').select('*').order('created_at', { ascending: false });
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+
+  if (!teams || teams.length === 0) {
+    return res.json([]);
+  }
+
+  const teamIds = teams.map(t => t.id);
+  const { data: members } = await supabase.from('team_members')
+    .select('*, profile:profile_id(*)')
+    .in('team_id', teamIds);
+
+  const teamsWithMembers = teams.map(t => ({
+    ...t,
+    members: members ? members.filter(m => m.team_id === t.id) : []
+  }));
+
+  res.json(teamsWithMembers);
 });
 
 // Public: Get team detail with members

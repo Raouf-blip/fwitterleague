@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 
 const props = withDefaults(defineProps<{
-  variant?: 'gold' | 'cyan' | 'success' | 'danger' | 'warning' | 'muted' | 'info'
+  variant?: 'gold' | 'cyan' | 'success' | 'danger' | 'warning' | 'muted' | 'info' | 'purple'
   size?: 'sm' | 'md'
 }>(), {
   variant: 'gold',
@@ -29,6 +29,7 @@ const classes = computed(() => {
     warning: 'bg-warning-muted text-warning border border-warning/20',
     muted: 'bg-white/5 text-text-muted border border-white/10',
     info: 'bg-cyan-muted text-cyan-light border border-cyan/20',
+    purple: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
   }
 
   return [

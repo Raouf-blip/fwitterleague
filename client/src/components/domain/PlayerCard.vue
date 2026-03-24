@@ -11,6 +11,14 @@
             <Shield :size="10" class="text-gold" />
             <span class="text-[9px] font-black text-gold uppercase tracking-tighter">{{ player.team.tag || player.team.name }}</span>
           </div>
+          <div v-if="player.is_caster" class="flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/10 rounded border border-purple-500/20 shrink-0">
+            <Mic :size="10" class="text-purple-400" />
+            <span class="text-[9px] font-black text-purple-400 uppercase tracking-tighter">Caster</span>
+          </div>
+          <div v-if="player.role === 'admin' || player.role === 'superadmin'" class="flex items-center gap-1 px-1.5 py-0.5 bg-cyan/10 rounded border border-cyan/20 shrink-0">
+            <ShieldCheck :size="10" class="text-cyan" />
+            <span class="text-[9px] font-black text-cyan uppercase tracking-tighter">Staff</span>
+          </div>
           <div v-else-if="player.is_looking_for_team" class="flex items-center gap-1 px-1.5 py-0.5 bg-cyan/10 rounded border border-cyan/20 shrink-0">
             <UserPlus :size="10" class="text-cyan" />
             <span class="text-[9px] font-black text-cyan uppercase tracking-tighter">Libre</span>
@@ -98,7 +106,7 @@
 <script setup lang="ts">
 import DiscordIcon from '../icons/DiscordIcon.vue'
 import LolRoleIcon from '../icons/LolRoleIcon.vue'
-import { TrendingUp, UserPlus, ExternalLink, Shield } from 'lucide-vue-next'
+import { TrendingUp, UserPlus, ExternalLink, Shield, Mic, ShieldCheck } from 'lucide-vue-next'
 import type { Agent } from '../../types'
 import { getOpggUrl, getDpmUrl } from '../../lib/formatters'
 import BaseCard from '../ui/BaseCard.vue'

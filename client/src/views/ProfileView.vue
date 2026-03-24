@@ -8,13 +8,21 @@
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
             <h1 class="text-2xl font-extrabold text-text-primary">{{ authStore.profile.username }}</h1>
-            <BaseBadge 
+            <div v-if="team" class="flex items-center gap-1.5 px-2 py-1 bg-gold/10 rounded-lg border border-gold/20 shrink-0">
+              <Shield :size="12" class="text-gold" />
+              <span class="text-[11px] font-black text-gold uppercase tracking-widest">{{ team.tag || team.name }}</span>
+            </div>
+            <div v-if="authStore.profile.is_caster" class="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 rounded-lg border border-purple-500/20 shrink-0">
+              <Mic :size="12" class="text-purple-400" />
+              <span class="text-[11px] font-black text-purple-400 uppercase tracking-widest">Caster</span>
+            </div>
+            <div 
               v-if="authStore.profile.role === 'admin' || authStore.profile.role === 'superadmin'" 
-              variant="cyan" 
-              size="sm"
+              class="flex items-center gap-1.5 px-2 py-1 bg-cyan/10 rounded-lg border border-cyan/20 shrink-0"
             >
-              Staff
-            </BaseBadge>
+              <ShieldCheck :size="12" class="text-cyan" />
+              <span class="text-[11px] font-black text-cyan uppercase tracking-widest">Staff</span>
+            </div>
           </div>
 
           <div class="flex items-center gap-3 mt-1 flex-wrap">
@@ -356,6 +364,8 @@ import {
   ExternalLink,
   DoorOpen,
   RefreshCw,
+  Mic,
+  ShieldCheck,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'

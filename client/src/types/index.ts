@@ -9,6 +9,7 @@ export interface Profile {
   preferred_roles?: string[]
   is_captain: boolean
   is_looking_for_team: boolean
+  is_caster?: boolean
   bio: string | null
   rank: string | null
   winrate: number

@@ -127,6 +127,25 @@ router.patch('/:id/role', authenticate, authorizeSuperAdmin, async (req: any, re
   res.json(data);
 });
 
+// Admin: Change user status
+router.patch('/:id/status', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { is_captain, is_looking_for_team, is_caster } = req.body;
+  const updateData: any = {};
+  if (is_captain !== undefined) updateData.is_captain = is_captain;
+  if (is_looking_for_team !== undefined) updateData.is_looking_for_team = is_looking_for_team;
+  if (is_caster !== undefined) updateData.is_caster = is_caster;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 // Public: Get profile by ID
 router.get('/:id', async (req, res) => {
   const { data, error } = await supabase.from('profiles').select('*').eq('id', req.params.id).single();
