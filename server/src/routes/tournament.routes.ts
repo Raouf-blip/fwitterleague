@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabase } from '../config/supabase';
 import { authenticate } from '../middlewares/auth';
 import { authorizeAdmin } from '../middlewares/admin';
+import { calculateAbsoluteLP, getRankFromLP } from '../lib/rank-utils';
 
 const router = Router();
 
@@ -37,8 +38,39 @@ router.get('/:id', async (req, res) => {
   const { data, error } = await supabase.from('tournaments').select('*').eq('id', req.params.id).single();
   if (error) return res.status(404).json({ error: 'Tournoi introuvable.' });
 
-  const { data: registrations } = await supabase.from('tournament_registrations').select('*, team:team_id(*)').eq('tournament_id', req.params.id);
-  res.json({ ...data, registrations });
+  const { data: registrationsData } = await supabase.from('tournament_registrations')
+    .select('*, team:team_id(*, members:team_members(*, profile:profile_id(*)))')
+    .eq('tournament_id', req.params.id);
+
+  const registrations = registrationsData || [];
+
+  const registrationsWithElo = registrations.map(reg => {
+    const teamMembers = reg.team?.members || [];
+    
+    // Filter out unranked players for average calculation
+    const rankedMembers = teamMembers.filter((m: any) => {
+      const lp = calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+      return lp > 0;
+    });
+
+    const totalLP = rankedMembers.reduce((sum: number, m: any) => {
+      return sum + calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+    }, 0);
+    
+    const averageLP = rankedMembers.length > 0 ? totalLP / rankedMembers.length : 0;
+    const averageRank = getRankFromLP(averageLP);
+
+    return {
+      ...reg,
+      team: {
+        ...reg.team,
+        total_lp: totalLP,
+        average_rank: averageRank
+      }
+    };
+  });
+
+  res.json({ ...data, registrations: registrationsWithElo });
 });
 
 // Admin Only: Create tournament

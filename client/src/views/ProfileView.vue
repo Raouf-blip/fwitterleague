@@ -204,7 +204,10 @@
               </div>
               <div class="min-w-0">
                 <h3 class="font-bold text-text-primary truncate">{{ team.name }}</h3>
-                <p class="text-xs text-gold uppercase tracking-widest font-bold">Membre actif</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <p class="text-[10px] text-gold uppercase tracking-widest font-extrabold px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20">Membre</p>
+                  <RankBadge v-if="team.average_rank" :rank="team.average_rank" />
+                </div>
               </div>
             </div>
             <div class="flex gap-2">

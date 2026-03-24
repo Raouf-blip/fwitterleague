@@ -156,7 +156,6 @@ import PageHeader from '../components/layout/PageHeader.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
-import BaseSelect from '../components/ui/BaseSelect.vue'
 import PlayerCard from '../components/domain/PlayerCard.vue'
 import InviteModal from '../components/forms/InviteModal.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -297,7 +296,7 @@ const filteredAgents = computed(() => {
     result = result.filter(a => a.is_looking_for_team && !a.team)
   }
 
-  // 6. Tri : Agents Libres en priorité, puis par date de création
+  // 6. Tri : Agents Libres en priorité, puis par ordre alphabétique
   return result.sort((a, b) => {
     const aIsFree = a.is_looking_for_team && !a.team;
     const bIsFree = b.is_looking_for_team && !b.team;
@@ -305,7 +304,7 @@ const filteredAgents = computed(() => {
     if (aIsFree && !bIsFree) return -1;
     if (!aIsFree && bIsFree) return 1;
     
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    return a.username.localeCompare(b.username);
   })
 })
 </script>

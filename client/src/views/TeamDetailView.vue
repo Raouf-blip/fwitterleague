@@ -14,8 +14,12 @@
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
             <h1 class="text-2xl font-extrabold text-text-primary">{{ team.name }}</h1>
-            <BaseBadge variant="gold">[{{ team.tag }}]</BaseBadge>
+            <BaseBadge variant="gold">{{ team.tag }}</BaseBadge>
             <BaseBadge v-if="team.is_locked" variant="danger" size="md">Roster verrouillé</BaseBadge>
+          </div>
+          <div v-if="team.average_rank" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
+            Elo moyen :
+            <RankBadge :rank="team.average_rank" />
           </div>
           <p v-if="team.description" class="text-sm text-text-secondary mt-2">{{ team.description }}</p>
         </div>
@@ -139,6 +143,7 @@ import BaseModal from '../components/ui/BaseModal.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import RosterTable from '../components/domain/RosterTable.vue'
 import StatBlock from '../components/domain/StatBlock.vue'
+import RankBadge from '../components/domain/RankBadge.vue'
 import ApplyModal from '../components/forms/ApplyModal.vue'
 import TeamCreateForm from '../components/forms/TeamCreateForm.vue'
 

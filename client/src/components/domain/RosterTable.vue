@@ -29,10 +29,11 @@
           <div class="flex flex-col min-w-0">
             <RouterLink
               :to="`/profile/${slot.member.profile.id}`"
-              class="font-black text-base text-text-primary truncate hover:text-gold transition-colors block leading-tight mb-1"
+              class="font-black text-base text-text-primary truncate hover:text-gold transition-colors block leading-tight mb-0.5"
             >
               {{ slot.member.profile.username }}
             </RouterLink>
+            <div class="text-xs text-text-muted">{{ slot.member.profile.riot_id || 'Riot ID non lié' }}</div>
             
             <div class="flex flex-wrap items-center gap-2">
               <RankBadge :rank="slot.member.profile.rank" :lp="slot.member.profile.lp" />

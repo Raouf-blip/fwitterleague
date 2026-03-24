@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabase } from '../config/supabase';
 import { authenticate } from '../middlewares/auth';
 import { checkTeamLock } from '../utils/team-lock';
+import { calculateAbsoluteLP, getRankFromLP } from '../lib/rank-utils';
 
 const router = Router();
 
@@ -19,23 +20,62 @@ router.get('/', async (req, res) => {
     .select('*, profile:profile_id(*)')
     .in('team_id', teamIds);
 
-  const teamsWithMembers = teams.map(t => ({
-    ...t,
-    members: members ? members.filter(m => m.team_id === t.id) : []
-  }));
+  const teamsWithMembers = teams.map(t => {
+    const teamMembers = members ? members.filter(m => m.team_id === t.id) : [];
+    
+    // Filter out unranked players for average calculation
+    const rankedMembers = teamMembers.filter(m => {
+      const lp = calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+      return lp > 0;
+    });
+
+    const totalLP = rankedMembers.reduce((sum, m) => {
+      return sum + calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+    }, 0);
+    
+    const averageLP = rankedMembers.length > 0 ? totalLP / rankedMembers.length : 0;
+
+    return {
+      ...t,
+      members: teamMembers,
+      total_lp: totalLP,
+      average_rank: getRankFromLP(averageLP)
+    };
+  });
 
   res.json(teamsWithMembers);
 });
 
 // Public: Get team detail with members
 router.get('/:id', async (req, res) => {
-  const { data, error } = await supabase.from('teams').select('*, captain:captain_id(username)').eq('id', req.params.id).single();
-  if (error) return res.status(404).json({ error: 'Équipe non trouvée' });
+  const { data: teamData, error: teamError } = await supabase.from('teams').select('*, captain:captain_id(username)').eq('id', req.params.id).single();
+  if (teamError) return res.status(404).json({ error: 'Équipe non trouvée' });
+
+  const { data: membersData } = await supabase.from('team_members').select('*, profile:profile_id(*)').eq('team_id', req.params.id);
+  const members = membersData || [];
   
-  const { data: members } = await supabase.from('team_members').select('*, profile:profile_id(*)').eq('team_id', req.params.id);
   const isLocked = await checkTeamLock(req.params.id);
   
-  res.json({ ...data, members, is_locked: isLocked });
+  // Filter out unranked players for average calculation
+  const rankedMembers = members.filter(m => {
+    const lp = calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+    return lp > 0;
+  });
+
+  const totalLP = rankedMembers.reduce((sum, m) => {
+    return sum + calculateAbsoluteLP(m.profile?.rank, m.profile?.lp);
+  }, 0);
+  
+  const averageLP = rankedMembers.length > 0 ? totalLP / rankedMembers.length : 0;
+  const averageRank = getRankFromLP(averageLP);
+
+  res.json({
+    ...teamData,
+    members: members,
+    is_locked: isLocked,
+    total_lp: totalLP,
+    average_rank: averageRank
+  });
 });
 
 // Private: Create a team

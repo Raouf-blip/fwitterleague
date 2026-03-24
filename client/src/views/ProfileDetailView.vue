@@ -111,6 +111,10 @@
             </div>
             <div>
               <h3 class="font-bold text-text-primary text-sm">{{ team.name }} [{{ team.tag }}]</h3>
+              <div v-if="team.average_rank" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
+                Elo moyen :
+                <RankBadge :rank="team.average_rank" />
+              </div>
             </div>
           </div>
           <BaseButton variant="secondary" size="sm" :to="'/teams/' + team.id">Voir l'équipe</BaseButton>

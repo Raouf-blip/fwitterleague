@@ -1,300 +1,285 @@
 <template>
-  <div>
-    <PageHeader title="Administration" subtitle="Gestion complète de la plateforme." />
+  <BaseSpinner v-if="loading" />
 
-    <!-- Stats Row -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div v-for="stat in stats" :key="stat.label" class="bg-surface border border-border rounded-xl p-4 text-center">
-        <div class="text-2xl font-extrabold" :class="stat.color">{{ stat.value }}</div>
-        <div class="text-xs text-text-muted mt-1">{{ stat.label }}</div>
+  <div v-else class="p-6">
+    <PageHeader title="Panel Admin" subtitle="Gestion des utilisateurs et des équipes" />
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div v-for="s in stats" :key="s.label" class="bg-surface border border-border p-4 rounded-xl">
+        <div class="text-xs text-text-muted mb-1 font-bold uppercase tracking-wider">{{ s.label }}</div>
+        <div class="text-2xl font-black" :class="s.color">{{ s.value }}</div>
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="flex flex-wrap gap-3 mb-8">
-      <BaseButton variant="primary" to="/admin/tournaments">
-        <template #icon><Trophy :size="16" /></template>
-        Gérer les tournois
-      </BaseButton>
-      <BaseButton variant="secondary" @click="activeSection = 'users'">
-        <template #icon><Users :size="16" /></template>
-        Utilisateurs
-      </BaseButton>
-      <BaseButton variant="secondary" @click="activeSection = 'teams'">
-        <template #icon><Shield :size="16" /></template>
-        Équipes
-      </BaseButton>
-    </div>
+    <BaseTabs
+      v-model="activeSection"
+      :tabs="[
+        { key: 'users', label: 'Utilisateurs' },
+        { key: 'teams', label: 'Équipes' }
+      ]"
+      class="mb-6"
+    />
 
-    <BaseSpinner v-if="loading" />
-
-    <template v-else>
-      <!-- ==================== USERS SECTION ==================== -->
-      <div v-if="activeSection === 'users'">
-        <BaseCard :hoverable="false" class="!p-0 overflow-hidden">
-          <div class="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="text-lg font-bold text-text-primary">Utilisateurs ({{ users.length }})</h2>
-            <div class="flex items-center gap-3">
-              <BaseInput
-                v-model="userSearch"
-                placeholder="Rechercher..."
-                class="w-48"
-              />
-              <BaseSelect
-                v-model="roleFilter"
-                :options="roleOptions"
-                placeholder="Rôle"
-                class="w-32"
-              />
-              <BaseSelect
-                v-model="statusFilter"
-                :options="statusOptions"
-                placeholder="Statut"
-                class="w-36"
-              />
-            </div>
+    <!-- Users Section -->
+    <div v-if="activeSection === 'users'" class="space-y-6">
+      <BaseCard :hoverable="false">
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+          <div class="flex-1">
+            <BaseInput v-model="userSearch" placeholder="Rechercher un utilisateur (pseudo, riot, discord)...">
+              <template #icon><Users :size="18" /></template>
+            </BaseInput>
           </div>
-
-          <div v-if="filteredUsers.length === 0" class="text-center text-text-muted py-10 text-sm">
-            Aucun utilisateur trouvé.
+          <div class="w-full md:w-48">
+            <BaseSelect v-model="roleFilter" :options="roleOptions" />
           </div>
-
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-border text-text-muted text-left">
-                  <th class="px-5 py-3">Joueur</th>
-                  <th class="px-5 py-3 hidden sm:table-cell">Riot ID</th>
-                  <th class="px-5 py-3 hidden md:table-cell">Discord</th>
-                  <th class="px-5 py-3">Rôle</th>
-                  <th class="px-5 py-3 hidden md:table-cell">Rang</th>
-                  <th class="px-5 py-3 hidden lg:table-cell">Statut</th>
-                  <th class="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="user in filteredUsers"
-                  :key="user.id"
-                  class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
-                >
-                  <td class="px-5 py-3">
-                    <div class="flex items-center gap-3">
-                      <BaseAvatar :name="user.username" :src="user.avatar_url ?? undefined" size="sm" />
-                      <div>
-                        <RouterLink
-                          :to="`/profile/${user.id}`"
-                          class="font-semibold text-text-primary hover:text-gold transition-colors"
-                        >
-                          {{ user.username }}
-                        </RouterLink>
-                        <div class="text-xs text-text-muted">{{ formatDate(user.created_at) }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-5 py-3 text-text-secondary hidden sm:table-cell">{{ user.riot_id || '-' }}</td>
-                  <td class="px-5 py-3 text-text-secondary hidden md:table-cell">{{ user.discord || '-' }}</td>
-                  <td class="px-5 py-3">
-                    <BaseBadge
-                      :variant="user.role === 'superadmin' ? 'danger' : user.role === 'admin' ? 'gold' : 'muted'"
-                      size="sm"
-                    >
-                      {{ user.role }}
-                    </BaseBadge>
-                  </td>
-                  <td class="px-5 py-3 hidden md:table-cell">
-                    <RankBadge :rank="user.rank" :lp="user.lp" />
-                  </td>
-                  <td class="px-5 py-3 hidden lg:table-cell">
-                    <div class="flex flex-wrap gap-1">
-                      <BaseBadge v-if="user.is_captain" variant="gold" size="sm">Capitaine</BaseBadge>
-                      <BaseBadge v-if="user.is_looking_for_team" variant="success" size="sm">Agent libre</BaseBadge>
-                      <BaseBadge v-if="user.is_caster" variant="purple" size="sm">Caster</BaseBadge>
-                    </div>
-                  </td>
-                  <td class="px-5 py-3">
-                    <div class="flex items-center justify-end gap-1">
-                      <BaseButton variant="ghost" size="sm" :to="`/profile/${user.id}`">
-                        <template #icon><Eye :size="14" /></template>
-                      </BaseButton>
-                      <BaseButton
-                        v-if="isSuperAdmin"
-                        variant="ghost"
-                        size="sm"
-                        @click="openRoleModal(user)"
-                      >
-                        <template #icon><ShieldCheck :size="14" /></template>
-                      </BaseButton>
-                      <BaseButton
-                        v-if="isSuperAdmin && user.id !== authStore.user?.id"
-                        variant="danger"
-                        size="sm"
-                        @click="confirmDeleteUser(user)"
-                      >
-                        <template #icon><Trash2 :size="14" /></template>
-                      </BaseButton>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="w-full md:w-64">
+            <BaseSelect v-model="statusFilter" :options="statusOptions" />
           </div>
-        </BaseCard>
-      </div>
-
-      <!-- ==================== TEAMS SECTION ==================== -->
-      <div v-if="activeSection === 'teams'">
-        <BaseCard :hoverable="false" class="!p-0 overflow-hidden">
-          <div class="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="text-lg font-bold text-text-primary">Équipes ({{ teams.length }})</h2>
-            <BaseInput
-              v-model="teamSearch"
-              placeholder="Rechercher une équipe..."
-              class="w-56"
-            />
-          </div>
-
-          <div v-if="filteredTeams.length === 0" class="text-center text-text-muted py-10 text-sm">
-            Aucune équipe trouvée.
-          </div>
-
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-border text-text-muted text-left">
-                  <th class="px-5 py-3">Équipe</th>
-                  <th class="px-5 py-3 hidden sm:table-cell">Capitaine</th>
-                  <th class="px-5 py-3 text-center">Membres</th>
-                  <th class="px-5 py-3 hidden md:table-cell">Statut</th>
-                  <th class="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="t in filteredTeams"
-                  :key="t.id"
-                  class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
-                >
-                  <td class="px-5 py-3">
-                    <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xs font-black text-gold">
-                        {{ t.tag }}
-                      </div>
-                      <div>
-                        <RouterLink
-                          :to="`/teams/${t.id}`"
-                          class="font-bold text-text-primary hover:text-gold transition-colors"
-                        >
-                          {{ t.name }}
-                        </RouterLink>
-                        <div class="text-xs text-text-muted">[{{ t.tag }}]</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-5 py-3 hidden sm:table-cell">
-                    <RouterLink
-                      v-if="getCaptainId(t)"
-                      :to="`/profile/${getCaptainId(t)}`"
-                      class="font-semibold text-text-primary hover:text-gold transition-colors"
-                    >
-                      {{ getCaptainName(t) }}
-                    </RouterLink>
-                    <span v-else class="text-text-secondary">{{ getCaptainName(t) }}</span>
-                  </td>
-                  <td class="px-5 py-3 text-center text-text-primary font-semibold">
-                    {{ t.members?.length || 0 }}/6
-                  </td>
-                  <td class="px-5 py-3 hidden md:table-cell">
-                    <BaseBadge v-if="t.is_locked" variant="danger" size="sm">Verrouillé</BaseBadge>
-                    <BaseBadge v-else variant="success" size="sm">Ouvert</BaseBadge>
-                  </td>
-                  <td class="px-5 py-3">
-                    <div class="flex items-center justify-end gap-1">
-                      <BaseButton variant="ghost" size="sm" :to="`/teams/${t.id}`">
-                        <template #icon><Eye :size="14" /></template>
-                      </BaseButton>
-                      <BaseButton
-                        v-if="isSuperAdmin"
-                        variant="secondary"
-                        size="sm"
-                        @click="openManageMembers(t)"
-                      >
-                        <template #icon><UserCog :size="14" /></template>
-                      </BaseButton>
-                      <BaseButton
-                        variant="danger"
-                        size="sm"
-                        @click="confirmDeleteTeam(t)"
-                      >
-                        <template #icon><Trash2 :size="14" /></template>
-                      </BaseButton>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </BaseCard>
-      </div>
-    </template>
-
-    <!-- Role Change Modal -->
-    <BaseModal v-model="showRoleModal" title="Changer le rôle" size="sm">
-      <div class="space-y-4">
-        <p class="text-sm text-text-secondary">
-          Modifier le rôle de <strong class="text-text-primary">{{ selectedUser?.username }}</strong>
-        </p>
-        <BaseSelect
-          v-model="newRole"
-          label="Nouveau rôle"
-          :options="[
-            { value: 'user', label: 'Utilisateur' },
-            { value: 'admin', label: 'Admin' },
-            { value: 'superadmin', label: 'Super Admin' },
-          ]"
-        />
-        <BaseSelect
-          v-model="newStatus"
-          label="Statut du joueur"
-          :options="[
-            { value: 'none', label: 'Aucun' },
-            { value: 'captain', label: 'Capitaine' },
-            { value: 'lft', label: 'Agent libre' },
-          ]"
-        />
-        <BaseSelect
-          v-model="isCaster"
-          label="Caster Officiel"
-          :options="[
-            { value: 'no', label: 'Non' },
-            { value: 'yes', label: 'Oui' },
-          ]"
-        />
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="showRoleModal = false">Annuler</BaseButton>
-          <BaseButton variant="primary" :loading="changingRole" @click="changeRole">Confirmer</BaseButton>
         </div>
-      </template>
+
+        <div v-if="filteredUsers.length === 0" class="text-center text-text-muted py-10 text-sm">
+          Aucun utilisateur trouvé.
+        </div>
+
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-text-muted text-left">
+                <th class="px-5 py-3">Utilisateur</th>
+                <th class="px-5 py-3 hidden lg:table-cell">Rôle</th>
+                <th class="px-5 py-3 text-center">Rank</th>
+                <th class="px-5 py-3 text-center">Statut</th>
+                <th class="px-5 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="u in filteredUsers"
+                :key="u.id"
+                class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
+                :class="{ 'opacity-50': u.role === 'admin' && !isSuperAdmin }"
+              >
+                <td class="px-5 py-3">
+                  <div class="flex items-center gap-3">
+                    <BaseAvatar :src="u.avatar_url || undefined" :name="u.username" size="sm" />
+                    <div>
+                      <RouterLink
+                        :to="`/profile/${u.id}`"
+                        class="font-bold text-text-primary hover:text-gold transition-colors"
+                      >
+                        {{ u.username }}
+                      </RouterLink>
+                      <div class="text-xs text-text-muted">{{ u.riot_id || 'Riot ID non lié' }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3 hidden lg:table-cell">
+                  <BaseBadge
+                    :variant="u.role === 'superadmin' ? 'danger' : u.role === 'admin' ? 'cyan' : 'muted'"
+                    size="sm"
+                  >
+                     {{ u.role }}
+                  </BaseBadge>
+                </td>
+                <td class="px-5 py-3 text-center">
+                  <RankBadge :rank="u.rank" :lp="u.lp" />
+                </td>
+                <td class="px-5 py-3">
+                  <div class="flex flex-wrap justify-center gap-1.5">
+                    <BaseBadge v-if="u.is_captain" variant="cyan" size="sm">Capitaine</BaseBadge>
+                    <BaseBadge v-if="u.is_looking_for_team" variant="success" size="sm">Agent libre</BaseBadge>
+                    <BaseBadge v-if="u.is_caster" variant="purple" size="sm">
+                      <template #icon><Mic :size="10" /></template>
+                      Caster
+                    </BaseBadge>
+                    <span v-if="!u.is_captain && !u.is_looking_for_team && !u.is_caster" class="text-text-muted">-</span>
+                  </div>
+                </td>
+                <td class="px-5 py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    <BaseButton
+                      variant="ghost"
+                      size="sm"
+                      @click="openRoleModal(u)"
+                      :disabled="u.role === 'superadmin' && authStore.profile?.id !== u.id && !isSuperAdmin"
+                    >
+                      <template #icon><UserCog :size="14" /></template>
+                    </BaseButton>
+                    <BaseButton
+                      v-if="isSuperAdmin"
+                      variant="ghost"
+                      size="sm"
+                      class="text-danger hover:bg-danger/10"
+                      @click="confirmDeleteUser(u)"
+                      :disabled="u.id === authStore.user?.id"
+                    >
+                      <template #icon><Trash2 :size="14" /></template>
+                    </BaseButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </BaseCard>
+    </div>
+
+    <!-- Teams Section -->
+    <div v-else-if="activeSection === 'teams'" class="space-y-6">
+      <BaseCard :hoverable="false">
+        <div class="mb-6">
+          <BaseInput v-model="teamSearch" placeholder="Rechercher une équipe (nom, tag)...">
+            <template #icon><Shield :size="18" /></template>
+          </BaseInput>
+        </div>
+
+        <div v-if="filteredTeams.length === 0" class="text-center text-text-muted py-10 text-sm">
+          Aucune équipe trouvée.
+        </div>
+
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-text-muted text-left">
+                <th class="px-5 py-3">Équipe</th>
+                <th class="px-5 py-3 hidden sm:table-cell">Capitaine</th>
+                <th class="px-5 py-3 text-center">Membres</th>
+                <th class="px-5 py-3 text-center">Elo Moyen</th>
+                <th class="px-5 py-3 hidden md:table-cell">Statut</th>
+                <th class="px-5 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="t in filteredTeams"
+                :key="t.id"
+                class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
+              >
+                <td class="px-5 py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-gold-muted border border-border-gold flex items-center justify-center text-xs font-black text-gold">
+                      {{ t.tag }}
+                    </div>
+                    <div>
+                      <RouterLink
+                        :to="`/teams/${t.id}`"
+                        class="font-bold text-text-primary hover:text-gold transition-colors"
+                      >
+                        {{ t.name }}
+                      </RouterLink>
+                      <div class="text-xs text-text-muted">[{{ t.tag }}]</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-3 hidden sm:table-cell">
+                  <RouterLink
+                    v-if="getCaptainId(t)"
+                    :to="`/profile/${getCaptainId(t)}`"
+                    class="font-semibold text-text-primary hover:text-gold transition-colors"
+                  >
+                    {{ getCaptainName(t) }}
+                  </RouterLink>
+                  <span v-else class="text-text-secondary">{{ getCaptainName(t) }}</span>
+                </td>
+                <td class="px-5 py-3 text-center text-text-primary font-semibold">
+                  {{ t.members?.length || 0 }}/6
+                </td>
+                <td class="px-5 py-3 text-center">
+                  <RankBadge v-if="t.average_rank" :rank="t.average_rank" />
+                  <span v-else class="text-text-muted">-</span>
+                </td>
+                <td class="px-5 py-3 hidden md:table-cell">
+                  <BaseBadge v-if="t.is_locked" variant="danger" size="sm">Verrouillé</BaseBadge>
+                  <BaseBadge v-else variant="success" size="sm">Ouvert</BaseBadge>
+                </td>
+                <td class="px-5 py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    <BaseButton variant="ghost" size="sm" :to="`/teams/${t.id}`">
+                      <template #icon><Eye :size="14" /></template>
+                    </BaseButton>
+                    <BaseButton
+                      v-if="isSuperAdmin"
+                      variant="secondary"
+                      size="sm"
+                      @click="openManageMembers(t)"
+                    >
+                      <template #icon><Users :size="14" /></template>
+                    </BaseButton>
+                    <BaseButton
+                      v-if="isSuperAdmin"
+                      variant="ghost"
+                      size="sm"
+                      class="text-danger hover:bg-danger/10"
+                      @click="confirmDeleteTeam(t)"
+                    >
+                      <template #icon><Trash2 :size="14" /></template>
+                    </BaseButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </BaseCard>
+    </div>
+
+    <!-- Role Modal -->
+    <BaseModal v-model="showRoleModal" title="Gérer l'utilisateur" size="sm">
+      <div v-if="selectedUser" class="space-y-4">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 mb-4">
+          <BaseAvatar :src="selectedUser.avatar_url || undefined" :name="selectedUser.username" size="md" />
+          <div>
+            <div class="font-bold text-text-primary">{{ selectedUser.username }}</div>
+            <div class="text-xs text-text-muted">{{ selectedUser.riot_id || 'Riot ID non lié' }}</div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div v-if="isSuperAdmin">
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Rôle Système</label>
+            <BaseSelect v-model="newRole" :options="roleOptions" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Statut Joueur</label>
+            <BaseSelect v-model="newStatus" :options="[
+              { value: 'none', label: 'Aucun' },
+              { value: 'captain', label: 'Capitaine' },
+              { value: 'lft', label: 'Agent libre' }
+            ]" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Caster</label>
+            <BaseSelect v-model="isCaster" :options="[
+              { value: 'no', label: 'Non' },
+              { value: 'yes', label: 'Oui' }
+            ]" />
+          </div>
+        </div>
+
+        <div class="pt-4 flex gap-2">
+          <BaseButton variant="secondary" class="flex-1" @click="showRoleModal = false">Annuler</BaseButton>
+          <BaseButton variant="primary" class="flex-1" :loading="changingRole" @click="changeRole">Enregistrer</BaseButton>
+        </div>
+      </div>
     </BaseModal>
 
-    <!-- Delete User Confirm -->
+    <!-- Confirm Dialogs -->
     <ConfirmDialog
       v-model="showDeleteUserConfirm"
-      title="Supprimer cet utilisateur ?"
-      :message="`Voulez-vous vraiment supprimer le compte de ${selectedUser?.username} ? Cette action est irréversible.`"
+      title="Supprimer le compte ?"
+      :message="`Voulez-vous vraiment supprimer définitivement le compte de ${selectedUser?.username} ? Cette action est irréversible.`"
       confirm-label="Supprimer"
       variant="danger"
       :loading="deletingUser"
       @confirm="deleteUser"
     />
 
-    <!-- Delete Team Confirm -->
     <ConfirmDialog
       v-model="showDeleteTeamConfirm"
-      title="Dissoudre cette équipe ?"
-      :message="`Voulez-vous vraiment dissoudre l'équipe ${selectedTeam?.name} [${selectedTeam?.tag}] ? Tous les membres seront retirés.`"
+      title="Dissoudre l'équipe ?"
+      :message="`Voulez-vous vraiment dissoudre l'équipe ${selectedTeam?.name} ?`"
       confirm-label="Dissoudre"
       variant="danger"
       :loading="deletingTeam"
@@ -302,84 +287,59 @@
     />
 
     <!-- Manage Members Modal -->
-    <BaseModal v-model="showMembersModal" :title="`Membres de ${managedTeam?.name || ''}`" size="md">
-      <div class="space-y-5">
-        <!-- Current members -->
+    <BaseModal v-model="showMembersModal" :title="`Membres : ${managedTeam?.name}`" size="md">
+      <div v-if="managedTeam" class="space-y-6">
         <div>
-          <h3 class="text-xs font-black uppercase tracking-widest text-text-muted mb-3">Membres actuels</h3>
-          <div v-if="!managedTeam?.members?.length" class="text-sm text-text-muted text-center py-4">Aucun membre.</div>
-          <div v-else class="space-y-2">
-            <div
-              v-for="m in managedTeam?.members"
-              :key="m.profile_id"
-              class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
-            >
+          <h3 class="text-sm font-bold text-text-primary mb-3 flex justify-between items-center">
+            Membres Actuels
+            <span class="text-xs text-text-muted font-normal">{{ managedTeam.members?.length || 0 }}/6</span>
+          </h3>
+          <div class="space-y-2">
+            <div v-for="m in managedTeam.members" :key="m.profile_id" class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
               <div class="flex items-center gap-3">
-                <BaseAvatar :name="m.profile?.username" :src="m.profile?.avatar_url ?? undefined" size="sm" />
+                <BaseAvatar :src="m.profile?.avatar_url || undefined" :name="m.profile?.username" size="sm" />
                 <div>
-                  <RouterLink
-                    :to="`/profile/${m.profile_id}`"
-                    class="text-sm font-semibold text-text-primary hover:text-gold transition-colors"
-                  >
-                    {{ m.profile?.username }}
-                  </RouterLink>
-                  <BaseBadge v-if="m.role === 'Captain'" variant="gold" size="sm" class="ml-2">Capitaine</BaseBadge>
+                  <div class="text-sm font-bold text-text-primary">{{ m.profile?.username }}</div>
+                  <div class="text-[10px] text-text-muted uppercase font-bold tracking-widest">{{ m.role }}</div>
                 </div>
               </div>
               <BaseButton
-                v-if="m.profile_id !== managedTeam?.captain_id"
-                variant="danger"
+                v-if="m.role !== 'Captain'"
+                variant="ghost"
                 size="sm"
-                :loading="removingMemberId === m.profile_id"
+                class="text-danger hover:bg-danger/10"
                 @click="removeMember(m.profile_id)"
+                :loading="removingMemberId === m.profile_id"
               >
                 <template #icon><UserMinus :size="14" /></template>
-                Retirer
               </BaseButton>
             </div>
           </div>
         </div>
 
-        <!-- Add a player -->
-        <div>
-          <h3 class="text-xs font-black uppercase tracking-widest text-text-muted mb-3">Ajouter un joueur</h3>
-          <div class="flex gap-2">
-            <BaseInput
-              v-model="addPlayerSearch"
-              placeholder="Rechercher un joueur..."
-              class="flex-1"
-            />
-          </div>
-          <div v-if="addPlayerResults.length > 0" class="mt-2 space-y-1 max-h-48 overflow-y-auto">
-            <div
-              v-for="p in addPlayerResults"
-              :key="p.id"
-              class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <div class="flex items-center gap-3">
-                <BaseAvatar :name="p.username" :src="p.avatar_url ?? undefined" size="sm" />
-                <div>
-                  <RouterLink
-                    :to="`/profile/${p.id}`"
-                    class="text-sm font-semibold text-text-primary hover:text-gold transition-colors"
-                  >
-                    {{ p.username }}
-                  </RouterLink>
-                  <span v-if="p.riot_id" class="text-xs text-text-muted ml-2">{{ p.riot_id }}</span>
-                </div>
+        <div v-if="(managedTeam.members?.length || 0) < 6" class="border-t border-border pt-6">
+          <h3 class="text-sm font-bold text-text-primary mb-3">Ajouter un membre</h3>
+          <BaseInput v-model="addPlayerSearch" placeholder="Rechercher un joueur par pseudo...">
+            <template #icon><UserPlus :size="16" /></template>
+          </BaseInput>
+
+          <div v-if="addPlayerResults.length > 0" class="mt-4 space-y-1 max-h-48 overflow-y-auto pr-1">
+            <div v-for="u in addPlayerResults" :key="u.id" class="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group">
+              <div class="flex items-center gap-2">
+                <BaseAvatar :src="u.avatar_url || undefined" :name="u.username" size="sm" />
+                <div class="text-sm font-semibold text-text-primary">{{ u.username }}</div>
               </div>
               <BaseButton
-                variant="primary"
+                variant="secondary"
                 size="sm"
-                :loading="addingPlayerId === p.id"
-                @click="addMember(p.id)"
+                @click="addMember(u.id)"
+                :loading="addingPlayerId === u.id"
               >
                 <template #icon><UserPlus :size="14" /></template>
                 Ajouter
               </BaseButton>
             </div>
           </div>
-          <p v-else-if="addPlayerSearch.length >= 2" class="text-xs text-text-muted mt-2">Aucun joueur libre trouvé.</p>
         </div>
       </div>
     </BaseModal>
@@ -388,24 +348,24 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ShieldCheck, Trash2, Eye, Trophy, Users, Shield, UserCog, UserPlus, UserMinus } from 'lucide-vue-next'
+import { Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
-import { formatDate } from '../lib/formatters'
 import type { Profile, Team } from '../types'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
-import BaseSelect from '../components/ui/BaseSelect.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
+import RankBadge from '../components/domain/RankBadge.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseAvatar from '../components/ui/BaseAvatar.vue'
 import BaseModal from '../components/ui/BaseModal.vue'
 import BaseSpinner from '../components/ui/BaseSpinner.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
-import RankBadge from '../components/domain/RankBadge.vue'
+import BaseSelect from '../components/ui/BaseSelect.vue'
+import BaseTabs from '../components/ui/BaseTabs.vue'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
@@ -413,17 +373,14 @@ const notificationStore = useNotificationStore()
 const users = ref<Profile[]>([])
 const teams = ref<Team[]>([])
 const tournaments = ref<any[]>([])
-const matches = ref<any[]>([])
 const loading = ref(true)
 const activeSection = ref<'users' | 'teams'>('users')
 
-// User filters
 const userSearch = ref('')
 const roleFilter = ref('')
 const statusFilter = ref('')
 const teamSearch = ref('')
 
-// Role modal
 const showRoleModal = ref(false)
 const selectedUser = ref<Profile | null>(null)
 const newRole = ref('user')
@@ -431,16 +388,13 @@ const newStatus = ref<'none' | 'captain' | 'lft'>('none')
 const isCaster = ref('no')
 const changingRole = ref(false)
 
-// Delete user
 const showDeleteUserConfirm = ref(false)
 const deletingUser = ref(false)
 
-// Delete team
 const showDeleteTeamConfirm = ref(false)
 const selectedTeam = ref<Team | null>(null)
 const deletingTeam = ref(false)
 
-// Manage members
 const showMembersModal = ref(false)
 const managedTeam = ref<any>(null)
 const addPlayerSearch = ref('')
@@ -481,7 +435,7 @@ const stats = computed(() => {
 })
 
 const filteredUsers = computed(() => {
-  let result = users.value
+  let result = [...users.value]
   if (userSearch.value) {
     const q = userSearch.value.toLowerCase()
     result = result.filter(u =>
@@ -498,6 +452,7 @@ const filteredUsers = computed(() => {
     else if (statusFilter.value === 'lft') result = result.filter(u => u.is_looking_for_team)
     else if (statusFilter.value === 'caster') result = result.filter(u => u.is_caster)
   }
+  result.sort((a, b) => a.username.localeCompare(b.username))
   return result
 })
 
@@ -516,7 +471,6 @@ const addPlayerResults = computed(() => {
   const memberIds = new Set(managedTeam.value.members?.map((m: any) => m.profile_id) || [])
   return users.value.filter(u => {
     if (memberIds.has(u.id)) return false
-    // Only show players without a team
     const inAnyTeam = teams.value.some(t => t.members?.some((m: any) => m.profile_id === u.id))
     if (inAnyTeam) return false
     return u.username.toLowerCase().includes(q) || u.riot_id?.toLowerCase().includes(q)
@@ -541,31 +495,45 @@ async function fetchAll() {
   loading.value = true
   try {
     const token = await getToken()
-    const [u, te, to, m] = await Promise.all([
+    const [uResult, teResult, toResult] = await Promise.allSettled([
       api.get('/profiles', token),
       api.get('/teams'),
       api.get('/tournaments'),
-      api.get('/tournaments/matches'),
     ])
-    users.value = u
-    teams.value = te
-    tournaments.value = to
-    matches.value = m
+
+    if (uResult.status === 'fulfilled') {
+      users.value = uResult.value
+    } else {
+      console.error('Erreur chargement utilisateurs:', uResult.reason)
+      notificationStore.show('Erreur chargement utilisateurs', 'error')
+    }
+
+    if (teResult.status === 'fulfilled') {
+      teams.value = teResult.value
+    } else {
+      console.error('Erreur chargement équipes:', teResult.reason)
+      notificationStore.show('Erreur chargement équipes', 'error')
+    }
+
+    if (toResult.status === 'fulfilled') {
+      tournaments.value = toResult.value
+    } else {
+      console.error('Erreur chargement tournois:', toResult.reason)
+      notificationStore.show('Erreur chargement tournois', 'error')
+    }
   } catch (e: any) {
     notificationStore.show(e.message || 'Erreur chargement', 'error')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 
-// --- User actions ---
 function openRoleModal(user: Profile) {
   selectedUser.value = user
   newRole.value = user.role
-  
   if (user.is_captain) newStatus.value = 'captain'
   else if (user.is_looking_for_team) newStatus.value = 'lft'
   else newStatus.value = 'none'
-
   isCaster.value = user.is_caster ? 'yes' : 'no'
   showRoleModal.value = true
 }
@@ -580,37 +548,28 @@ async function changeRole() {
   changingRole.value = true
   try {
     const token = await getToken()
-    
     const promises = []
-    
-    // Update role if changed
     if (newRole.value !== selectedUser.value.role) {
       promises.push(api.patch(`/profiles/${selectedUser.value.id}/role`, { role: newRole.value }, token))
     }
-    
-    // Update status
     const isCaptain = newStatus.value === 'captain'
     const isLFT = newStatus.value === 'lft'
     const newIsCaster = isCaster.value === 'yes'
-    const casterChanged = newIsCaster !== selectedUser.value.is_caster
-    
-    if (isCaptain !== selectedUser.value.is_captain || isLFT !== selectedUser.value.is_looking_for_team || casterChanged) {
-      promises.push(api.patch(`/profiles/${selectedUser.value.id}/status`, { 
-        is_captain: isCaptain, 
+    if (isCaptain !== selectedUser.value.is_captain || isLFT !== selectedUser.value.is_looking_for_team || newIsCaster !== selectedUser.value.is_caster) {
+      promises.push(api.patch(`/profiles/${selectedUser.value.id}/status`, {
+        is_captain: isCaptain,
         is_looking_for_team: isLFT,
         is_caster: newIsCaster
       }, token))
     }
-
     if (promises.length > 0) {
       await Promise.all(promises)
-      notificationStore.show(`Utilisateur ${selectedUser.value.username} mis à jour`, 'success')
+      notificationStore.show('Utilisateur mis à jour', 'success')
       await fetchAll()
     }
-    
     showRoleModal.value = false
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur mise à jour utilisateur', 'error')
+    notificationStore.show(e.message || 'Erreur mise à jour', 'error')
   } finally {
     changingRole.value = false
   }
@@ -622,7 +581,7 @@ async function deleteUser() {
   try {
     const token = await getToken()
     await api.delete(`/profiles/${selectedUser.value.id}`, token)
-    notificationStore.show(`Compte de ${selectedUser.value.username} supprimé`, 'success')
+    notificationStore.show('Utilisateur supprimé', 'success')
     showDeleteUserConfirm.value = false
     await fetchAll()
   } catch (e: any) {
@@ -632,7 +591,6 @@ async function deleteUser() {
   }
 }
 
-// --- Team actions ---
 function confirmDeleteTeam(team: Team) {
   selectedTeam.value = team
   showDeleteTeamConfirm.value = true
@@ -644,26 +602,24 @@ async function deleteTeam() {
   try {
     const token = await getToken()
     await api.delete(`/teams/${selectedTeam.value.id}`, token)
-    notificationStore.show(`Équipe ${selectedTeam.value.name} dissoute`, 'success')
+    notificationStore.show('Équipe dissoute', 'success')
     showDeleteTeamConfirm.value = false
     await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur suppression équipe', 'error')
+    notificationStore.show(e.message || 'Erreur suppression', 'error')
   } finally {
     deletingTeam.value = false
   }
 }
 
-// --- Manage members ---
 async function openManageMembers(team: any) {
-  // Fetch fresh team detail with members
   try {
     const data = await api.get(`/teams/${team.id}`)
     managedTeam.value = data
     addPlayerSearch.value = ''
     showMembersModal.value = true
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur chargement équipe', 'error')
+    notificationStore.show('Erreur chargement équipe', 'error')
   }
 }
 
@@ -673,14 +629,13 @@ async function addMember(profileId: string) {
   try {
     const token = await getToken()
     await api.post(`/teams/${managedTeam.value.id}/members`, { profile_id: profileId }, token)
-    notificationStore.show('Joueur ajouté à l\'équipe', 'success')
-    // Refresh
+    notificationStore.show('Joueur ajouté', 'success')
     const data = await api.get(`/teams/${managedTeam.value.id}`)
     managedTeam.value = data
     addPlayerSearch.value = ''
     await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur ajout joueur', 'error')
+    notificationStore.show(e.message || 'Erreur ajout', 'error')
   } finally {
     addingPlayerId.value = null
   }
@@ -692,13 +647,12 @@ async function removeMember(profileId: string) {
   try {
     const token = await getToken()
     await api.delete(`/teams/${managedTeam.value.id}/members/${profileId}`, token)
-    notificationStore.show('Joueur retiré de l\'équipe', 'success')
-    // Refresh
+    notificationStore.show('Joueur retiré', 'success')
     const data = await api.get(`/teams/${managedTeam.value.id}`)
     managedTeam.value = data
     await fetchAll()
   } catch (e: any) {
-    notificationStore.show(e.message || 'Erreur retrait joueur', 'error')
+    notificationStore.show(e.message || 'Erreur retrait', 'error')
   } finally {
     removingMemberId.value = null
   }

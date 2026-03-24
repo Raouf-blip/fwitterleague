@@ -25,6 +25,8 @@ export interface TeamSummary {
   tag: string
   logo_url?: string | null
   member_count?: number
+  total_lp?: number
+  average_rank?: string
 }
 
 export interface Team {
@@ -35,6 +37,8 @@ export interface Team {
   description: string | null
   captain_id: string
   is_locked: boolean
+  total_lp?: number
+  average_rank?: string
   created_at: string
   members: TeamMember[]
 }
@@ -49,6 +53,7 @@ export interface TeamMember {
     id: string
     username: string
     avatar_url: string | null
+    riot_id: string | null
     rank: string | null
     winrate: number
     lp?: number

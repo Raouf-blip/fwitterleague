@@ -70,10 +70,11 @@ async function fetchData() {
         api.get('/teams'),
         api.get('/profiles/me/applications', token),
       ])
-      teams.value = t
+      teams.value = t.sort((a: Team, b: Team) => a.name.localeCompare(b.name))
       myApplications.value = apps
     } else {
-      teams.value = await api.get('/teams')
+      const t = await api.get('/teams')
+      teams.value = t.sort((a: Team, b: Team) => a.name.localeCompare(b.name))
     }
   } catch (e) {
     console.error(e)
