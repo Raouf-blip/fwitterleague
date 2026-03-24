@@ -15,7 +15,8 @@
       v-model="activeSection"
       :tabs="[
         { key: 'users', label: 'Utilisateurs' },
-        { key: 'teams', label: 'Équipes' }
+        { key: 'teams', label: 'Équipes' },
+        { key: 'patchnotes', label: 'Patch Notes' }
       ]"
       class="mb-6"
     />
@@ -234,6 +235,52 @@
       </BaseCard>
     </div>
 
+    <!-- Patch Notes Section -->
+    <div v-else-if="activeSection === 'patchnotes'" class="space-y-6">
+      <div class="flex justify-end">
+        <BaseButton variant="primary" @click="openPatchNoteModal()">
+          <template #icon><Plus :size="16" /></template>
+          Nouveau Patch Note
+        </BaseButton>
+      </div>
+
+      <BaseCard :hoverable="false">
+        <div v-if="patchNotes.length === 0" class="text-center text-text-muted py-10 text-sm">
+          Aucun patch note.
+        </div>
+
+        <div v-else class="space-y-4">
+          <div
+            v-for="pn in patchNotes"
+            :key="pn.id"
+            class="flex items-start justify-between p-4 rounded-xl bg-white/5 border border-white/10"
+          >
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-1">
+                <span class="text-lg font-black text-text-primary">{{ pn.version }}</span>
+                <span class="text-xs text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{{ pn.date }}</span>
+              </div>
+              <p class="text-sm text-gold font-semibold">{{ pn.title }}</p>
+              <p class="text-xs text-text-muted mt-1">{{ countItems(pn) }} changements · {{ pn.categories?.length || 0 }} catégories</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0 ml-4">
+              <BaseButton variant="ghost" size="sm" @click="openPatchNoteModal(pn)">
+                <template #icon><Pencil :size="14" /></template>
+              </BaseButton>
+              <BaseButton
+                variant="ghost"
+                size="sm"
+                class="text-danger hover:bg-danger/10"
+                @click="confirmDeletePatchNote(pn)"
+              >
+                <template #icon><Trash2 :size="14" /></template>
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+      </BaseCard>
+    </div>
+
     <!-- Role Modal -->
     <BaseModal v-model="showRoleModal" title="Gérer l'utilisateur" size="sm">
       <div v-if="selectedUser" class="space-y-4">
@@ -354,12 +401,108 @@
         </div>
       </div>
     </BaseModal>
+
+    <!-- Patch Note Modal -->
+    <BaseModal v-model="showPatchNoteModal" :title="editingPatchNote ? 'Modifier le Patch Note' : 'Nouveau Patch Note'" size="lg">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Version</label>
+            <BaseInput v-model="pnForm.version" placeholder="v1.0.0">
+              <template #icon><span class="text-xs font-bold text-text-muted">#</span></template>
+            </BaseInput>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Titre</label>
+            <BaseInput v-model="pnForm.title" placeholder="Titre du patch">
+              <template #icon><span class="text-xs">📝</span></template>
+            </BaseInput>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Date</label>
+            <input
+              v-model="pnForm.dateInput"
+              type="date"
+              class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 transition-colors cursor-pointer [color-scheme:dark]"
+            />
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="border-t border-border pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-text-primary">Catégories</h3>
+            <BaseButton variant="secondary" size="sm" @click="addCategory">
+              <template #icon><Plus :size="14" /></template>
+              Catégorie
+            </BaseButton>
+          </div>
+
+          <div v-for="(cat, ci) in pnForm.categories" :key="ci" class="mb-4 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div class="flex items-center gap-3 mb-3">
+              <BaseSelect
+                v-model="cat.preset"
+                :options="categoryPresets"
+                class="w-48"
+                @update:model-value="applyCategoryPreset(ci)"
+              />
+              <button
+                class="ml-auto p-1 text-danger hover:bg-danger/10 rounded cursor-pointer"
+                @click="pnForm.categories.splice(ci, 1)"
+              >
+                <Trash2 :size="14" />
+              </button>
+            </div>
+
+            <div class="space-y-2">
+              <div v-for="(_, ii) in cat.items" :key="ii" class="flex items-center gap-2">
+                <span class="text-text-muted text-xs shrink-0">•</span>
+                <input
+                  v-model="cat.items[ii]"
+                  class="flex-1 bg-transparent border-b border-white/10 text-sm text-text-primary py-1 px-1 focus:outline-none focus:border-gold/50 transition-colors"
+                  placeholder="Description du changement..."
+                />
+                <button
+                  class="p-1 text-danger/60 hover:text-danger hover:bg-danger/10 rounded cursor-pointer"
+                  @click="cat.items.splice(ii, 1)"
+                >
+                  <X :size="12" />
+                </button>
+              </div>
+              <button
+                class="text-xs text-cyan hover:text-cyan/80 flex items-center gap-1 mt-1 cursor-pointer"
+                @click="cat.items.push('')"
+              >
+                <Plus :size="12" /> Ajouter un item
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 flex gap-2">
+          <BaseButton variant="secondary" class="flex-1" @click="showPatchNoteModal = false">Annuler</BaseButton>
+          <BaseButton variant="primary" class="flex-1" :loading="savingPatchNote" @click="savePatchNote">
+            {{ editingPatchNote ? 'Enregistrer' : 'Créer' }}
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
+
+    <ConfirmDialog
+      v-model="showDeletePatchNoteConfirm"
+      title="Supprimer le patch note ?"
+      :message="`Voulez-vous vraiment supprimer le patch note ${deletingPatchNoteRef?.version} ?`"
+      confirm-label="Supprimer"
+      variant="danger"
+      :loading="deletingPatchNote"
+      @confirm="deletePatchNote"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic } from 'lucide-vue-next'
+import { Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic, Plus, Pencil, X } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -385,7 +528,7 @@ const users = ref<Profile[]>([])
 const teams = ref<Team[]>([])
 const tournaments = ref<any[]>([])
 const loading = ref(true)
-const activeSection = ref<'users' | 'teams'>('users')
+const activeSection = ref<'users' | 'teams' | 'patchnotes'>('users')
 
 const userSearch = ref('')
 const roleFilter = ref('')
@@ -411,6 +554,64 @@ const managedTeam = ref<any>(null)
 const addPlayerSearch = ref('')
 const addingPlayerId = ref<string | null>(null)
 const removingMemberId = ref<string | null>(null)
+
+// Patch Notes state
+const patchNotes = ref<any[]>([])
+const showPatchNoteModal = ref(false)
+const editingPatchNote = ref<any>(null)
+const savingPatchNote = ref(false)
+const showDeletePatchNoteConfirm = ref(false)
+const deletingPatchNoteRef = ref<any>(null)
+const deletingPatchNote = ref(false)
+
+interface PnCategory {
+  preset: string
+  emoji: string
+  label: string
+  color: string
+  dotColor: string
+  items: string[]
+}
+
+const pnForm = ref<{ version: string; title: string; dateInput: string; categories: PnCategory[] }>({
+  version: '',
+  title: '',
+  dateInput: getTodayDate(),
+  categories: [],
+})
+
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function formatDateToFrench(dateStr: string): string {
+  const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+  const d = new Date(dateStr + 'T12:00:00')
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+}
+
+function dateInputFromFrench(frenchDate: string): string {
+  const months: Record<string, string> = { 'Janvier': '01', 'Février': '02', 'Mars': '03', 'Avril': '04', 'Mai': '05', 'Juin': '06', 'Juillet': '07', 'Août': '08', 'Septembre': '09', 'Octobre': '10', 'Novembre': '11', 'Décembre': '12' }
+  const parts = frenchDate.split(' ')
+  if (parts.length === 3 && months[parts[1]]) {
+    return `${parts[2]}-${months[parts[1]]}-${parts[0].padStart(2, '0')}`
+  }
+  return getTodayDate()
+}
+
+const categoryPresets = [
+  { value: 'new', label: '✨ Nouveautés' },
+  { value: 'fix', label: '🐛 Corrections' },
+  { value: 'improve', label: '🎨 Améliorations' },
+  { value: 'launch', label: '🚀 Lancement' },
+]
+
+const presetMap: Record<string, Omit<PnCategory, 'items' | 'preset'>> = {
+  new: { emoji: '✨', label: 'Nouveautés', color: 'text-cyan', dotColor: 'bg-cyan' },
+  fix: { emoji: '🐛', label: 'Corrections', color: 'text-warning', dotColor: 'bg-warning' },
+  improve: { emoji: '🎨', label: 'Améliorations', color: 'text-success', dotColor: 'bg-success' },
+  launch: { emoji: '🚀', label: 'Lancement', color: 'text-gold', dotColor: 'bg-gold' },
+}
 
 const isSuperAdmin = computed(() => authStore.profile?.role === 'superadmin')
 
@@ -502,6 +703,7 @@ function getCaptainId(team: Team) {
 
 onMounted(async () => {
   await fetchAll()
+  await fetchPatchNotes()
 })
 
 async function fetchAll() {
@@ -668,6 +870,107 @@ async function removeMember(profileId: string) {
     notificationStore.show(e.message || 'Erreur retrait', 'error')
   } finally {
     removingMemberId.value = null
+  }
+}
+
+// --- Patch Notes ---
+async function fetchPatchNotes() {
+  try {
+    patchNotes.value = await api.get('/patchnotes')
+  } catch (e: any) {
+    console.error('Erreur chargement patch notes:', e)
+  }
+}
+
+function countItems(pn: any) {
+  return (pn.categories || []).reduce((sum: number, c: any) => sum + (c.items?.length || 0), 0)
+}
+
+function addCategory() {
+  pnForm.value.categories.push({ preset: 'new', emoji: '✨', label: 'Nouveautés', color: 'text-cyan', dotColor: 'bg-cyan', items: [''] })
+}
+
+function applyCategoryPreset(index: number) {
+  const cat = pnForm.value.categories[index]
+  const p = presetMap[cat.preset]
+  if (p) {
+    cat.emoji = p.emoji
+    cat.label = p.label
+    cat.color = p.color
+    cat.dotColor = p.dotColor
+  }
+}
+
+function openPatchNoteModal(pn?: any) {
+  if (pn) {
+    editingPatchNote.value = pn
+    pnForm.value = {
+      version: pn.version,
+      title: pn.title,
+      dateInput: dateInputFromFrench(pn.date),
+      categories: (pn.categories || []).map((c: any) => ({
+        preset: Object.entries(presetMap).find(([, v]) => v.label === c.label)?.[0] || 'new',
+        ...c,
+        items: [...(c.items || [])]
+      }))
+    }
+  } else {
+    editingPatchNote.value = null
+    pnForm.value = { version: '', title: '', dateInput: getTodayDate(), categories: [] }
+  }
+  showPatchNoteModal.value = true
+}
+
+function confirmDeletePatchNote(pn: any) {
+  deletingPatchNoteRef.value = pn
+  showDeletePatchNoteConfirm.value = true
+}
+
+async function savePatchNote() {
+  savingPatchNote.value = true
+  try {
+    const token = await getToken()
+    const payload = {
+      version: pnForm.value.version,
+      title: pnForm.value.title,
+      date: formatDateToFrench(pnForm.value.dateInput),
+      categories: pnForm.value.categories.map(c => ({
+        emoji: c.emoji,
+        label: c.label,
+        color: c.color,
+        dotColor: c.dotColor,
+        items: c.items.filter(i => i.trim())
+      }))
+    }
+    if (editingPatchNote.value) {
+      await api.put(`/patchnotes/${editingPatchNote.value.id}`, payload, token)
+      notificationStore.show('Patch note mis à jour', 'success')
+    } else {
+      await api.post('/patchnotes', payload, token)
+      notificationStore.show('Patch note créé', 'success')
+    }
+    showPatchNoteModal.value = false
+    await fetchPatchNotes()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur', 'error')
+  } finally {
+    savingPatchNote.value = false
+  }
+}
+
+async function deletePatchNote() {
+  if (!deletingPatchNoteRef.value) return
+  deletingPatchNote.value = true
+  try {
+    const token = await getToken()
+    await api.delete(`/patchnotes/${deletingPatchNoteRef.value.id}`, token)
+    notificationStore.show('Patch note supprimé', 'success')
+    showDeletePatchNoteConfirm.value = false
+    await fetchPatchNotes()
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur suppression', 'error')
+  } finally {
+    deletingPatchNote.value = false
   }
 }
 </script>

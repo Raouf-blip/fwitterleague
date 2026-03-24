@@ -56,6 +56,19 @@ export const api = {
     return res.json();
   },
 
+  async put(endpoint: string, body: any, token?: string) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   async delete(endpoint: string, token?: string) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;

@@ -6,6 +6,11 @@
           <img src="../../assets/logo.png" alt="FwitterLeague" class="h-10 w-auto" />
           <span>&copy; {{ year }}</span>
         </div>
+        <div class="flex items-center gap-4 text-xs text-text-muted">
+          <RouterLink to="/patchnotes" class="hover:text-gold transition-colors">Patch Notes</RouterLink>
+          <RouterLink to="/rules" class="hover:text-gold transition-colors">Règlement</RouterLink>
+          <RouterLink to="/contact" class="hover:text-gold transition-colors">Contact</RouterLink>
+        </div>
         <p class="text-xs text-text-muted">
           Plateforme de tournois League of Legends
         </p>
