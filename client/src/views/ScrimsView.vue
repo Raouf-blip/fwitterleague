@@ -19,7 +19,7 @@
         size="sm"
         @click="setFilter('all')"
       >
-        Tous
+        En cours / À venir
       </BaseButton>
       <BaseButton
         :variant="currentFilter === 'open' ? 'secondary' : 'ghost'"
@@ -34,6 +34,14 @@
         @click="setFilter('team')"
       >
         Challenge (Team)
+      </BaseButton>
+      <div class="w-px bg-border mx-2"></div>
+      <BaseButton
+        :variant="currentFilter === 'history' ? 'secondary' : 'ghost'"
+        size="sm"
+        @click="setFilter('history')"
+      >
+        Historique
       </BaseButton>
     </div>
 
@@ -157,8 +165,21 @@ const showCreateModal = ref(false);
 const currentFilter = ref("all");
 
 const scrims = computed(() => {
-  if (currentFilter.value === "all") return scrimStore.scrims;
-  return scrimStore.scrims.filter((s) => s.type === currentFilter.value);
+  const allScrims = scrimStore.scrims;
+
+  if (currentFilter.value === "history") {
+    return allScrims.filter((s) =>
+      ["completed", "cancelled"].includes(s.status),
+    );
+  }
+
+  // Active scrims (scheduled, pending)
+  const activeScrims = allScrims.filter(
+    (s) => !["completed", "cancelled"].includes(s.status),
+  );
+
+  if (currentFilter.value === "all") return activeScrims;
+  return activeScrims.filter((s) => s.type === currentFilter.value);
 });
 
 function setFilter(filter: string) {
