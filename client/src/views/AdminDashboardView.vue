@@ -46,7 +46,8 @@
             <thead>
               <tr class="border-b border-border text-text-muted text-left">
                 <th class="px-5 py-3">Utilisateur</th>
-                <th class="px-5 py-3 hidden lg:table-cell">Rôle</th>
+                <th class="px-5 py-3 hidden md:table-cell">Équipe</th>
+                <th class="px-5 py-3 text-center hidden lg:table-cell">Rôle</th>
                 <th class="px-5 py-3 text-center">Rank</th>
                 <th class="px-5 py-3 text-center">Statut</th>
                 <th class="px-5 py-3 text-right">Actions</th>
@@ -73,7 +74,17 @@
                     </div>
                   </div>
                 </td>
-                <td class="px-5 py-3 hidden lg:table-cell">
+                <td class="px-5 py-3 hidden md:table-cell">
+                  <RouterLink
+                    v-if="u.team"
+                    :to="`/teams/${u.team.id}`"
+                    class="font-bold text-text-primary hover:text-gold transition-colors"
+                  >
+                    {{ u.team.name }}
+                  </RouterLink>
+                  <span v-else class="text-xs text-text-muted">-</span>
+                </td>
+                <td class="px-5 py-3 text-center hidden lg:table-cell">
                   <BaseBadge
                     :variant="u.role === 'superadmin' ? 'danger' : u.role === 'admin' ? 'cyan' : 'muted'"
                     size="sm"
@@ -86,7 +97,7 @@
                 </td>
                 <td class="px-5 py-3">
                   <div class="flex flex-wrap justify-center gap-1.5">
-                    <BaseBadge v-if="u.is_captain" variant="cyan" size="sm">Capitaine</BaseBadge>
+                    <BaseBadge v-if="u.is_captain" variant="gold" size="sm">Capitaine</BaseBadge>
                     <BaseBadge v-if="u.is_looking_for_team" variant="success" size="sm">Agent libre</BaseBadge>
                     <BaseBadge v-if="u.is_caster" variant="purple" size="sm">
                       <template #icon><Mic :size="10" /></template>
@@ -441,7 +452,9 @@ const filteredUsers = computed(() => {
     result = result.filter(u =>
       u.username.toLowerCase().includes(q) ||
       u.riot_id?.toLowerCase().includes(q) ||
-      u.discord?.toLowerCase().includes(q)
+      u.discord?.toLowerCase().includes(q) ||
+      (u as any).team?.name?.toLowerCase().includes(q) ||
+      (u as any).team?.tag?.toLowerCase().includes(q)
     )
   }
   if (roleFilter.value) {

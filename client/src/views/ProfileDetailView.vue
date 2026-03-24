@@ -148,7 +148,6 @@ import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
 import { UserPlus, UserX, ExternalLink, Shield, Mic, ShieldCheck } from 'lucide-vue-next'
 import { api } from '../lib/api'
-import { getToken } from '../composables/useAuth'
 import { getOpggUrl, getDpmUrl } from '../lib/formatters'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
@@ -162,6 +161,7 @@ import BaseAvatar from '../components/ui/BaseAvatar.vue'
 import BaseEmptyState from '../components/ui/BaseEmptyState.vue'
 import RankBadge from '../components/domain/RankBadge.vue'
 import InviteModal from '../components/forms/InviteModal.vue'
+import { getToken } from '../composables/useAuth'
 
 const route = useRoute()
 const authStore = useAuthStore()

@@ -31,7 +31,7 @@
       </div>
       <div v-if="item.message" class="mt-1">
         <p class="text-sm text-text-secondary whitespace-pre-wrap break-words" :class="{ 'line-clamp-2': !showFullMessage }">{{ item.message }}</p>
-        <button v-if="item.message.length > 120" @click="showFullMessage = !showFullMessage" class="text-xs text-cyan hover:underline inline-block mt-1">
+        <button v-if="item.message.length > 20" @click="showFullMessage = !showFullMessage" class="text-xs text-cyan hover:underline inline-block mt-1">
           {{ showFullMessage ? 'Voir moins' : 'Lire la suite' }}
         </button>
       </div>

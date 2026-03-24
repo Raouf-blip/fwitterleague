@@ -5,14 +5,25 @@ import { authorizeAdmin, authorizeSuperAdmin } from '../middlewares/admin';
 
 const router = Router();
 
-// Admin: List all profiles
+// Admin: List all profiles (with team info)
 router.get('/', authenticate, authorizeAdmin, async (req: any, res) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, team_members(team_id, team:team_id(id, name, tag))')
     .order('created_at', { ascending: false });
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data || []);
+
+  // Flatten team info
+  const result = (data || []).map((p: any) => {
+    const memberInfo = p.team_members && p.team_members.length > 0 ? p.team_members[0] : null;
+    return {
+      ...p,
+      team: memberInfo ? memberInfo.team : null,
+      team_members: undefined
+    };
+  });
+
+  res.json(result);
 });
 
 // SuperAdmin: Delete a user account
@@ -22,18 +33,39 @@ router.delete('/:id', authenticate, authorizeSuperAdmin, async (req: any, res) =
     return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte via cette route.' });
   }
 
-  // If user is captain, disband their team
-  const { data: team } = await supabase.from('teams').select('id').eq('captain_id', targetId).maybeSingle();
-  if (team) {
-    await supabase.from('teams').delete().eq('id', team.id);
+  try {
+    // 1. If user is captain, disband their team (this also deletes team_members for that team)
+    const { data: captainTeam } = await supabase.from('teams').select('id').eq('captain_id', targetId).maybeSingle();
+    if (captainTeam) {
+      await supabase.from('team_members').delete().eq('team_id', captainTeam.id);
+      await supabase.from('applications').delete().eq('team_id', captainTeam.id);
+      await supabase.from('teams').delete().eq('id', captainTeam.id);
+    }
+
+    // 2. Remove user from any team they belong to as a member
+    await supabase.from('team_members').delete().eq('profile_id', targetId);
+
+    // 3. Clean up applications (sent or received via sender_id)
+    await supabase.from('applications').delete().eq('sender_id', targetId);
+
+    // 4. Clean up notifications
+    await supabase.from('notifications').delete().eq('user_id', targetId);
+
+    // 5. Delete the profile
+    await supabase.from('profiles').delete().eq('id', targetId);
+
+    // 6. Delete the auth user
+    const { error: authError } = await supabase.auth.admin.deleteUser(targetId);
+    if (authError) {
+      console.error('[DeleteUser] Auth deletion error:', authError.message);
+      // Profile is already gone, just log the auth error
+    }
+
+    res.json({ message: 'Utilisateur supprimé.' });
+  } catch (e: any) {
+    console.error('[DeleteUser] Error:', e.message);
+    res.status(500).json({ error: 'Erreur lors de la suppression: ' + e.message });
   }
-
-  // Delete auth user (cascades profile via RLS/trigger)
-  const { error: authError } = await supabase.auth.admin.deleteUser(targetId);
-  if (authError) return res.status(400).json({ error: authError.message });
-
-  await supabase.from('profiles').delete().eq('id', targetId);
-  res.json({ message: 'Utilisateur supprime.' });
 });
 
 // Private: Get my profile

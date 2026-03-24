@@ -141,7 +141,16 @@
                 <div class="flex justify-between items-start gap-3">
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-text-primary truncate">{{ notif.title }}</p>
-                    <p class="text-xs text-text-secondary mt-0.5 line-clamp-2">{{ notif.message }}</p>
+                    <p class="text-xs text-text-secondary mt-0.5 whitespace-pre-wrap break-words" :class="expandedNotifs.has(notif.id) ? '' : 'line-clamp-2'">
+                      {{ notif.message }}
+                    </p>
+                    <button 
+                      v-if="notif.message && notif.message.length > 100" 
+                      @click="toggleNotif(notif.id)"
+                      class="text-[10px] text-cyan hover:underline mt-1 font-bold uppercase tracking-tight"
+                    >
+                      {{ expandedNotifs.has(notif.id) ? 'Voir moins' : 'Lire la suite' }}
+                    </button>
                     <p class="text-[10px] text-text-muted mt-2 uppercase font-bold">{{ formatRelativeTime(notif.created_at) }}</p>
                   </div>
                   <button
@@ -160,31 +169,55 @@
             </div>
           </BaseCard>
 
-          <!-- Applications -->
-          <BaseCard :hoverable="false" title="Candidatures envoyées">
-            <div v-if="sentApplications.length === 0" class="text-center py-8">
+          <!-- Interactions (Applications & Invitations) -->
+          <BaseCard :hoverable="false" title="Invitations & Candidatures">
+            <div v-if="allInteractions.length === 0" class="text-center py-8">
               <Send :size="32" class="mx-auto text-text-muted/30 mb-2" />
-              <p class="text-sm text-text-muted">Aucune candidature envoyée.</p>
+              <p class="text-sm text-text-muted">Aucune interaction en cours.</p>
             </div>
             <div v-else class="space-y-3">
               <div
-                v-for="app in sentApplications.slice(0, 4)"
+                v-for="app in allInteractions.slice(0, 6)"
                 :key="app.id"
-                class="p-3 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between gap-3"
+                class="p-3 rounded-lg bg-surface border border-border flex items-center justify-between gap-3 shadow-sm"
               >
-                <div class="min-w-0">
-                  <p class="text-sm font-bold text-text-primary truncate">
-                    {{ app.team?.name }} <span class="text-gold">[{{ app.team?.tag }}]</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <p class="text-sm font-bold text-text-primary truncate">
+                      {{ interactionTitle(app) }}
+                    </p>
+                    <BaseBadge :variant="app.type === 'offer' ? 'gold' : 'cyan'" size="sm" class="text-[9px] uppercase">
+                      {{ app.type === 'offer' ? 'Offre' : 'Candidature' }}
+                    </BaseBadge>
+                  </div>
+                  <p class="text-[10px] text-text-muted uppercase font-bold flex items-center gap-1.5">
+                    {{ app.type === 'offer' ? (app.sender_id === authStore.user?.id ? 'De :' : 'Pour :') : (app.sender_id === authStore.user?.id ? 'Vers :' : 'De :') }}
+                    <span class="text-text-secondary">{{ interactionTarget(app) }}</span>
+                    &middot; {{ formatRelativeTime(app.created_at) }}
                   </p>
-                  <p class="text-[10px] text-text-muted mt-1 uppercase font-bold">{{ formatDate(app.created_at) }}</p>
                 </div>
-                <BaseBadge
-                  :variant="app.status === 'accepted' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'"
-                  size="sm"
-                >
-                  {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé' }}
-                </BaseBadge>
+                <div class="flex items-center gap-2">
+                  <BaseBadge
+                    :variant="app.status === 'accepted' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'"
+                    size="sm"
+                  >
+                    {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé' }}
+                  </BaseBadge>
+                  <BaseButton 
+                    v-if="app.status === 'pending' && canRespond(app)"
+                    variant="ghost" 
+                    size="sm" 
+                    to="/notifications" 
+                    class="!p-1 h-8 w-8"
+                    title="Voir les détails"
+                  >
+                    <Eye :size="14" />
+                  </BaseButton>
+                </div>
               </div>
+              <BaseButton variant="ghost" size="sm" to="/notifications" class="w-full mt-2">
+                Gérer les invitations
+              </BaseButton>
             </div>
           </BaseCard>
         </div>
@@ -369,6 +402,7 @@ import {
   RefreshCw,
   Mic,
   ShieldCheck,
+  Eye,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -377,7 +411,7 @@ import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import { useInboxStore } from '../stores/inbox'
-import { getOpggUrl, getDpmUrl, formatRelativeTime, formatDate } from '../lib/formatters'
+import { getOpggUrl, getDpmUrl, formatRelativeTime } from '../lib/formatters'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
@@ -412,6 +446,44 @@ const sentApplications = ref<any[]>([])
 const notifications = computed(() => inboxStore.notifications)
 const unreadNotifs = computed(() => inboxStore.unreadCount)
 
+const expandedNotifs = ref(new Set<string>())
+function toggleNotif(id: string) {
+  if (expandedNotifs.value.has(id)) expandedNotifs.value.delete(id)
+  else expandedNotifs.value.add(id)
+}
+
+const allInteractions = computed(() => {
+  const sent = sentApplications.value.map(a => ({ ...a, direction: 'sent' }))
+  const received = inboxStore.applications.map(a => ({ ...a, direction: 'received' }))
+  
+  // Fusionner et retirer les doublons (si une offre apparaît dans les deux)
+  const merged = [...sent]
+  received.forEach(r => {
+    if (!merged.find(m => m.id === r.id)) {
+      merged.push(r)
+    }
+  })
+  
+  return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+})
+
+function interactionTitle(app: any) {
+  return app.team?.name || 'Équipe inconnue'
+}
+
+function interactionTarget(app: any) {
+  if (app.type === 'offer') {
+    return app.sender_id === authStore.user?.id ? (app.team?.name || 'Une équipe') : (app.sender?.username || 'Un joueur')
+  }
+  return app.sender_id === authStore.user?.id ? (app.team?.name || 'Une équipe') : (app.sender?.username || 'Un joueur')
+}
+
+function canRespond(app: any) {
+  if (app.type === 'offer' && app.sender_id === authStore.user?.id) return true
+  if (app.type === 'application' && authStore.profile?.is_captain && app.team_id === authStore.profile?.team?.id) return true
+  return false
+}
+
 watch(() => authStore.profile, (p) => {
   if (p) {
     team.value = p.team
@@ -419,6 +491,7 @@ watch(() => authStore.profile, (p) => {
     if (p.team && p.is_looking_for_team) {
       silentlyDisableLooking()
     }
+    fetchData()
   }
 }, { immediate: true })
 
