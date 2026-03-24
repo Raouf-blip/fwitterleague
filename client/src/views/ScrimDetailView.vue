@@ -521,6 +521,7 @@
         <ScrimResultForm
           :scrimId="scrim.id"
           :participants="formParticipants"
+          :initialData="scrim"
           @submit="handleSubmitResults"
           @cancel="showResultModal = false"
         />

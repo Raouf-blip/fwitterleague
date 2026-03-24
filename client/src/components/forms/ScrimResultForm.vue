@@ -363,6 +363,7 @@ const props = defineProps<{
   scrimId: string;
   participants: ScrimParticipant[];
   loading?: boolean;
+  initialData?: any;
 }>();
 
 const emit = defineEmits(["submit", "cancel"]);
@@ -406,8 +407,48 @@ function initStats() {
     ...blueSides.map(mapParticipant),
     ...redSides.map(mapParticipant),
   ];
+
+  // If initial Data provided (e.g. editing existing results), populate form
+  if (props.initialData) {
+    if (props.initialData.game_duration) {
+      gameDuration.value = Math.floor(props.initialData.game_duration / 60);
+    }
+    if (props.initialData.screenshot_url) {
+      // Don't set previewUrl to avoid confusion with new upload, or set it?
+      // Let's set it so they see what was there
+      previewUrl.value = props.initialData.screenshot_url;
+      screenshotUrl.value = props.initialData.screenshot_url;
+    }
+    if (props.initialData.stats && Array.isArray(props.initialData.stats)) {
+      localStats.value.forEach((stat) => {
+        const existing = props.initialData.stats.find(
+          (s: any) => s.user_id === stat.user_id,
+        );
+        if (existing) {
+          stat.champion = existing.champion_name || "";
+          stat.kills = existing.kills || 0;
+          stat.deaths = existing.deaths || 0;
+          stat.assists = existing.assists || 0;
+          stat.cs = existing.cs || 0;
+          stat.win = existing.win || false;
+          if (existing.role) stat.role = existing.role;
+        }
+      });
+
+      // infer winning team for UI state
+      const winner = props.initialData.stats.find((s: any) => s.win);
+      if (winner) {
+        const p = props.participants.find((p) => p.user_id === winner.user_id);
+        if (p && (p.side === "blue" || p.side === "red")) {
+          winningTeam.value = p.side;
+        }
+      }
+    }
+  }
 }
-watch(() => props.participants, initStats, { immediate: true });
+watch([() => props.participants, () => props.initialData], initStats, {
+  immediate: true,
+});
 
 const blueTeamStats = computed(() =>
   localStats.value.filter((s) => s.side === "blue"),
