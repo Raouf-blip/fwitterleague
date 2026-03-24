@@ -65,8 +65,14 @@ Simple mais classe.
                 class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-200 cursor-pointer"
                 @click="showMenu = !showMenu"
               >
-                <BaseAvatar :name="authStore.profile?.username || '?'" :src="authStore.profile?.avatar_url" size="sm" />
-                <span class="text-sm font-medium text-text-primary hidden sm:block">
+                <BaseAvatar
+                  :name="authStore.profile?.username || '?'"
+                  :src="authStore.profile?.avatar_url"
+                  size="sm"
+                />
+                <span
+                  class="text-sm font-medium text-text-primary hidden sm:block"
+                >
                   {{ authStore.profile?.username }}
                 </span>
                 <ChevronDown :size="14" class="text-text-muted" />
@@ -187,6 +193,7 @@ const isAdmin = computed(
 const navLinks = computed(() => {
   const links = [
     { to: "/tournaments", label: "Tournois", icon: Award },
+    { to: "/scrims", label: "Scrims", icon: Swords },
     { to: "/agents", label: "Mercato", icon: Users },
     { to: "/teams", label: "Équipes", icon: Shield },
     { to: "/rules", label: "Règlement", icon: BookOpen },
@@ -226,9 +233,12 @@ onMounted(() => {
 
 onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
-watch(() => authStore.user, (newUser) => {
-  if (newUser) {
-    inboxStore.fetchInbox();
-  }
-});
+watch(
+  () => authStore.user,
+  (newUser) => {
+    if (newUser) {
+      inboxStore.fetchInbox();
+    }
+  },
+);
 </script>

@@ -14,6 +14,18 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: "/scrims",
+      name: "scrims",
+      component: () => import("../views/ScrimsView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/scrims/:id",
+      name: "scrim-detail",
+      component: () => import("../views/ScrimDetailView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
