@@ -269,7 +269,9 @@
             </template>
             <!-- No Role Participants -->
             <div
-              v-for="p in blueSide.filter((p) => !p.role || !ROLES.includes(p.role))"
+              v-for="p in blueSide.filter(
+                (p) => !p.role || !ROLES.includes(p.role),
+              )"
               :key="p.id"
               class="flex items-center gap-2 p-2 rounded bg-surface-elevated opacity-75"
             >
@@ -355,7 +357,9 @@
             </template>
             <!-- No Role Participants -->
             <div
-              v-for="p in redSide.filter((p) => !p.role || !ROLES.includes(p.role))"
+              v-for="p in redSide.filter(
+                (p) => !p.role || !ROLES.includes(p.role),
+              )"
               :key="p.id"
               class="flex items-center gap-2 p-2 rounded bg-surface-elevated opacity-75"
             >
@@ -593,7 +597,7 @@ const ROLES = ["Top", "Jungle", "Mid", "ADC", "Support"];
 
 function getParticipant(side: string, role: string) {
   return scrim.value?.participants?.find(
-    (p) => p.side === side && p.role === role
+    (p) => p.side === side && p.role === role,
   );
 }
 
@@ -747,7 +751,7 @@ function getStatusVariant(status: string) {
 
 async function join(side: string, role?: string) {
   if (!scrim.value) return;
-  
+
   // Safety check for Open Scrims
   if (scrim.value.type === "open" && side !== "reserve" && !role) {
     console.warn("Role is required for Open Scrims");

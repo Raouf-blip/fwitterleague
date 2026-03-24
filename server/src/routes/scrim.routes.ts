@@ -196,7 +196,9 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
   const { id } = req.params;
   const userId = req.user.id;
   const { side, role } = req.body; // 'blue', 'red' or 'reserve'; role (optional for reserve)
-  console.log(`User ${userId} joining scrim ${id}. Side: ${side}, Role: ${role}`);
+  console.log(
+    `User ${userId} joining scrim ${id}. Side: ${side}, Role: ${role}`,
+  );
 
   // Normaliser la side
   let normalizedSide = side;
@@ -220,8 +222,16 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
   if (scrim.status !== "scheduled")
     return res.status(400).json({ error: "Ce scrim n'est pas ouvert." });
 
-  if (scrim.type === "open" && normalizedSide && (!role || !VALID_ROLES.includes(role))) {
-      return res.status(400).json({ error: `Un rôle valide est requis pour rejoindre un Open Scrim. (Role reçu: '${role}', Side: '${normalizedSide}')` });
+  if (
+    scrim.type === "open" &&
+    normalizedSide &&
+    (!role || !VALID_ROLES.includes(role))
+  ) {
+    return res
+      .status(400)
+      .json({
+        error: `Un rôle valide est requis pour rejoindre un Open Scrim. (Role reçu: '${role}', Side: '${normalizedSide}')`,
+      });
   }
 
   // Si c'est un Scrim d'équipe, on vérifie l'appartenance
@@ -237,12 +247,9 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
       membership && membership.length > 0 ? membership[0].team_id : null;
 
     if (!userTeamId) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Vous ne faites pas partie d'une équipe participant à ce scrim.",
-        });
+      return res.status(403).json({
+        error: "Vous ne faites pas partie d'une équipe participant à ce scrim.",
+      });
     }
 
     // Enforce Side
@@ -277,9 +284,9 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
       .eq("role", role)
       .neq("user_id", userId)
       .maybeSingle();
-      
+
     if (conflict) {
-       return res.status(400).json({ error: `Le rôle ${role} est déjà pris.` });
+      return res.status(400).json({ error: `Le rôle ${role} est déjà pris.` });
     }
   }
 
