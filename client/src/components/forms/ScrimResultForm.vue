@@ -22,6 +22,21 @@
         </div>
 
         <div
+          v-else-if="errorMessage"
+          class="h-full flex flex-col items-center justify-center px-4 py-2"
+        >
+          <p class="text-xs font-bold text-danger mb-1">Erreur d'analyse</p>
+          <p
+            class="text-[10px] text-text-muted mb-3 break-words w-full overflow-hidden text-ellipsis line-clamp-3"
+          >
+            {{ errorMessage }}
+          </p>
+          <button @click="clearImage" class="text-xs text-cyan hover:underline">
+            Réessayer
+          </button>
+        </div>
+
+        <div
           v-else-if="previewUrl"
           class="h-full relative group flex items-center justify-center"
         >
@@ -360,6 +375,7 @@ function triggerFileInput() {
 
 const previewUrl = ref<string | null>(null);
 const isProcessing = ref(false);
+const errorMessage = ref<string | null>(null);
 const screenshotUrl = ref("");
 const gameDuration = ref(0);
 const winningTeam = ref<"blue" | "red" | null>(null);
@@ -434,10 +450,12 @@ function clearImage() {
   previewUrl.value = null;
   isProcessing.value = false;
   screenshotUrl.value = "";
+  errorMessage.value = null;
 }
 
 function processAI(file: File) {
   isProcessing.value = true;
+  errorMessage.value = null;
 
   // Upload image to Supabase Storage first? Or base64 to server?
   // Route handles base64?
@@ -498,9 +516,29 @@ async function uploadAndAnalyze(file: File) {
         if (side) winningTeam.value = side;
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
-    // alert("Erreur analyse");
+    errorMessage.value = "Une erreur est survenue lors de l'analyse.";
+
+    if (e.response && e.response.data && e.response.data.error) {
+      errorMessage.value = e.response.data.error;
+    } else if (e.message) {
+      // Try to parse JSON inside message
+      try {
+        if (e.message.includes("{")) {
+          const jsonPart = e.message.substring(e.message.indexOf("{"));
+          const parsed = JSON.parse(jsonPart);
+          if (parsed.error) errorMessage.value = parsed.error;
+        } else {
+          errorMessage.value = e.message;
+        }
+      } catch {
+        errorMessage.value = e.message;
+      }
+    }
+
+    // Clear preview on error so we can show the error state
+    previewUrl.value = null;
   } finally {
     isProcessing.value = false;
   }

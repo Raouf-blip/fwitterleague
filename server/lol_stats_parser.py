@@ -1,14 +1,21 @@
 import google.generativeai as genai
 import json
 import os
+from dotenv import load_dotenv
 from PIL import Image
 import io
+
+# Charge les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 # ==========================================
 # CONFIGURATION
 # ==========================================
-# Remplace par ta clé API obtenue sur Google AI Studio
-API_KEY = "AIzaSyAjJCWN-RkYw1OtmWUHkVlMuiV9NeCnTRM" 
+# Récupère la clé API depuis les variables d'environnement
+API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not API_KEY:
+    raise ValueError("La clé API GEMINI_API_KEY n'est pas définie dans le fichier .env")
 
 # Configurer le modèle
 genai.configure(api_key=API_KEY)
