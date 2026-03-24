@@ -17,7 +17,7 @@
             <BaseBadge variant="gold">{{ team.tag }}</BaseBadge>
             <BaseBadge v-if="team.is_locked" variant="danger" size="md">Roster verrouillé</BaseBadge>
           </div>
-          <div v-if="team.average_rank" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
+          <div v-if="team.average_rank && isAdmin" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
             Elo moyen :
             <RankBadge :rank="team.average_rank" />
           </div>
@@ -169,6 +169,7 @@ const updating = ref(false)
 const isCaptain = computed(() => !!(authStore.profile && team.value && team.value.captain_id === authStore.profile.id))
 const isMember = computed(() => members.value.some(m => m.profile_id === authStore.profile?.id))
 const canApply = computed(() => authStore.user && !authStore.profile?.team && !isMember.value)
+const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
 
 const isApplied = computed(() => {
   return inboxStore.applications.some((app: any) => 

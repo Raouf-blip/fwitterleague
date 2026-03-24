@@ -111,7 +111,7 @@
             </div>
             <div>
               <h3 class="font-bold text-text-primary text-sm">{{ team.name }} [{{ team.tag }}]</h3>
-              <div v-if="team.average_rank" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
+              <div v-if="team.average_rank && isAdmin" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
                 Elo moyen :
                 <RankBadge :rank="team.average_rank" />
               </div>
@@ -176,6 +176,7 @@ const myTeamOffers = ref<any[]>([])
 
 const opggUrl = computed(() => profile.value?.riot_id ? getOpggUrl(profile.value.riot_id) : null)
 const dpmUrl = computed(() => profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null)
+const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
 const canRecruit = computed(() => {
   return authStore.profile?.is_captain &&
          profile.value?.id !== authStore.user?.id &&
