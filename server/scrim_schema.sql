@@ -64,9 +64,20 @@ CREATE TABLE IF NOT EXISTS scrim_participants (
   scrim_id UUID NOT NULL REFERENCES scrims(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   side TEXT CHECK (side IN ('blue', 'red')), 
+  role TEXT, -- Added role column
   joined_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(scrim_id, user_id)
 );
+
+-- Migration pour ajouter la colonne 'role' si la table 'scrim_participants' existe déjà sans
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER TABLE scrim_participants ADD COLUMN role TEXT;
+    EXCEPTION
+        WHEN duplicate_column THEN RAISE NOTICE 'Column role already exists in scrim_participants.';
+    END;
+END $$;
 
 
 -- 3. Création de la table 'scrim_stats_individual' (Nommé ainsi pour éviter confusion avec stats d'équipe)

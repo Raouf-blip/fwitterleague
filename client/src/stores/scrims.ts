@@ -63,11 +63,11 @@ export const useScrimStore = defineStore("scrims", () => {
     }
   }
 
-  async function joinScrim(id: string, side?: string) {
+  async function joinScrim(id: string, side: string, role?: string) {
     loading.value = true;
     try {
       const token = await getToken();
-      const res = await api.post(`/scrims/${id}/join`, { side }, token);
+      const res = await api.post(`/scrims/${id}/join`, { side, role }, token);
 
       // Update local state if currentScrim is the one joined
       if (currentScrim.value && currentScrim.value.id === id) {

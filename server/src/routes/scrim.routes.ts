@@ -195,12 +195,20 @@ router.post("/", authenticate, async (req: any, res) => {
 router.post("/:id/join", authenticate, async (req: any, res) => {
   const { id } = req.params;
   const userId = req.user.id;
-  const { side } = req.body; // 'blue', 'red' or 'reserve'
+  const { side, role } = req.body; // 'blue', 'red' or 'reserve'; role (optional for reserve)
+  console.log(`User ${userId} joining scrim ${id}. Side: ${side}, Role: ${role}`);
 
   // Normaliser la side
   let normalizedSide = side;
   if (!normalizedSide) normalizedSide = "blue"; // default
   if (normalizedSide === "reserve") normalizedSide = null;
+
+  // Validation Role pour Open Scrims
+  const VALID_ROLES = ["Top", "Jungle", "Mid", "ADC", "Support"];
+  if (normalizedSide && (!role || !VALID_ROLES.includes(role))) {
+    // Note: On n'impose pas le role pour les scrims Team pour l'instant si on ne veut pas casser l'existant,
+    // mais le code frontend ne l'envoie que pour Open Scrim
+  }
 
   // Vérifier le scrim
   const { data: scrim } = await supabase
@@ -211,6 +219,10 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
   if (!scrim) return res.status(404).json({ error: "Scrim non trouvé" });
   if (scrim.status !== "scheduled")
     return res.status(400).json({ error: "Ce scrim n'est pas ouvert." });
+
+  if (scrim.type === "open" && normalizedSide && (!role || !VALID_ROLES.includes(role))) {
+      return res.status(400).json({ error: `Un rôle valide est requis pour rejoindre un Open Scrim. (Role reçu: '${role}', Side: '${normalizedSide}')` });
+  }
 
   // Si c'est un Scrim d'équipe, on vérifie l'appartenance
   if (scrim.type === "team") {
@@ -234,10 +246,8 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
     }
 
     // Enforce Side
-    // Challenger = Blue (Host), Challenged = Red (Guest)
     if (userTeamId === scrim.challenger_team_id) {
       if (normalizedSide && normalizedSide !== "blue") {
-        // S'ils essaient dec joindre Red
         return res
           .status(400)
           .json({ error: "Votre équipe joue coté Bleu (Challenger)." });
@@ -257,21 +267,41 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
     });
   }
 
+  // Check Role Conflict (Open Scrims Only)
+  if (scrim.type === "open" && normalizedSide) {
+    const { data: conflict } = await supabase
+      .from("scrim_participants")
+      .select("id")
+      .eq("scrim_id", id)
+      .eq("side", normalizedSide)
+      .eq("role", role)
+      .neq("user_id", userId)
+      .maybeSingle();
+      
+    if (conflict) {
+       return res.status(400).json({ error: `Le rôle ${role} est déjà pris.` });
+    }
+  }
+
   // Vérifier si déjà inscrit
   const { data: existing } = await supabase
     .from("scrim_participants")
-    .select("id, side")
+    .select("id, side, role")
     .eq("scrim_id", id)
     .eq("user_id", userId)
     .maybeSingle();
 
   if (existing) {
-    // Si la side est différente, on met à jour
-    // Note: existing.side peut être null (reserve)
-    if (existing.side !== normalizedSide) {
+    // Update existing
+    const updates: any = {};
+    if (existing.side !== normalizedSide) updates.side = normalizedSide;
+    if (role && existing.role !== role) updates.role = role;
+    if (!normalizedSide) updates.role = null;
+
+    if (Object.keys(updates).length > 0) {
       const { data, error } = await supabase
         .from("scrim_participants")
-        .update({ side: normalizedSide })
+        .update(updates)
         .eq("id", existing.id)
         .select()
         .single();
@@ -288,6 +318,7 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
       scrim_id: id,
       user_id: userId,
       side: normalizedSide,
+      role: normalizedSide ? role : null,
     })
     .select()
     .single();

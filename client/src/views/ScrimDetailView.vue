@@ -224,10 +224,54 @@
             <span class="text-xs text-text-muted">{{ blueSide.length }}/5</span>
           </div>
           <div class="space-y-2 flex-1">
+            <template v-for="role in ROLES" :key="role">
+              <div
+                v-if="getParticipant('blue', role)"
+                class="flex items-center gap-2 p-2 rounded bg-surface-elevated"
+              >
+                <LolRoleIcon :role="role" class="w-5 h-5 opacity-70" />
+                <BaseAvatar
+                  :src="getParticipant('blue', role)!.profile?.avatar_url"
+                  :name="getParticipant('blue', role)!.profile?.username"
+                  size="sm"
+                />
+                <span class="text-sm font-medium truncate">{{
+                  getParticipant("blue", role)!.profile?.username
+                }}</span>
+                <span class="text-xs text-text-muted ml-auto">{{
+                  getParticipant("blue", role)!.profile?.rank || "Unranked"
+                }}</span>
+              </div>
+              <div v-else class="relative">
+                <button
+                  v-if="scrim.status === 'scheduled'"
+                  @click="join('blue', role)"
+                  :disabled="loadingAction"
+                  class="w-full flex items-center gap-2 p-2 rounded border border-dashed border-border hover:border-cyan hover:bg-cyan/5 transition-colors text-left group"
+                >
+                  <LolRoleIcon
+                    :role="role"
+                    class="w-5 h-5 opacity-30 group-hover:opacity-100 transition-opacity"
+                  />
+                  <span
+                    class="text-sm text-text-muted group-hover:text-cyan transition-colors"
+                    >Rejoindre {{ role }}</span
+                  >
+                </button>
+                <div
+                  v-else
+                  class="flex items-center gap-2 p-2 rounded border border-dashed border-border opacity-50"
+                >
+                  <LolRoleIcon :role="role" class="w-5 h-5 opacity-30" />
+                  <span class="text-sm text-text-muted italic">Vide</span>
+                </div>
+              </div>
+            </template>
+            <!-- No Role Participants -->
             <div
-              v-for="p in blueSide"
+              v-for="p in blueSide.filter((p) => !p.role || !ROLES.includes(p.role))"
               :key="p.id"
-              class="flex items-center gap-2 p-2 rounded bg-surface-elevated"
+              class="flex items-center gap-2 p-2 rounded bg-surface-elevated opacity-75"
             >
               <BaseAvatar
                 :src="p.profile?.avatar_url"
@@ -237,39 +281,9 @@
               <span class="text-sm font-medium truncate">{{
                 p.profile?.username
               }}</span>
-              <span class="text-xs text-text-muted ml-auto">{{
-                p.profile?.rank || "Unranked"
-              }}</span>
-            </div>
-            <div
-              v-if="blueSide.length === 0"
-              class="text-xs text-text-muted text-center py-4"
-            >
-              Aucun joueur
-            </div>
-          </div>
-          <div
-            v-if="scrim.status === 'scheduled'"
-            class="mt-4 pt-4 border-t border-border"
-          >
-            <BaseButton
-              v-if="mySide !== 'blue'"
-              variant="ghost"
-              size="sm"
-              class="w-full border-dashed border border-border text-cyan hover:bg-cyan/10 hover:border-cyan"
-              @click="join('blue')"
-              :loading="loadingAction"
-            >
-              {{
-                mySide
-                  ? "Changer pour " +
-                    (scrim.type === "team" ? "cette équipe" : "l'équipe Bleue")
-                  : "Rejoindre " +
-                    (scrim.type === "team" ? "cette équipe" : "l'équipe Bleue")
-              }}
-            </BaseButton>
-            <div v-else class="text-center text-xs text-cyan font-bold py-2">
-              Vous êtes dans cette équipe
+              <span class="text-xs text-text-muted ml-auto text-[10px]"
+                >Flexible</span
+              >
             </div>
           </div>
         </div>
@@ -296,10 +310,54 @@
             <span class="text-xs text-text-muted">{{ redSide.length }}/5</span>
           </div>
           <div class="space-y-2 flex-1">
+            <template v-for="role in ROLES" :key="role">
+              <div
+                v-if="getParticipant('red', role)"
+                class="flex items-center gap-2 p-2 rounded bg-surface-elevated"
+              >
+                <LolRoleIcon :role="role" class="w-5 h-5 opacity-70" />
+                <BaseAvatar
+                  :src="getParticipant('red', role)!.profile?.avatar_url"
+                  :name="getParticipant('red', role)!.profile?.username"
+                  size="sm"
+                />
+                <span class="text-sm font-medium truncate">{{
+                  getParticipant("red", role)!.profile?.username
+                }}</span>
+                <span class="text-xs text-text-muted ml-auto">{{
+                  getParticipant("red", role)!.profile?.rank || "Unranked"
+                }}</span>
+              </div>
+              <div v-else class="relative">
+                <button
+                  v-if="scrim.status === 'scheduled'"
+                  @click="join('red', role)"
+                  :disabled="loadingAction"
+                  class="w-full flex items-center gap-2 p-2 rounded border border-dashed border-border hover:border-danger hover:bg-danger/5 transition-colors text-left group"
+                >
+                  <LolRoleIcon
+                    :role="role"
+                    class="w-5 h-5 opacity-30 group-hover:opacity-100 transition-opacity"
+                  />
+                  <span
+                    class="text-sm text-text-muted group-hover:text-danger transition-colors"
+                    >Rejoindre {{ role }}</span
+                  >
+                </button>
+                <div
+                  v-else
+                  class="flex items-center gap-2 p-2 rounded border border-dashed border-border opacity-50"
+                >
+                  <LolRoleIcon :role="role" class="w-5 h-5 opacity-30" />
+                  <span class="text-sm text-text-muted italic">Vide</span>
+                </div>
+              </div>
+            </template>
+            <!-- No Role Participants -->
             <div
-              v-for="p in redSide"
+              v-for="p in redSide.filter((p) => !p.role || !ROLES.includes(p.role))"
               :key="p.id"
-              class="flex items-center gap-2 p-2 rounded bg-surface-elevated"
+              class="flex items-center gap-2 p-2 rounded bg-surface-elevated opacity-75"
             >
               <BaseAvatar
                 :src="p.profile?.avatar_url"
@@ -309,39 +367,9 @@
               <span class="text-sm font-medium truncate">{{
                 p.profile?.username
               }}</span>
-              <span class="text-xs text-text-muted ml-auto">{{
-                p.profile?.rank || "Unranked"
-              }}</span>
-            </div>
-            <div
-              v-if="redSide.length === 0"
-              class="text-xs text-text-muted text-center py-4"
-            >
-              Aucun joueur
-            </div>
-          </div>
-          <div
-            v-if="scrim.status === 'scheduled'"
-            class="mt-4 pt-4 border-t border-border"
-          >
-            <BaseButton
-              v-if="mySide !== 'red'"
-              variant="ghost"
-              size="sm"
-              class="w-full border-dashed border border-border text-danger hover:bg-danger/10 hover:border-danger"
-              @click="join('red')"
-              :loading="loadingAction"
-            >
-              {{
-                mySide
-                  ? "Changer pour " +
-                    (scrim.type === "team" ? "cette équipe" : "l'équipe Rouge")
-                  : "Rejoindre " +
-                    (scrim.type === "team" ? "cette équipe" : "l'équipe Rouge")
-              }}
-            </BaseButton>
-            <div v-else class="text-center text-xs text-danger font-bold py-2">
-              Vous êtes dans cette équipe
+              <span class="text-xs text-text-muted ml-auto text-[10px]"
+                >Flexible</span
+              >
             </div>
           </div>
         </div>
@@ -542,6 +570,7 @@ import BaseSpinner from "../components/ui/BaseSpinner.vue";
 import BaseAvatar from "../components/ui/BaseAvatar.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import RankBadge from "../components/domain/RankBadge.vue";
+import LolRoleIcon from "../components/icons/LolRoleIcon.vue";
 import ScrimResultForm from "../components/forms/ScrimResultForm.vue";
 import { supabase } from "../lib/supabase"; // Import Supabase directly for ad-hoc queries
 
@@ -559,6 +588,14 @@ const loadingMembers = ref(false);
 
 const scrim = computed(() => scrimStore.currentScrim);
 const me = computed(() => authStore.user?.id);
+
+const ROLES = ["Top", "Jungle", "Mid", "ADC", "Support"];
+
+function getParticipant(side: string, role: string) {
+  return scrim.value?.participants?.find(
+    (p) => p.side === side && p.role === role
+  );
+}
 
 // Team Rosters Loading Logic (Moved up or consolidated)
 // Fetch members logic
@@ -708,13 +745,21 @@ function getStatusVariant(status: string) {
   }
 }
 
-async function join(side: string) {
+async function join(side: string, role?: string) {
   if (!scrim.value) return;
+  
+  // Safety check for Open Scrims
+  if (scrim.value.type === "open" && side !== "reserve" && !role) {
+    console.warn("Role is required for Open Scrims");
+    return;
+  }
+
   loadingAction.value = true;
   try {
-    await scrimStore.joinScrim(scrim.value.id, side);
-  } catch (e) {
+    await scrimStore.joinScrim(scrim.value.id, side, role);
+  } catch (e: any) {
     console.error(e);
+    alert(e.message || "Une erreur inconnue est survenue.");
   } finally {
     loadingAction.value = false;
   }
