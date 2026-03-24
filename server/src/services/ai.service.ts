@@ -8,14 +8,15 @@ dotenv.config();
 
 export interface AnalyzeResult {
   pseudo: string;
-
   champion: string;
   kills: number;
   deaths: number;
   assists: number;
   cs: number;
+  cs_min?: number;
   side?: "blue" | "red";
   win?: boolean;
+  game_duration?: number;
 }
 
 export async function analyzeScreenshot(
@@ -30,8 +31,6 @@ export async function analyzeScreenshot(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // D'après la liste des modèles disponibles (mars 2026), gemini-1.5 est obsolète.
-  // Utilisation de la version stable actuelle.
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
@@ -42,26 +41,31 @@ export async function analyzeScreenshot(
     ${participants.join(", ")}
 
     Règles strictes :
-    1. Pour chaque ligne de joueur, essaie de faire correspondre le pseudo avec la liste des participants.
-    2. Si le pseudo lu ressemble fortement à un participant, utilise le nom exact du participant.
-    3. Si le pseudo est illisible ou ne correspond à personne, renvoie le pseudo tel que lu, ou "Inconnu".
+    1. Essaie de repérer la durée de la partie (ex: "25:30"). Si trouvée, convertis en secondes.
+    2. Pour chaque ligne de joueur, essaie de faire correspondre le pseudo avec la liste des participants.
+    3. Si le pseudo lu ressemble fortement à un participant, utilise le nom exact du participant.
     4. Récupère : Champion, Kills, Morts, Assists, Sbires (CS).
-    5. Détermine l'équipe (Bleue ou Rouge) selon la position (généralement 5 premiers = Bleue, 5 suivants = Rouge).
-    6. Détermine qui a gagné si possible (Victory/Defeat visible ?). Sinon mets null.
+    5. Si CS/min est visible, récupère-le. Sinon, calcule-le si la durée est connue (CS / DuréeEnMinutes).
+    6. Détermine l'équipe (Bleue ou Rouge) selon la position (généralement 5 premiers = Bleue, 5 suivants = Rouge).
+    7. Détermine qui a gagné si possible (Victory/Defeat visible ?). Sinon mets null.
 
-    Format de sortie JSON uniquement (tableau d'objets) :
-    [
-      {
-        "pseudo": "NomExactParticipantOuLu",
-        "champion": "NomChampion",
-        "kills": 0,
-        "morts": 0,
-        "assists": 0,
-        "sbires": 0,
-        "equipe": "blue" | "red",
-        "resultat": "victoire" | "defaite" | null
-      }
-    ]
+    Format de sortie JSON uniquement :
+    {
+      "duree_secondes": 0 | null,
+      "joueurs": [
+        {
+          "pseudo": "NomExactParticipantOuLu",
+          "champion": "NomChampion",
+          "kills": 0,
+          "morts": 0,
+          "assists": 0,
+          "sbires": 0,
+          "cs_min": 0.0,
+          "equipe": "blue" | "red",
+          "resultat": "victoire" | "defaite" | null
+        }
+      ]
+    }
   `;
 
   try {
@@ -71,7 +75,6 @@ export async function analyzeScreenshot(
       throw new Error(`Failed to fetch image: ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
-    // Use Buffer.from() for Node environment compatibility with Gemini SDK
     const buffer = Buffer.from(arrayBuffer);
 
     // Prepare for Gemini
@@ -92,43 +95,23 @@ export async function analyzeScreenshot(
     const cleanJson = text.replace(/```json|```/g, "").trim();
 
     const data = JSON.parse(cleanJson);
+    const players = data.joueurs || (Array.isArray(data) ? data : []);
+    const duration = data.duree_secondes || null;
 
-    // Validate / map to simpler structure if needed
-    if (!Array.isArray(data)) {
-      // If Gemini returns the object structure despite instructions (sometimes happens), handle it
-      if (data.equipe_bleue || data.participants) {
-        const all = [
-          ...(data.equipe_bleue || []),
-          ...(data.equipe_rouge || []),
-          ...(data.participants || []),
-        ];
-        return all.map((d: any) => ({
-          pseudo: d.pseudo,
-          champion: d.champion,
-          kills: d.kills,
-          deaths: d.morts || d.deaths,
-          assists: d.assists,
-          cs: d.sbires || d.cs,
-          side: d.equipe,
-          win: d.resultat === "victoire",
-        }));
-      }
-      console.warn("Gemini did not return an array:", data);
-      return [];
-    }
-
-    return data.map((d: any) => ({
+    return players.map((d: any) => ({
       pseudo: d.pseudo,
       champion: d.champion,
       kills: d.kills,
-      deaths: d.morts,
+      deaths: d.morts || d.deaths,
       assists: d.assists,
-      cs: d.sbires,
+      cs: d.sbires || d.cs,
+      cs_min: d.cs_min,
       side: d.equipe,
-      win: d.resultat === "victoire",
+      win: d.resultat === "victoire" || d.resultat === true,
+      game_duration: duration,
     }));
-  } catch (error) {
-    console.error("Error analyzing screenshot with Gemini:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Gemini Analysis Error:", error);
+    throw new Error("Erreur d'analyse IA: " + error.message);
   }
 }

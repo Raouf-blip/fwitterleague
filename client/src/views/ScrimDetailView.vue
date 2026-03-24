@@ -514,11 +514,14 @@
                 </td>
                 <td class="p-3 text-right font-mono">
                   {{ stat.cs }}
-                  <span
-                    v-if="scrim.game_duration"
-                    class="text-xs text-text-muted ml-1"
-                  >
-                    ({{ (stat.cs / (scrim.game_duration / 60)).toFixed(1) }})
+                  <span class="text-xs text-text-muted ml-1">
+                    ({{
+                      stat.cs_min
+                        ? Number(stat.cs_min).toFixed(1)
+                        : scrim.game_duration
+                          ? (stat.cs / (scrim.game_duration / 60)).toFixed(1)
+                          : "-"
+                    }})
                   </span>
                 </td>
                 <td class="p-3 text-center">

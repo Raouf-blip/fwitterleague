@@ -141,7 +141,7 @@
                   <th class="px-1 py-2 font-medium w-12 text-center">K</th>
                   <th class="px-1 py-2 font-medium w-12 text-center">D</th>
                   <th class="px-1 py-2 font-medium w-12 text-center">A</th>
-                  <th class="px-1 py-2 font-medium w-14 text-center">CS</th>
+                  <th class="px-1 py-2 font-medium w-14 text-center">CS/m</th>
                   <th class="px-1 py-2 font-medium w-10 text-center">W</th>
                 </tr>
               </thead>
@@ -204,8 +204,9 @@
                   </td>
                   <td class="px-1 py-1">
                     <input
-                      v-model.number="stat.cs"
+                      v-model.number="stat.cs_min"
                       type="number"
+                      step="0.1"
                       min="0"
                       class="w-full bg-surface-elevated border border-transparent focus:border-cyan rounded px-1 py-1 outline-none text-center font-mono text-text-primary p-0"
                     />
@@ -242,7 +243,7 @@
                   <th class="px-1 py-2 font-medium w-12 text-center">K</th>
                   <th class="px-1 py-2 font-medium w-12 text-center">D</th>
                   <th class="px-1 py-2 font-medium w-12 text-center">A</th>
-                  <th class="px-1 py-2 font-medium w-14 text-center">CS</th>
+                  <th class="px-1 py-2 font-medium w-14 text-center">CS/m</th>
                   <th class="px-1 py-2 font-medium w-10 text-center">W</th>
                 </tr>
               </thead>
@@ -305,8 +306,9 @@
                   </td>
                   <td class="px-1 py-1">
                     <input
-                      v-model.number="stat.cs"
+                      v-model.number="stat.cs_min"
                       type="number"
+                      step="0.1"
                       min="0"
                       class="w-full bg-surface-elevated border border-transparent focus:border-danger rounded px-1 py-1 outline-none text-center font-mono text-text-primary p-0"
                     />
@@ -400,6 +402,7 @@ function initStats() {
     deaths: 0,
     assists: 0,
     cs: 0,
+    cs_min: 0, // Added cs_min
     win: false,
   });
 
@@ -430,6 +433,11 @@ function initStats() {
           stat.deaths = existing.deaths || 0;
           stat.assists = existing.assists || 0;
           stat.cs = existing.cs || 0;
+          stat.cs_min =
+            existing.cs_min ||
+            (existing.cs && gameDuration.value > 0
+              ? Number((existing.cs / gameDuration.value).toFixed(1))
+              : 0);
           stat.win = existing.win || false;
           if (existing.role) stat.role = existing.role;
         }
@@ -531,6 +539,11 @@ async function uploadAndAnalyze(file: File) {
       token,
     );
 
+    if (res.game_duration) {
+      // Duration is in seconds, store as minutes
+      gameDuration.value = Math.floor(res.game_duration / 60);
+    }
+
     if (res.stats && Array.isArray(res.stats)) {
       // Map result to localStats
       res.stats.forEach((detected: any) => {
@@ -543,6 +556,13 @@ async function uploadAndAnalyze(file: File) {
           existing.deaths = detected.deaths;
           existing.assists = detected.assists;
           existing.cs = detected.cs;
+          if (detected.cs_min) {
+            existing.cs_min = detected.cs_min;
+          } else if (detected.cs && gameDuration.value > 0) {
+            existing.cs_min = Number(
+              (detected.cs / gameDuration.value).toFixed(1),
+            );
+          }
           existing.win = detected.win;
           if (detected.role) existing.role = detected.role; // If AI detects role
         }
@@ -586,21 +606,33 @@ async function uploadAndAnalyze(file: File) {
 }
 
 async function handleSubmit() {
+  const durationMin = Number(gameDuration.value) || 0;
   emit("submit", {
     screenshot_url: screenshotUrl.value,
-    game_duration: Number(gameDuration.value) * 60, // minutes to seconds
+    game_duration: durationMin * 60, // minutes to seconds
     stats: localStats.value
       .filter((s) => s.champion && s.champion.trim() !== "") // Only include players with a selected champion
-      .map((s) => ({
-        user_id: s.user_id,
-        champion_name: s.champion,
-        kills: Number(s.kills) || 0,
-        deaths: Number(s.deaths) || 0,
-        assists: Number(s.assists) || 0,
-        cs: Number(s.cs) || 0,
-        win: s.win,
-        role: s.role, // Ensure we send role
-      })),
+      .map((s) => {
+        const cs_min = Number(s.cs_min) || 0;
+        // Calculate raw CS based on cs_min and duration if available, otherwise use existing cs.
+        // If user manually inputs cs_min, we calculate implied CS.
+        const cs =
+          durationMin > 0 && cs_min > 0
+            ? Math.round(cs_min * durationMin)
+            : Number(s.cs) || 0;
+
+        return {
+          user_id: s.user_id,
+          champion_name: s.champion,
+          kills: Number(s.kills) || 0,
+          deaths: Number(s.deaths) || 0,
+          assists: Number(s.assists) || 0,
+          cs,
+          cs_min,
+          win: s.win,
+          role: s.role, // Ensure we send role
+        };
+      }),
   });
 }
 </script>

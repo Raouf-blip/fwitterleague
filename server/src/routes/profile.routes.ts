@@ -85,7 +85,7 @@ router.get("/me", authenticate, async (req: any, res) => {
   // Get Scrim Stats
   const { data: stats } = await supabase
     .from("scrim_stats_individual")
-    .select("kills, deaths, assists, cs, win, champion_name")
+    .select("kills, deaths, assists, cs, cs_min, win, champion_name")
     .eq("user_id", req.user.id);
 
   const scrim_stats =
@@ -112,8 +112,10 @@ router.get("/me", authenticate, async (req: any, res) => {
                 ).toFixed(2)
               : "0.00",
           avg_cs: (
-            stats.reduce((acc: number, s: any) => acc + (s.cs || 0), 0) /
-            Math.max(1, stats.length)
+            stats.reduce(
+              (acc: number, s: any) => acc + (Number(s.cs_min) || 0),
+              0,
+            ) / Math.max(1, stats.length)
           ).toFixed(1),
         }
       : null;
@@ -251,7 +253,7 @@ router.get("/:id", async (req, res) => {
   // Get Scrim Stats
   const { data: stats } = await supabase
     .from("scrim_stats_individual")
-    .select("kills, deaths, assists, cs, win, champion_name")
+    .select("kills, deaths, assists, cs, cs_min, win, champion_name")
     .eq("user_id", req.params.id);
 
   const scrim_stats =
@@ -271,8 +273,10 @@ router.get("/:id", async (req, res) => {
             )
           ).toFixed(2),
           avg_cs: (
-            stats.reduce((acc: number, s: any) => acc + (s.cs || 0), 0) /
-            stats.length
+            stats.reduce(
+              (acc: number, s: any) => acc + (Number(s.cs_min) || 0),
+              0,
+            ) / Math.max(1, stats.length)
           ).toFixed(1),
         }
       : null;

@@ -227,11 +227,9 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
     normalizedSide &&
     (!role || !VALID_ROLES.includes(role))
   ) {
-    return res
-      .status(400)
-      .json({
-        error: `Un rôle valide est requis pour rejoindre un Open Scrim. (Role reçu: '${role}', Side: '${normalizedSide}')`,
-      });
+    return res.status(400).json({
+      error: `Un rôle valide est requis pour rejoindre un Open Scrim. (Role reçu: '${role}', Side: '${normalizedSide}')`,
+    });
   }
 
   // Si c'est un Scrim d'équipe, on vérifie l'appartenance
@@ -528,17 +526,32 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
   // Insert stats
   // On suppose que le client envoie un tableau propre
   if (stats && Array.isArray(stats) && stats.length > 0) {
-    const statsToInsert = stats.map((s: any) => ({
-      scrim_id: id,
-      user_id: s.user_id,
-      champion_name: s.champion_name,
-      kills: s.kills,
-      deaths: s.deaths,
-      assists: s.assists,
-      cs: s.cs,
-      win: s.win || false,
-      role: s.role, // Now inserting role if DB has column
-    }));
+    // Determine game duration for CS/min if not provided in stats
+    // Priority: req.body.game_duration -> scrim.game_duration
+    const durationSec = game_duration || scrim.game_duration || 0;
+    const durationMin = durationSec > 0 ? durationSec / 60 : 0;
+
+    const statsToInsert = stats.map((s: any) => {
+      // Calculate CS/min
+      // If client sent cs_min, use it. Else calculate from CS & Duration.
+      let csMin = s.cs_min;
+      if (csMin === undefined && durationMin > 0 && s.cs !== undefined) {
+        csMin = Number((s.cs / durationMin).toFixed(1));
+      }
+
+      return {
+        scrim_id: id,
+        user_id: s.user_id,
+        champion_name: s.champion_name,
+        kills: s.kills,
+        deaths: s.deaths,
+        assists: s.assists,
+        cs: s.cs,
+        cs_min: csMin || 0, // Fallback to 0
+        win: s.win || false,
+        role: s.role,
+      };
+    });
 
     const { error } = await supabase
       .from("scrim_stats_individual")
@@ -609,8 +622,11 @@ router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
     );
 
     // 2. Call OpenAI Vision (now Gemini)
-    // Note: analyzeScreenshot returns { pseudo, champion, kills, deaths, assists, cs, win }
+    // Note: analyzeScreenshot returns { pseudo, champion, kills, deaths, assists, cs, cs_min, win, game_duration }
     const results: any[] = await analyzeScreenshot(imageUrl, participantNames);
+
+    // Extract global game duration if detected (it's duplicated in each player object)
+    const detectedDuration = results[0]?.game_duration || null;
 
     // 3. Match back to user IDs
     const matchedStats = results
@@ -632,14 +648,17 @@ router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
             deaths: result.deaths,
             assists: result.assists,
             cs: result.cs,
+            cs_min: result.cs_min,
             win: result.win === true || result.win === "true",
+            // Include role from registration if available
+            role: (match as any).role || null,
           };
         }
         return null; // Ignore unmatched players (as requested)
       })
       .filter((s) => s !== null);
 
-    res.json({ stats: matchedStats });
+    res.json({ stats: matchedStats, game_duration: detectedDuration });
   } catch (error: any) {
     console.error("AI Route Error:", error);
     res

@@ -80,6 +80,8 @@ BEGIN
 END $$;
 
 
+
+
 -- 3. Création de la table 'scrim_stats_individual' (Nommé ainsi pour éviter confusion avec stats d'équipe)
 -- Pour stocker les statistiques individuelles (KDA, CS) extraites par OCR
 CREATE TABLE IF NOT EXISTS scrim_stats_individual (
@@ -92,6 +94,7 @@ CREATE TABLE IF NOT EXISTS scrim_stats_individual (
   deaths INT DEFAULT 0,
   assists INT DEFAULT 0,
   cs INT DEFAULT 0,
+  cs_min FLOAT DEFAULT 0,
   win BOOLEAN DEFAULT FALSE,
   role TEXT,
   
@@ -107,6 +110,16 @@ BEGIN
         ALTER TABLE scrim_stats_individual ADD COLUMN role TEXT;
     EXCEPTION
         WHEN duplicate_column THEN RAISE NOTICE 'Column role already exists in scrim_stats_individual.';
+    END;
+END $$;
+
+-- Migration pour ajouter cs_min si ce n'est pas fait (retro-compat)
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER TABLE scrim_stats_individual ADD COLUMN cs_min FLOAT;
+    EXCEPTION
+        WHEN duplicate_column THEN RAISE NOTICE 'Column cs_min already exists in scrim_stats_individual.';
     END;
 END $$;
 
