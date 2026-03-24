@@ -51,6 +51,16 @@
               <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ authStore.profile.discord }}
             </span>
+            <a
+              v-if="authStore.profile.twitch_url"
+              :href="authStore.profile.twitch_url"
+              target="_blank"
+              class="text-[10px] text-[#9146FF] hover:underline flex items-center gap-1 bg-[#9146FF]/5 px-1.5 py-0.5 rounded border border-[#9146FF]/10"
+              title="Voir sur Twitch"
+            >
+              <TwitchIcon :size="12" />
+              Twitch
+            </a>
           </div>
 
           <div class="flex items-center gap-4 mt-3">
@@ -349,6 +359,8 @@
         :initial-riot-id="authStore.profile.riot_id || ''"
         :initial-avatar-url="authStore.profile.avatar_url || ''"
         :initial-discord="authStore.profile.discord || ''"
+        :initial-twitch-url="authStore.profile.twitch_url || ''"
+        :is-caster="authStore.profile.is_caster"
         :initial-is-looking="authStore.profile.is_looking_for_team"
         :initial-roles="authStore.profile.preferred_roles || []"
         :has-team="!!team"
@@ -405,6 +417,7 @@ import {
   Eye,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
+import TwitchIcon from '../components/icons/TwitchIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
@@ -590,7 +603,7 @@ async function markAsRead(id: string) {
   }
 }
 
-async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
+async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; twitch_url: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
   savingProfile.value = true
   fetchingRiot.value = true
   riotError.value = ''

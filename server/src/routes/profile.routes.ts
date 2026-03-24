@@ -91,7 +91,7 @@ router.get('/me', authenticate, async (req: any, res) => {
 // Private: Update my profile
 router.patch('/me', authenticate, async (req: any, res) => {
   // On empêche la modification manuelle du rôle via cette route
-  const { role, is_captain, last_riot_sync, riot_id, ...updateData } = req.body;
+  const { role, is_captain, is_caster, is_featured_caster, last_riot_sync, riot_id, ...updateData } = req.body;
 
   // Autoriser UNIQUEMENT la suppression du riot_id manuelle. L'ajout/modificaiton passe par /sync-riot.
   if (riot_id === '' || riot_id === null) {
@@ -161,11 +161,50 @@ router.patch('/:id/role', authenticate, authorizeSuperAdmin, async (req: any, re
 
 // Admin: Change user status
 router.patch('/:id/status', authenticate, authorizeAdmin, async (req: any, res) => {
-  const { is_captain, is_looking_for_team, is_caster } = req.body;
+  const { is_captain, is_looking_for_team, is_caster, is_featured_caster } = req.body;
   const updateData: any = {};
   if (is_captain !== undefined) updateData.is_captain = is_captain;
   if (is_looking_for_team !== undefined) updateData.is_looking_for_team = is_looking_for_team;
   if (is_caster !== undefined) updateData.is_caster = is_caster;
+  if (is_featured_caster !== undefined) updateData.is_featured_caster = is_featured_caster;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Public: Get all casters
+router.get('/casters', async (_req, res) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url, bio, twitch_url, is_featured_caster')
+    .eq('is_caster', true)
+    .order('is_featured_caster', { ascending: false })
+    .order('username', { ascending: true });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data || []);
+});
+
+// SuperAdmin: Edit any user's profile
+router.patch('/:id/admin-edit', authenticate, authorizeSuperAdmin, async (req: any, res) => {
+  const { role, is_captain, is_looking_for_team, is_caster, is_featured_caster, ...safeData } = req.body;
+  // Only allow safe fields: bio, twitch_url, discord, avatar_url, preferred_roles
+  const allowed = ['bio', 'twitch_url', 'discord', 'avatar_url', 'preferred_roles'];
+  const updateData: any = {};
+  for (const key of allowed) {
+    if (safeData[key] !== undefined) updateData[key] = safeData[key];
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ error: 'Aucun champ à modifier.' });
+  }
 
   const { data, error } = await supabase
     .from('profiles')

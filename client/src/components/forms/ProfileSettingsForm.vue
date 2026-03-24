@@ -72,6 +72,13 @@
       placeholder="tonpseudo"
     />
 
+    <BaseInput
+      v-if="isCaster"
+      v-model="twitchUrl"
+      label="Chaîne Twitch"
+      placeholder="https://twitch.tv/tonpseudo"
+    />
+
     <RoleSelector
       v-model="preferredRoles"
       label="Postes préférés"
@@ -130,6 +137,8 @@ const props = defineProps<{
   initialRiotId?: string
   initialAvatarUrl?: string
   initialDiscord?: string
+  initialTwitchUrl?: string
+  isCaster?: boolean
   initialIsLooking?: boolean
   initialRoles?: string[]
   hasTeam?: boolean
@@ -139,13 +148,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }]
+  save: [data: { bio: string; riot_id: string; avatar_url: string; discord: string; twitch_url: string; is_looking_for_team: boolean; preferred_roles: string[] }]
 }>()
 
 const bio = ref(props.initialBio || '')
 const riotId = ref(props.initialRiotId || '')
 const avatarUrl = ref(props.initialAvatarUrl || '')
 const discord = ref(props.initialDiscord || '')
+const twitchUrl = ref(props.initialTwitchUrl || '')
 const isLooking = ref(props.initialIsLooking || false)
 const preferredRoles = ref<string[]>(props.initialRoles || [])
 const uploading = ref(false)
@@ -155,6 +165,7 @@ watch(() => props.initialBio, (v) => { if (v !== undefined) bio.value = v })
 watch(() => props.initialRiotId, (v) => { if (v !== undefined) riotId.value = v })
 watch(() => props.initialAvatarUrl, (v) => { if (v !== undefined) avatarUrl.value = v })
 watch(() => props.initialDiscord, (v) => { if (v !== undefined) discord.value = v })
+watch(() => props.initialTwitchUrl, (v) => { if (v !== undefined) twitchUrl.value = v })
 watch(() => props.initialIsLooking, (v) => { if (v !== undefined) isLooking.value = v })
 watch(() => props.initialRoles, (v) => { if (v !== undefined) preferredRoles.value = v || [] })
 
@@ -210,6 +221,7 @@ function handleSubmit() {
     riot_id: riotId.value,
     avatar_url: avatarUrl.value,
     discord: discord.value,
+    twitch_url: twitchUrl.value,
     is_looking_for_team: isLooking.value,
     preferred_roles: preferredRoles.value
   })

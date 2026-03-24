@@ -162,6 +162,7 @@ import {
   Swords,
   MessageCircle,
   BookOpen,
+  Mic,
 } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth";
 import { useInboxStore } from "../../stores/inbox";
@@ -188,6 +189,7 @@ const navLinks = computed(() => {
   const links = [
     { to: "/tournaments", label: "Tournois", icon: Award },
     { to: "/agents", label: "Mercato", icon: Users },
+    { to: "/casters", label: "Casters", icon: Mic },
     { to: "/teams", label: "Équipes", icon: Shield },
     { to: "/rules", label: "Règlement", icon: BookOpen },
     { to: "/contact", label: "Contact", icon: MessageCircle },

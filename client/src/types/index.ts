@@ -10,6 +10,8 @@ export interface Profile {
   is_captain: boolean
   is_looking_for_team: boolean
   is_caster?: boolean
+  is_featured_caster?: boolean
+  twitch_url?: string | null
   bio: string | null
   rank: string | null
   winrate: number

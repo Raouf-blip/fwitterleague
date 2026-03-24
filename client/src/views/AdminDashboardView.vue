@@ -314,6 +314,14 @@
               { value: 'yes', label: 'Oui' }
             ]" />
           </div>
+
+          <div v-if="isCaster === 'yes' && isSuperAdmin">
+            <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Caster Principal (mis en avant)</label>
+            <BaseSelect v-model="isFeaturedCaster" :options="[
+              { value: 'no', label: 'Non' },
+              { value: 'yes', label: 'Oui' }
+            ]" />
+          </div>
         </div>
 
         <div class="pt-4 flex gap-2">
@@ -540,6 +548,7 @@ const selectedUser = ref<Profile | null>(null)
 const newRole = ref('user')
 const newStatus = ref<'none' | 'captain' | 'lft'>('none')
 const isCaster = ref('no')
+const isFeaturedCaster = ref('no')
 const changingRole = ref(false)
 
 const showDeleteUserConfirm = ref(false)
@@ -750,6 +759,7 @@ function openRoleModal(user: Profile) {
   else if (user.is_looking_for_team) newStatus.value = 'lft'
   else newStatus.value = 'none'
   isCaster.value = user.is_caster ? 'yes' : 'no'
+  isFeaturedCaster.value = user.is_featured_caster ? 'yes' : 'no'
   showRoleModal.value = true
 }
 
@@ -770,11 +780,13 @@ async function changeRole() {
     const isCaptain = newStatus.value === 'captain'
     const isLFT = newStatus.value === 'lft'
     const newIsCaster = isCaster.value === 'yes'
-    if (isCaptain !== selectedUser.value.is_captain || isLFT !== selectedUser.value.is_looking_for_team || newIsCaster !== selectedUser.value.is_caster) {
+    const newIsFeaturedCaster = isFeaturedCaster.value === 'yes' && newIsCaster
+    if (isCaptain !== selectedUser.value.is_captain || isLFT !== selectedUser.value.is_looking_for_team || newIsCaster !== selectedUser.value.is_caster || newIsFeaturedCaster !== selectedUser.value.is_featured_caster) {
       promises.push(api.patch(`/profiles/${selectedUser.value.id}/status`, {
         is_captain: isCaptain,
         is_looking_for_team: isLFT,
-        is_caster: newIsCaster
+        is_caster: newIsCaster,
+        is_featured_caster: newIsFeaturedCaster
       }, token))
     }
     if (promises.length > 0) {
