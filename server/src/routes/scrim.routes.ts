@@ -205,16 +205,47 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
   // Vérifier le scrim
   const { data: scrim } = await supabase
     .from("scrims")
-    .select("type, status")
+    .select("type, status, challenger_team_id, challenged_team_id")
     .eq("id", id)
     .single();
   if (!scrim) return res.status(404).json({ error: "Scrim non trouvé" });
-  if (scrim.type !== "open")
+  if (scrim.status !== "scheduled")
+    return res.status(400).json({ error: "Ce scrim n'est pas ouvert." });
+
+  // Si c'est un Scrim d'équipe, on vérifie l'appartenance
+  if (scrim.type === "team") {
+    const { data: membership } = await supabase
+      .from("team_members")
+      .select("team_id")
+      .eq("profile_id", userId)
+      .in("team_id", [scrim.challenger_team_id, scrim.challenged_team_id]); // Returns array
+    
+    // Check if user is in one of the teams
+    const userTeamId = membership && membership.length > 0 ? membership[0].team_id : null;
+
+    if (!userTeamId) {
+       return res.status(403).json({ error: "Vous ne faites pas partie d'une équipe participant à ce scrim." });
+    }
+
+    // Enforce Side
+    // Challenger = Blue (Host), Challenged = Red (Guest)
+    if (userTeamId === scrim.challenger_team_id) {
+        if (normalizedSide && normalizedSide !== 'blue') {
+             // S'ils essaient dec joindre Red
+             return res.status(400).json({ error: "Votre équipe joue coté Bleu (Challenger)." });
+        }
+        if (!normalizedSide) normalizedSide = 'blue';
+    } else if (userTeamId === scrim.challenged_team_id) {
+        if (normalizedSide && normalizedSide !== 'red') {
+             return res.status(400).json({ error: "Votre équipe joue coté Rouge (Challenged)." });
+        }
+         if (!normalizedSide) normalizedSide = 'red';
+    }
+  } else if (scrim.type !== "open") {
     return res.status(400).json({
       error: "Ce scrim n'est pas ouvert aux inscriptions individuelles.",
     });
-  if (scrim.status !== "scheduled")
-    return res.status(400).json({ error: "Ce scrim n'est pas ouvert." });
+  }
 
   // Vérifier si déjà inscrit
   const { data: existing } = await supabase
@@ -290,10 +321,10 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
     .single();
   const isAdmin = profile?.role === "admin" || profile?.role === "superadmin";
 
-  // Check generic rights (Creator or Host Captain)
+  // Check generic rights (Creator or Host Captain or Guest Captain)
   const { data: scrim } = await supabase
     .from("scrims")
-    .select("*, challenger_team:challenger_team_id(captain_id)")
+    .select("*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)")
     .eq("id", id)
     .single();
 
@@ -302,8 +333,10 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
   const isCreator = scrim.creator_id === userId;
   const isChallengerCaptain =
     (scrim.challenger_team as any)?.captain_id === userId;
+  const isChallengedCaptain =
+    (scrim.challenged_team as any)?.captain_id === userId;
 
-  if (!isCreator && !isChallengerCaptain && !isAdmin) {
+  if (!isCreator && !isChallengerCaptain && !isChallengedCaptain && !isAdmin) {
     return res.status(403).json({ error: "Non autorisé." });
   }
 
@@ -398,7 +431,7 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
 
   const { data: scrim } = await supabase
     .from("scrims")
-    .select("*, challenger_team:challenger_team_id(captain_id)")
+    .select("*, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)")
     .eq("id", id)
     .single();
 
@@ -409,8 +442,10 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
   const isCreator = scrim.creator_id === userId;
   const isChallengerCaptain =
     (scrim.challenger_team as any)?.captain_id === userId;
+  const isChallengedCaptain =
+    (scrim.challenged_team as any)?.captain_id === userId;
 
-  if (!isCreator && !isChallengerCaptain && !isAdmin) {
+  if (!isCreator && !isChallengerCaptain && !isChallengedCaptain && !isAdmin) {
     return res.status(403).json({
       error: "Seul l'organisateur ou un admin peut soumettre les résultats.",
     });
@@ -476,14 +511,39 @@ router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
   }
 
   try {
-    // 1. Get Participants for context (names help the AI match rows)
-    const { data: participants, error: pError } = await supabase
-      .from("scrim_participants")
-      .select("*, profile:user_id(username)")
-      .eq("scrim_id", id);
+    // 1. Get Participants for context based on Scrim Type
+    const { data: scrim } = await supabase
+      .from("scrims")
+      .select("type, challenger_team_id, challenged_team_id")
+      .eq("id", id)
+      .single();
 
-    if (pError) throw pError;
+    if (!scrim) throw new Error("Scrim introuvable");
 
+    let participants: any[] = [];
+
+    if (scrim.type === "team") {
+      // For Team Scrims, fetch all members from both teams
+      const teamIds = [scrim.challenger_team_id, scrim.challenged_team_id].filter(Boolean);
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("team_id, profile_id, profile:profile_id(id, username)")
+        .in("team_id", teamIds);
+      
+      // Normalize to match scrim_participants structure (user_id instead of profile_id)
+      participants = (members || []).map((m: any) => ({
+        user_id: m.profile_id,
+        profile: m.profile,
+      }));
+    } else {
+      // For Open Scrims, fetch scrim_participants directly
+      const { data: openParticipants } = await supabase
+        .from("scrim_participants")
+        .select("*, profile:user_id(username)")
+        .eq("scrim_id", id);
+      participants = openParticipants || [];
+    }
+    
     // Extract unique usernames (just in case)
     const participantNames = participants
       .map((p: any) => p.profile?.username)

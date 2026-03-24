@@ -548,15 +548,17 @@ async function handleSubmit() {
   emit("submit", {
     screenshot_url: screenshotUrl.value,
     game_duration: Number(gameDuration.value) * 60, // minutes to seconds
-    stats: localStats.value.map((s) => ({
-      user_id: s.user_id,
-      champion_name: s.champion,
-      kills: Number(s.kills) || 0,
-      deaths: Number(s.deaths) || 0,
-      assists: Number(s.assists) || 0,
-      cs: Number(s.cs) || 0,
-      win: s.win,
-      role: s.role, // Ensure we send role
+    stats: localStats.value
+      .filter((s) => s.champion && s.champion.trim() !== "") // Only include players with a selected champion
+      .map((s) => ({
+        user_id: s.user_id,
+        champion_name: s.champion,
+        kills: Number(s.kills) || 0,
+        deaths: Number(s.deaths) || 0,
+        assists: Number(s.assists) || 0,
+        cs: Number(s.cs) || 0,
+        win: s.win,
+        role: s.role, // Ensure we send role
     })),
   });
 }
