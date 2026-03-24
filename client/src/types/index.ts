@@ -42,6 +42,7 @@ export interface Scrim {
   challenged_team_id?: string;
   challenged_team?: TeamSummary & { captain_id?: string };
   screenshot_url?: string;
+  game_duration?: number;
   participants?: ScrimParticipant[];
   stats?: ScrimStats[];
   created_at: string;

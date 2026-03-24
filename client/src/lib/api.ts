@@ -1,20 +1,25 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
-async function fetchWithTimeout(url: string, options: any = {}, timeout = 8000) {
+// Timeout par défaut augmenté à 60s pour les traitements IA longs (OCR Gemini)
+async function fetchWithTimeout(
+  url: string,
+  options: any = {},
+  timeout = 60000,
+) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(id);
     return response;
   } catch (error: any) {
     clearTimeout(id);
-    if (error.name === 'AbortError') {
-      throw new Error('La requête a expiré (Timeout)');
+    if (error.name === "AbortError") {
+      throw new Error("La requête a expiré (Timeout)");
     }
     throw error;
   }
@@ -22,20 +27,24 @@ async function fetchWithTimeout(url: string, options: any = {}, timeout = 8000) 
 
 export const api = {
   async get(endpoint: string, token?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetchWithTimeout(`${API_URL}${endpoint}`, { headers });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async patch(endpoint: string, body: any, token?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers,
       body: JSON.stringify(body),
     });
@@ -44,11 +53,13 @@ export const api = {
   },
 
   async post(endpoint: string, body: any, token?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: JSON.stringify(body),
     });
@@ -57,11 +68,13 @@ export const api = {
   },
 
   async delete(endpoint: string, token?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers,
     });
     if (!res.ok) throw new Error(await res.text());

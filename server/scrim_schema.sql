@@ -36,6 +36,13 @@ BEGIN
         WHEN duplicate_column THEN RAISE NOTICE 'Column screenshot_url already exists in scrims.';
     END;
 
+    -- Ajout de la colonne 'game_duration' (en secondes)
+    BEGIN
+        ALTER TABLE scrims ADD COLUMN game_duration INT;
+    EXCEPTION
+        WHEN duplicate_column THEN RAISE NOTICE 'Column game_duration already exists in scrims.';
+    END;
+
     -- Mise à jour de la contrainte CHECK sur 'status' pour inclure les nouveaux statuts
     BEGIN
         ALTER TABLE scrims DROP CONSTRAINT IF EXISTS scrims_status_check;
@@ -75,11 +82,22 @@ CREATE TABLE IF NOT EXISTS scrim_stats_individual (
   assists INT DEFAULT 0,
   cs INT DEFAULT 0,
   win BOOLEAN DEFAULT FALSE,
+  role TEXT,
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   UNIQUE(scrim_id, user_id)
 );
+
+-- Migration pour ajouter la colonne 'role' si la table existait déjà sans
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER TABLE scrim_stats_individual ADD COLUMN role TEXT;
+    EXCEPTION
+        WHEN duplicate_column THEN RAISE NOTICE 'Column role already exists in scrim_stats_individual.';
+    END;
+END $$;
 
 -- Activation RLS
 ALTER TABLE scrim_participants ENABLE ROW LEVEL SECURITY;
@@ -98,5 +116,30 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'scrim_stats_individual' AND policyname = 'Public read stats') THEN
         CREATE POLICY "Public read stats" ON scrim_stats_individual FOR SELECT USING (true);
+    END IF;
+END $$;
+
+
+-- 4. Configuration du Storage pour les screenshots de Scrims
+-- Nécessaire pour l'upload des captures d'écran
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('scrim-screenshots', 'scrim-screenshots', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Politiques de sécurité pour le bucket 'scrim-screenshots'
+DO $$
+BEGIN
+    -- Lecture publique pour tout le monde
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public Access Scrim Screenshots' AND tablename = 'objects' AND schemaname = 'storage'
+    ) THEN
+        CREATE POLICY "Public Access Scrim Screenshots" ON storage.objects FOR SELECT USING (bucket_id = 'scrim-screenshots');
+    END IF;
+
+    -- Upload autorisé pour les utilisateurs connectés
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated Upload Scrim Screenshots' AND tablename = 'objects' AND schemaname = 'storage'
+    ) THEN
+        CREATE POLICY "Authenticated Upload Scrim Screenshots" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'scrim-screenshots' AND auth.role() = 'authenticated');
     END IF;
 END $$;

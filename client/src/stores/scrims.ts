@@ -157,7 +157,11 @@ export const useScrimStore = defineStore("scrims", () => {
 
   async function submitResults(
     id: string,
-    data: { screenshot_url: string; stats: any[] },
+    data: {
+      screenshot_url: string;
+      game_duration?: number;
+      stats: any[];
+    },
   ) {
     loading.value = true;
     try {

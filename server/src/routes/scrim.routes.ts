@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabase } from "../config/supabase";
 import { authenticate } from "../middlewares/auth";
+import { analyzeScreenshot } from "../services/ai.service";
 
 const router = Router();
 
@@ -382,8 +383,9 @@ router.post("/:id/challenge", authenticate, async (req: any, res) => {
 // POST /:id/results - Submit Stats (OCR validated by client)
 router.post("/:id/results", authenticate, async (req: any, res) => {
   const { id } = req.params;
-  const { screenshot_url, stats } = req.body;
+  const { screenshot_url, stats, game_duration } = req.body;
   // stats: tableau d'objets { user_id, champion_name, kills, deaths, assists, cs, win }
+  // game_duration: duration in seconds (INT)
   const userId = req.user.id;
 
   // Check rights
@@ -415,13 +417,26 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
   }
 
   // Update scrim status
-  await supabase
+  const updatePayload: any = {
+    status: "completed",
+    screenshot_url: screenshot_url, // Can be null/empty
+  };
+
+  if (game_duration) {
+    updatePayload.game_duration = game_duration;
+  }
+
+  const { error: updateError } = await supabase
     .from("scrims")
-    .update({
-      status: "completed",
-      screenshot_url: screenshot_url,
-    })
+    .update(updatePayload)
     .eq("id", id);
+
+  if (updateError) {
+    console.error("Error updating scrim results:", updateError);
+    return res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour du scrim." });
+  }
 
   // Insert stats
   // On suppose que le client envoie un tableau propre
@@ -435,6 +450,7 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
       assists: s.assists,
       cs: s.cs,
       win: s.win || false,
+      role: s.role, // Now inserting role if DB has column
     }));
 
     const { error } = await supabase
@@ -448,6 +464,73 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
   }
 
   res.json({ message: "Résultats enregistrés avec succès." });
+});
+
+// POST /:id/analyze-screenshot - AI Vision Analysis for Stats
+router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
+  const { id } = req.params;
+  const { imageUrl } = req.body;
+
+  if (!imageUrl) {
+    return res.status(400).json({ error: "Aucune URL d'image fournie." });
+  }
+
+  try {
+    // 1. Get Participants for context (names help the AI match rows)
+    const { data: participants, error: pError } = await supabase
+      .from("scrim_participants")
+      .select("*, profile:user_id(username)")
+      .eq("scrim_id", id);
+
+    if (pError) throw pError;
+
+    // Extract unique usernames (just in case)
+    const participantNames = participants
+      .map((p: any) => p.profile?.username)
+      .filter(Boolean);
+
+    console.log(
+      `Analyzing screenshot for Scrim ${id} with players: ${participantNames.join(", ")}`,
+    );
+
+    // 2. Call OpenAI Vision (now Gemini)
+    // Note: analyzeScreenshot returns { pseudo, champion, kills, deaths, assists, cs, win }
+    const results: any[] = await analyzeScreenshot(imageUrl, participantNames);
+
+    // 3. Match back to user IDs
+    const matchedStats = results
+      .map((result: any) => {
+        // Find exact or closest match in participants
+        // The AI returns "pseudo" (or formerly "matched_username")
+        const detectedName = result.pseudo || result.matched_username;
+
+        const match = participants.find(
+          (p: any) =>
+            p.profile.username.toLowerCase() === detectedName.toLowerCase(),
+        );
+
+        if (match) {
+          return {
+            user_id: match.user_id,
+            champion_name: result.champion || result.champion_name,
+            kills: result.kills,
+            deaths: result.deaths,
+            assists: result.assists,
+            cs: result.cs,
+            win: result.win === true || result.win === "true",
+          };
+        }
+        return null; // Ignore unmatched players (as requested)
+      })
+      .filter((s) => s !== null);
+
+    res.json({ stats: matchedStats });
+  } catch (error: any) {
+    console.error("AI Route Error:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Erreur lors de l'analyse avec l'IA." });
+  }
 });
 
 export default router;

@@ -307,15 +307,25 @@
 
       <!-- Stats Display (if completed) -->
       <div v-if="scrim.status === 'completed'" class="mt-12">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-          <BarChart2 :size="20" /> Résultats du match
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold flex items-center gap-2">
+            <BarChart2 :size="20" /> Résultats du match
+          </h2>
+          <span
+            v-if="scrim.game_duration"
+            class="px-3 py-1 bg-surface-elevated rounded-full text-sm text-text-muted border border-border"
+          >
+            Durée: {{ Math.floor(scrim.game_duration / 60) }}m
+            {{ (scrim.game_duration % 60).toString().padStart(2, "0") }}s
+          </span>
+        </div>
         <!-- Simple Table for now -->
         <div class="overflow-x-auto border border-border rounded-lg">
           <table class="w-full text-sm text-left">
             <thead class="bg-surface-elevated text-text-secondary">
               <tr>
                 <th class="p-3">Joueur</th>
+                <th class="p-3">Role</th>
                 <th class="p-3">Champion</th>
                 <th class="p-3 text-right">K / D / A</th>
                 <th class="p-3 text-right">CS</th>
@@ -329,6 +339,13 @@
                 :class="stat.win ? 'bg-cyan/5' : ''"
               >
                 <td class="p-3 font-medium">{{ stat.profile?.username }}</td>
+                <td class="p-3">
+                  <div v-if="stat.role" class="flex items-center gap-1">
+                    <!-- You can add an icon here if LolRoleIcon is globally registered or imported -->
+                    <span>{{ stat.role }}</span>
+                  </div>
+                  <span v-else class="text-text-muted text-xs">-</span>
+                </td>
                 <td class="p-3">{{ stat.champion_name }}</td>
                 <td class="p-3 text-right font-mono">
                   {{ stat.kills }}/{{ stat.deaths }}/{{ stat.assists }}
@@ -358,8 +375,13 @@
       </div>
 
       <!-- Result Modal -->
-      <BaseModal v-model="showResultModal" title="Saisie des Résultats">
+      <BaseModal
+        v-model="showResultModal"
+        title="Saisie des Résultats"
+        size="3xl"
+      >
         <ScrimResultForm
+          :scrimId="scrim.id"
           :participants="scrim.participants || []"
           @submit="handleSubmitResults"
           @cancel="showResultModal = false"
