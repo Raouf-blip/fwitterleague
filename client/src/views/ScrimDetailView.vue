@@ -28,7 +28,12 @@
           <BaseBadge :variant="getStatusVariant(scrim.status)">
             {{ scrim.status.toUpperCase() }}
           </BaseBadge>
-          <BaseBadge v-if="scrim.is_validated" variant="success" size="sm" class="flex items-center gap-1">
+          <BaseBadge
+            v-if="scrim.is_validated"
+            variant="success"
+            size="sm"
+            class="flex items-center gap-1"
+          >
             <span>VALIDÉ</span>
             <CheckCircle :size="12" />
           </BaseBadge>
@@ -587,7 +592,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { UploadCloud, BarChart2, Image as ImageIcon, CheckCircle, XCircle } from "lucide-vue-next";
+import {
+  UploadCloud,
+  BarChart2,
+  Image as ImageIcon,
+  CheckCircle,
+  XCircle,
+} from "lucide-vue-next";
 import { useScrimStore } from "../stores/scrims";
 import { useAuthStore } from "../stores/auth";
 import BaseButton from "../components/ui/BaseButton.vue";

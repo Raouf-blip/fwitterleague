@@ -248,15 +248,17 @@
                 <BaseBadge size="sm" :variant="getStatusVariant(scrim.status)">
                   {{ getStatusLabel(scrim.status) }}
                 </BaseBadge>
-                <div 
-                  v-if="scrim.status === 'completed'" 
+                <div
+                  v-if="scrim.status === 'completed'"
                   class="flex items-center gap-1"
                 >
                   <span
                     class="text-[10px] uppercase font-bold tracking-wider"
-                    :class="scrim.is_validated ? 'text-success' : 'text-warning'"
+                    :class="
+                      scrim.is_validated ? 'text-success' : 'text-warning'
+                    "
                   >
-                    {{ scrim.is_validated ? 'Validé' : 'Non Validé' }}
+                    {{ scrim.is_validated ? "Validé" : "Non Validé" }}
                   </span>
                 </div>
               </div>

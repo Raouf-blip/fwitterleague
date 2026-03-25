@@ -406,7 +406,7 @@ router.patch(
   async (req: any, res) => {
     const { id } = req.params;
     const { is_validated } = req.body;
-    
+
     // Default to true if not provided (backward compatibility)
     const validState = is_validated !== undefined ? is_validated : true;
 
@@ -416,7 +416,9 @@ router.patch(
       .eq("id", id);
 
     if (error) return res.status(400).json({ error: error.message });
-    res.json({ message: `Scrim ${validState ? 'validé' : 'invalidé'} avec succès.` });
+    res.json({
+      message: `Scrim ${validState ? "validé" : "invalidé"} avec succès.`,
+    });
   },
 );
 

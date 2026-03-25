@@ -15,13 +15,15 @@ router.get("/players", async (req, res) => {
     const { data: stats, error } = await supabase.from("scrim_stats_individual")
       .select(`
         *,
+        scrim:scrim_id!inner(is_validated),
         profile:user_id (
           id,
           username,
           avatar_url,
           rank
         )
-      `);
+      `)
+      .eq("scrim.is_validated", true);
 
     if (error) throw error;
 

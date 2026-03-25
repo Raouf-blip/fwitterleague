@@ -85,8 +85,9 @@ router.get("/me", authenticate, async (req: any, res) => {
   // Get Scrim Stats
   const { data: stats } = await supabase
     .from("scrim_stats_individual")
-    .select("kills, deaths, assists, cs, cs_min, win, champion_name")
-    .eq("user_id", req.user.id);
+    .select("kills, deaths, assists, cs, cs_min, win, champion_name, scrim:scrim_id!inner(is_validated)")
+    .eq("user_id", req.user.id)
+    .eq("scrim.is_validated", true);
 
   const scrim_stats =
     stats && stats.length > 0
@@ -253,8 +254,9 @@ router.get("/:id", async (req, res) => {
   // Get Scrim Stats
   const { data: stats } = await supabase
     .from("scrim_stats_individual")
-    .select("kills, deaths, assists, cs, cs_min, win, champion_name")
-    .eq("user_id", req.params.id);
+    .select("kills, deaths, assists, cs, cs_min, win, champion_name, scrim:scrim_id!inner(is_validated)")
+    .eq("user_id", req.params.id)
+    .eq("scrim.is_validated", true);
 
   const scrim_stats =
     stats && stats.length > 0

@@ -181,7 +181,11 @@ export const useScrimStore = defineStore("scrims", () => {
     loading.value = true;
     try {
       const token = await getToken();
-      await api.patch(`/scrims/${id}/validate`, { is_validated: isValid }, token);
+      await api.patch(
+        `/scrims/${id}/validate`,
+        { is_validated: isValid },
+        token,
+      );
       if (currentScrim.value && currentScrim.value.id === id) {
         currentScrim.value.is_validated = isValid;
       }
