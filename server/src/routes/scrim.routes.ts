@@ -155,10 +155,10 @@ router.post("/", authenticate, async (req: any, res) => {
       if (hostInfo) {
         await supabase.from("notifications").insert({
           user_id: teamGuest.captain_id,
-          type: "info", // ou 'scrim_request' si on crée un nouveau type
+          type: "scrim_request", // Changed from "info" to "scrim_request"
           title: "Défi de Scrim reçu",
           message: `L'équipe ${hostInfo.name} vous défie pour un scrim le ${new Date(scheduled_at).toLocaleString()}.`,
-          // On pourrait ajouter un lien ou ID pour rediriger
+          metadata: { scrim_id: scrim.id }, // Added metadata with scrim_id
         });
       }
     }
@@ -459,8 +459,29 @@ router.post("/:id/challenge", authenticate, async (req: any, res) => {
     newStatus = "scheduled";
     notifMessage = `L'équipe adverse a accepté votre défi pour le scrim du ${new Date(scrim.scheduled_at).toLocaleString()}.`;
   } else if (action === "decline") {
-    newStatus = "cancelled"; // ou supprimer carrément la ligne ? "cancelled" garde une trace.
+    // Supprimer le scrim si refusé
+    const { error: deleteError } = await supabase
+      .from("scrims")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError)
+      return res.status(400).json({ error: deleteError.message });
+
     notifMessage = `L'équipe adverse a décliné votre défi pour le scrim.`;
+
+    // Notifier le créateur du défi (Host) avant de retourner
+    const hostCaptainId = (scrim.challenger_team as any)?.captain_id;
+    if (hostCaptainId) {
+      await supabase.from("notifications").insert({
+        user_id: hostCaptainId,
+        type: "error", // ou info/warning
+        title: "Défi Refusé",
+        message: notifMessage,
+      });
+    }
+
+    return res.json({ status: "deleted" });
   } else {
     return res.status(400).json({ error: "Action invalide." });
   }
