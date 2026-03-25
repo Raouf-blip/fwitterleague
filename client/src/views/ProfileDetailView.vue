@@ -47,10 +47,10 @@
               <ExternalLink :size="12" />
               DPM.LOL
             </a>
-            <span v-if="profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
-              <DiscordIcon :size="14" class="text-[#5865F2]" />
-              {{ profile.discord }}
-            </span>
+            <div v-if="profile.discord_id" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+              <DiscordIcon :size="12" class="text-[#5865F2]" />
+              <span>{{ profile.discord }}</span>
+            </div>
           </div>
           <div class="flex items-center gap-4 mt-3">
             <RankBadge :rank="profile.rank" :lp="profile.lp" />

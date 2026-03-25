@@ -47,7 +47,7 @@
               <ExternalLink :size="12" />
               DPM.LOL
             </a>
-            <span v-if="authStore.profile.discord" class="flex items-center gap-1 text-sm text-text-secondary">
+            <span v-if="authStore.profile.discord_id" class="flex items-center gap-1 text-sm text-text-secondary">
               <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ authStore.profile.discord }}
             </span>
@@ -106,6 +106,41 @@
     </BaseCard>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Discord Sync Alert Banner (Full Width) -->
+      <div v-if="!authStore.profile.discord_id" class="lg:col-span-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-danger/10 border border-danger/20 gap-4 shadow-lg shadow-danger/5">
+          <div class="flex items-center gap-4 text-center sm:text-left">
+            <div class="p-2 bg-danger/20 rounded-lg shrink-0">
+              <AlertCircle :size="24" class="text-danger" />
+            </div>
+            <div>
+              <p class="font-bold text-text-primary">Action requise : Synchronisation Discord</p>
+              <p class="text-xs text-text-secondary">Votre compte Discord n'est pas lié. Synchronisez-le pour apparaître officiellement et accéder aux rôles sur le serveur.</p>
+            </div>
+          </div>
+          <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
+            Lier mon compte
+          </BaseButton>
+        </div>
+      </div>
+
+      <div v-if="!authStore.profile.riot_id" class="lg:col-span-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-danger/10 border border-danger/20 gap-4 shadow-lg shadow-danger/5">
+          <div class="flex items-center gap-4 text-center sm:text-left">
+            <div class="p-2 bg-danger/20 rounded-lg shrink-0">
+              <AlertCircle :size="24" class="text-danger" />
+            </div>
+            <div>
+              <p class="font-bold text-text-primary">Action requise : Synchronisation Riot</p>
+              <p class="text-xs text-text-secondary">Votre compte Riot n'est pas lié. Synchronisez-le pour apparaître officiellement et accéder aux rôles sur le serveur.</p>
+            </div>
+          </div>
+          <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
+            Lier mon compte
+          </BaseButton>
+        </div>
+      </div>
+
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Bio -->
@@ -349,6 +384,7 @@
         :initial-riot-id="authStore.profile.riot_id || ''"
         :initial-avatar-url="authStore.profile.avatar_url || ''"
         :initial-discord="authStore.profile.discord || ''"
+        :initial-discord-id="authStore.profile.discord_id || null"
         :initial-is-looking="authStore.profile.is_looking_for_team"
         :initial-roles="authStore.profile.preferred_roles || []"
         :has-team="!!team"
@@ -403,6 +439,7 @@ import {
   Mic,
   ShieldCheck,
   Eye,
+  AlertCircle,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -501,6 +538,26 @@ let syncTimer: any = null
 
 onMounted(async () => {
   syncTimer = setInterval(() => { now.value = Date.now() }, 10000)
+  
+  // Handle Discord Sync results from URL
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('success')) {
+    if (params.get('success') === 'discord_synced') {
+      notificationStore.show('Compte Discord synchronisé !', 'success')
+    }
+    // Clean URL
+    router.replace({ query: {} })
+  } else if (params.has('error')) {
+    const error = params.get('error')
+    if (error === 'discord_denied') {
+      notificationStore.show('Synchronisation Discord annulée.', 'warning')
+    } else {
+      notificationStore.show('Échec de la synchronisation Discord.', 'error')
+    }
+    // Clean URL
+    router.replace({ query: {} })
+  }
+
   await fetchData()
 })
 
@@ -590,7 +647,7 @@ async function markAsRead(id: string) {
   }
 }
 
-async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }) {
+async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; discord_id: string | null; is_looking_for_team: boolean; preferred_roles: string[] }) {
   savingProfile.value = true
   fetchingRiot.value = true
   riotError.value = ''
