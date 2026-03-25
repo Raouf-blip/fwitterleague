@@ -17,6 +17,13 @@ export interface Profile {
   last_riot_sync: string | null
   created_at: string
   team: TeamSummary | null
+  scrim_stats?: {
+    games_played: number
+    wins: number
+    losses: number
+    kda: string
+    avg_cs: string
+  } | null
 }
 
 export interface TeamSummary {
@@ -27,6 +34,52 @@ export interface TeamSummary {
   member_count?: number
   total_lp?: number
   average_rank?: string
+}
+
+export type ScrimType = "team" | "open"
+export type ScrimStatus = "pending" | "scheduled" | "completed" | "cancelled"
+export type ScrimSide = "blue" | "red" | "reserve"
+
+export interface Scrim {
+  id: string
+  type: ScrimType
+  status: ScrimStatus
+  scheduled_at: string
+  creator_id: string
+  creator?: { username: string; id: string }
+  challenger_team_id?: string
+  challenger_team?: TeamSummary & { captain_id?: string }
+  challenged_team_id?: string
+  challenged_team?: TeamSummary & { captain_id?: string }
+  screenshot_url?: string
+  game_duration?: number
+  participants?: ScrimParticipant[]
+  stats?: ScrimStats[]
+  created_at: string
+  winner_id?: string
+  is_validated?: boolean
+}
+
+export interface ScrimParticipant {
+  id: string
+  scrim_id: string
+  user_id: string
+  side?: ScrimSide
+  joined_at: string
+  profile?: Profile
+}
+
+export interface ScrimStats {
+  id: string
+  scrim_id: string
+  user_id: string;
+  champion_name: string
+  kills: number
+  deaths: number
+  assists: number
+  cs: number
+  win: boolean
+  profile?: { username: string }
 }
 
 export interface Team {
@@ -47,7 +100,7 @@ export interface TeamMember {
   id: string
   team_id: string
   profile_id: string
-  role: 'Captain' | 'Member'
+  role: "Captain" | "Member"
   joined_at: string
   profile: {
     id: string
@@ -66,7 +119,7 @@ export interface Tournament {
   name: string
   description: string | null
   max_teams: number
-  status: 'upcoming' | 'ongoing' | 'finished'
+  status: "upcoming" | "ongoing" | "finished"
   start_date: string
   end_date: string
   created_at: string
@@ -90,37 +143,7 @@ export interface Match {
   score_2: number | null
   scheduled_at: string
   winner_id: string | null
-  created_at: string
+  created_at: string;
   team_1: { name: string }
   team_2: { name: string }
 }
-
-export interface Application {
-  id: string
-  team_id: string
-  sender_id: string
-  message: string | null
-  status: 'pending' | 'accepted' | 'rejected'
-  type: 'application' | 'offer'
-  created_at: string
-  team?: TeamSummary & { captain_id?: string }
-  sender?: { username: string; rank: string | null; id: string }
-}
-
-export interface AppNotification {
-  id: string
-  user_id: string
-  title: string
-  message: string
-  type: 'application' | 'offer' | 'system'
-  is_read: boolean
-  created_at: string
-  isNotif?: boolean
-}
-
-export interface InboxResponse {
-  notifications: AppNotification[]
-  interactions: Application[]
-}
-
-export type Agent = Profile

@@ -18,7 +18,9 @@
             class="relative bg-surface-elevated border border-border rounded-xl shadow-2xl z-10 max-h-[85vh] flex flex-col"
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <div
+              class="flex items-center justify-between px-6 py-4 border-b border-border"
+            >
               <h2 class="text-lg font-bold text-text-primary">{{ title }}</h2>
               <button
                 class="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors cursor-pointer"
@@ -28,7 +30,9 @@
               </button>
             </div>
             <!-- Body -->
-            <div class="px-6 py-5 overflow-y-auto custom-scrollbar overscroll-contain flex-1">
+            <div
+              class="px-6 py-5 overflow-y-auto custom-scrollbar overscroll-contain flex-1"
+            >
               <slot />
             </div>
             <!-- Footer -->
@@ -43,24 +47,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { X } from 'lucide-vue-next'
+import { computed } from "vue";
+import { X } from "lucide-vue-next";
 
-const props = withDefaults(defineProps<{
-  modelValue: boolean
-  title: string
-  size?: 'sm' | 'md' | 'lg'
-}>(), {
-  size: 'md',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    title: string;
+    size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "full";
+  }>(),
+  {
+    size: "md",
+  },
+);
 
 defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+  "update:modelValue": [value: boolean];
+}>();
 
-const sizeClasses = computed(() => ({
-  sm: 'w-full max-w-sm',
-  md: 'w-full max-w-lg',
-  lg: 'w-full max-w-2xl',
-}[props.size]))
+const sizeClasses = computed(() => {
+  const map: Record<string, string> = {
+    sm: "w-full max-w-sm",
+    md: "w-full max-w-lg",
+    lg: "w-full max-w-2xl",
+    xl: "w-full max-w-4xl",
+    "2xl": "w-full max-w-6xl",
+    "3xl": "w-full max-w-7xl",
+    "4xl": "w-full max-w-[90vw]",
+    full: "w-full max-w-[95vw]",
+  };
+  return map[props.size] || map.md;
+});
 </script>
