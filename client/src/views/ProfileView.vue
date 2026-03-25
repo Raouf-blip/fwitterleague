@@ -834,6 +834,7 @@ async function handleRiotSyncOnly(newRiotId: string) {
     await api.post('/profiles/sync-riot', { riotId: newRiotId }, token)
     await authStore.fetchProfile()
     notificationStore.show('Profil Riot synchronisé !', 'success')
+    showSettings.value = false
   } catch (err: any) {
     let msg = err.message
     try { msg = JSON.parse(err.message).error || msg } catch(e) {}
@@ -862,7 +863,6 @@ async function markAsRead(id: string) {
 
 async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; discord_id: string | null; is_looking_for_team: boolean; preferred_roles: string[] }) {
   savingProfile.value = true
-  fetchingRiot.value = true
   riotError.value = ''
 
   try {
@@ -871,30 +871,41 @@ async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_u
     // Step 1: Update Profile data
     await api.patch('/profiles/me', data, token)
 
-    // Step 2: Auto-sync Riot data if Riot ID has changed
-    if (data.riot_id !== authStore.profile?.riot_id) {
-      if (data.riot_id && data.riot_id.includes('#')) {
-        try {
-          await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
-        } catch (syncErr: any) {
-          let msg = syncErr.message
-          try {
-            msg = JSON.parse(syncErr.message).error || msg
-          } catch(e) {}
+    // Step 2: Auto-sync Riot data ONLY if Riot ID has changed relative to our last loaded profile
+    if (data.riot_id !== authStore.profile?.riot_id && data.riot_id && data.riot_id.includes('#')) {
+      fetchingRiot.value = true
+      try {
+        await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
+      } catch (syncErr: any) {
+        let msg = syncErr.message
+        try { msg = JSON.parse(syncErr.message).error || msg } catch(e) {}
 
-          if (msg.includes('introuvable')) {
-            riotError.value = 'Riot ID introuvable. Ce compte n\'existe pas.'
-          } else if (msg.includes('patienter')) {
-            riotError.value = 'Veuillez patienter 2 minutes entre chaque synchronisation.'
-          } else {
-            riotError.value = 'Impossible de lier ce compte Riot.'
-          }
-          return // N'enregistre pas la suite du flow de sauvegarde, garde la pop-up ouverte
+        if (msg.includes('introuvable')) {
+          riotError.value = 'Riot ID introuvable. Ce compte n\'existe pas.'
+        } else if (msg.includes('patienter')) {
+          riotError.value = 'Veuillez patienter 2 minutes entre chaque synchronisation.'
+        } else {
+          riotError.value = 'Impossible de lier ce compte Riot.'
         }
+        return // Keep modal open on error
       }
     }
+    
+    await authStore.fetchProfile()
+    notificationStore.show("Profil mis à jour", "success")
+    showSettings.value = false
+  } catch (err: any) {
+    if (err.response?.data?.error?.includes("Riot ID")) {
+      riotError.value = err.response.data.error;
+    } else {
+      notificationStore.show(
+        err.response?.data?.error || "Erreur lors de la sauvegarde",
+        "error",
+      );
+    }
   } finally {
-    savingProfile.value = false;
+    savingProfile.value = false
+    fetchingRiot.value = false
   }
 }
 
