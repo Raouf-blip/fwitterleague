@@ -5,7 +5,8 @@ Ce bot est le lien de notification entre la plateforme **FwitterLeague** et Disc
 ## 🌟 Fonctionnalités
 
 1.  **🔔 Notifications de Scrims** : Envoie une notification automatique dans un salon Discord dès qu'un scrim est créé sur la plateforme.
-2.  **🔗 Redirection Directe** : Chaque notification contient un bouton permettant de se rendre directement sur la page du scrim pour s'inscrire ou voir les détails.
+2.  **🚀 Notifications de Patch Notes** : Alerte la communauté lors de la sortie d'une nouvelle mise à jour de la plateforme.
+3.  **🔗 Redirection Directe** : Chaque notification contient un bouton permettant de se rendre directement sur la page correspondante (scrim ou patch note).
 
 ## 🏗️ Architecture
 

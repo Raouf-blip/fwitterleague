@@ -58,6 +58,7 @@ const rest = new REST().setToken(token);
 })();
 
 import { notifyNewScrim } from './utils/scrim-notifier';
+import { notifyNewPatchNote } from './utils/patchnote-notifier';
 import { supabase } from './config/supabase';
 
 // When the client is ready, run this code (only once)
@@ -73,7 +74,16 @@ client.once(Events.ClientReady, (readyClient: Client<true>) => {
         })
         .subscribe();
     
-    console.log('[Realtime] Listening for new scrims...');
+    // Subscribe to new patch notes
+    supabase
+        .channel('new-patchnotes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patch_notes' }, (payload) => {
+            console.log('[Realtime] New patch note detected:', payload.new.id);
+            notifyNewPatchNote(readyClient, payload.new);
+        })
+        .subscribe();
+    
+    console.log('[Realtime] Listening for new scrims and patch notes...');
 });
 
 // Handle commands
