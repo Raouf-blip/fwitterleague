@@ -114,8 +114,8 @@
               <AlertCircle :size="24" class="text-danger" />
             </div>
             <div>
-              <p class="font-bold text-text-primary">Action requise : Synchronisation Discord</p>
-              <p class="text-xs text-text-secondary">Votre compte Discord n'est pas lié. Synchronisez-le pour apparaître officiellement et accéder aux rôles sur le serveur.</p>
+              <p class="font-bold text-text-primary">Synchronisation Discord</p>
+              <p class="text-xs text-text-secondary">Votre compte Discord n'est pas lié. Veuillez lier votre compte Discord dans les paramètres pour synchroniser vos informations avec le serveur.</p>
             </div>
           </div>
           <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
@@ -131,8 +131,8 @@
               <AlertCircle :size="24" class="text-danger" />
             </div>
             <div>
-              <p class="font-bold text-text-primary">Action requise : Synchronisation Riot</p>
-              <p class="text-xs text-text-secondary">Votre compte Riot n'est pas lié. Synchronisez-le pour apparaître officiellement et accéder aux rôles sur le serveur.</p>
+              <p class="font-bold text-text-primary">Synchronisation Riot</p>
+              <p class="text-xs text-text-secondary">Votre compte Riot n'est pas lié. Veuillez entrez votre Riot ID dans les paramètres pour que les autres joueurs puissent vous trouver.</p>
             </div>
           </div>
           <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
@@ -392,6 +392,7 @@
         :syncing="fetchingRiot"
         :riot-error="riotError"
         @save="handleSaveSettings"
+        @sync="handleRiotSyncOnly"
       />
     </BaseModal>
 
@@ -635,6 +636,44 @@ async function handleSyncRiot() {
     notificationStore.show('Riot Sync: ' + msg, 'error')
   } finally {
     syncingRiot.value = false
+  }
+}
+
+async function handleRiotSyncOnly(newRiotId: string) {
+  if (!newRiotId || !newRiotId.includes('#')) {
+    riotError.value = 'Format invalide (Pseudo#TAG)'
+    return
+  }
+  
+  // Allow bypassing the cooldown IF it's a new ID
+  const isNewId = newRiotId !== authStore.profile?.riot_id
+  
+  if (isSyncDisabled.value && !isNewId) {
+    notificationStore.show(syncTooltip.value, 'warning')
+    return
+  }
+
+  fetchingRiot.value = true
+  riotError.value = ''
+  try {
+    const token = await getToken()
+    await api.post('/profiles/sync-riot', { riotId: newRiotId }, token)
+    await authStore.fetchProfile()
+    notificationStore.show('Profil Riot synchronisé !', 'success')
+  } catch (err: any) {
+    let msg = err.message
+    try { msg = JSON.parse(err.message).error || msg } catch(e) {}
+    
+    if (msg.includes('introuvable')) {
+      riotError.value = 'Riot ID introuvable.'
+    } else if (msg.includes('patienter')) {
+      riotError.value = 'Veuillez patienter.'
+    } else {
+      riotError.value = 'Erreur de synchronisation.'
+    }
+    notificationStore.show('Erreur Riot Sync: ' + msg, 'error')
+  } finally {
+    fetchingRiot.value = false
   }
 }
 
