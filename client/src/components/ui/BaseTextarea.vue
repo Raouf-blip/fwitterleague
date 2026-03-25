@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-1.5">
-    <label v-if="label" :for="id" class="text-sm font-medium text-text-secondary">
+    <label v-if="label" :for="id" class="text-sm font-bold text-text-secondary">
       {{ label }}
     </label>
     <textarea

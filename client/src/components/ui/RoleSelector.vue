@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-2">
-    <label v-if="label" class="text-xs font-black uppercase tracking-widest text-text-muted">
+  <div class="flex flex-col gap-1.5">
+    <label v-if="label" class="text-sm font-bold text-text-secondary">
       {{ label }}
     </label>
     <div class="flex flex-wrap gap-2">

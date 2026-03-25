@@ -47,30 +47,99 @@
       </div>
     </div>
 
-    <BaseInput
-      v-model="riotId"
-      label="Riot ID"
-      placeholder="Pseudo#TAG"
-      :error="riotError"
-      :class="{ 'border-danger ring-danger/30': riotError }"
-    />
-    
-    <div v-if="riotId && riotId.includes('#') && !riotError" class="flex items-center gap-2 -mt-3 mb-2">
-      <a
-        :href="getOpggUrl(riotId)"
-        target="_blank"
-        class="text-xs text-cyan hover:underline inline-flex items-center gap-1"
+    <!-- Riot ID Section -->
+    <div class="flex flex-col gap-1">
+      <BaseInput
+        v-model="riotId"
+        label="Riot ID"
+        placeholder="Pseudo#TAG"
+        :error="riotError"
+        :disabled="isRiotIdLocked"
+        :class="{ 'border-danger ring-danger/30': riotError }"
       >
-        <ExternalLink :size="12" />
-        Voir sur OP.GG
-      </a>
+        <template #trailing>
+          <div class="flex items-center gap-2">
+            <!-- Sync Button (Visible when editing) -->
+            <button
+              v-if="!isRiotIdLocked && riotId.includes('#')"
+              type="button"
+              @click="$emit('sync', riotId)"
+              class="p-1.5 text-cyan/60 hover:text-cyan transition-colors bg-cyan/5 hover:bg-cyan/10 rounded-md border border-cyan/10"
+              title="Synchroniser"
+              :disabled="syncing"
+            >
+              <Loader2 v-if="syncing" :size="14" class="animate-spin" />
+              <Check v-else :size="14" />
+            </button>
+
+            <!-- Modifier Button (Visible when locked) -->
+            <button
+              v-if="isRiotIdLocked && initialRiotId"
+              type="button"
+              @click="isRiotIdLocked = false"
+              class="p-1.5 text-cyan/60 hover:text-cyan transition-colors bg-cyan/5 hover:bg-cyan/10 rounded-md border border-cyan/10"
+              title="Modifier le Riot ID"
+            >
+              <Pencil :size="14" />
+            </button>
+          </div>
+        </template>
+      </BaseInput>
+
+      <div v-if="isRiotIdLocked && initialRiotId" class="flex items-center gap-4 px-1">
+        <a
+          :href="getOpggUrl(riotId)"
+          target="_blank"
+          class="text-[10px] font-bold text-cyan hover:underline inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <ExternalLink :size="10" />
+          Voir sur OP.GG
+        </a>
+
+        <a
+          :href="getDpmUrl(riotId)"
+          target="_blank"
+          class="text-[10px] font-bold text-cyan hover:underline inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <ExternalLink :size="10" />
+          Voir sur DPM.LOL
+        </a>
+      </div>
     </div>
 
-    <BaseInput
-      v-model="discord"
-      label="Discord"
-      placeholder="tonpseudo"
-    />
+    <!-- Discord Section -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-bold text-text-secondary">Compte Discord</label>
+      <div v-if="discordId" class="flex items-center justify-between p-3 rounded-lg bg-success/5 border border-success/20">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-[#5865F2]/10 rounded-lg">
+            <DiscordIcon :size="20" class="text-[#5865F2]" />
+          </div>
+          <div>
+            <p class="text-xs font-black text-success uppercase tracking-wider">Compte Lié</p>
+            <p class="text-sm font-bold text-text-primary">{{ discord }}</p>
+          </div>
+        </div>
+        <BaseButton variant="ghost" size="sm" @click="handleSyncDiscord" :loading="syncingDiscord" class="text-[10px] uppercase font-black">
+          Mettre à jour
+        </BaseButton>
+      </div>
+      <div v-else class="flex flex-col gap-3">
+        <p class="text-xs text-text-secondary leading-relaxed">
+          Liez votre compte Discord permettant la synchronisation de vos informations avec le serveur.
+        </p>
+        <BaseButton 
+          type="button"
+          variant="secondary" 
+          class="w-full !justify-start gap-3 border-[#5865F2]/30 hover:bg-[#5865F2]/10"
+          :loading="syncingDiscord"
+          @click="handleSyncDiscord"
+        >
+          <template #icon><DiscordIcon :size="18" class="text-[#5865F2]" /></template>
+          Synchroniser mon compte Discord
+        </BaseButton>
+      </div>
+    </div>
 
     <RoleSelector
       v-model="preferredRoles"
@@ -116,9 +185,12 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Save, ExternalLink, Pencil, Loader2 } from 'lucide-vue-next'
-import { getOpggUrl } from '../../lib/formatters'
+import { Save, ExternalLink, Pencil, Loader2, Check } from 'lucide-vue-next'
+import DiscordIcon from '../icons/DiscordIcon.vue'
+import { getDpmUrl, getOpggUrl } from '../../lib/formatters'
 import { supabase } from '../../lib/supabase'
+import { api } from '../../lib/api'
+import { getToken } from '../../composables/useAuth'
 import BaseInput from '../ui/BaseInput.vue'
 import BaseTextarea from '../ui/BaseTextarea.vue'
 import BaseButton from '../ui/BaseButton.vue'
@@ -130,6 +202,7 @@ const props = defineProps<{
   initialRiotId?: string
   initialAvatarUrl?: string
   initialDiscord?: string
+  initialDiscordId?: string | null
   initialIsLooking?: boolean
   initialRoles?: string[]
   hasTeam?: boolean
@@ -139,22 +212,27 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [data: { bio: string; riot_id: string; avatar_url: string; discord: string; is_looking_for_team: boolean; preferred_roles: string[] }]
+  save: [data: { bio: string; riot_id: string; avatar_url: string; discord: string; discord_id: string | null; is_looking_for_team: boolean; preferred_roles: string[] }]
+  sync: [riotId: string]
 }>()
 
 const bio = ref(props.initialBio || '')
 const riotId = ref(props.initialRiotId || '')
 const avatarUrl = ref(props.initialAvatarUrl || '')
 const discord = ref(props.initialDiscord || '')
+const discordId = ref(props.initialDiscordId || null)
 const isLooking = ref(props.initialIsLooking || false)
 const preferredRoles = ref<string[]>(props.initialRoles || [])
 const uploading = ref(false)
+const syncingDiscord = ref(false)
+const isRiotIdLocked = ref(!!props.initialRiotId)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 watch(() => props.initialBio, (v) => { if (v !== undefined) bio.value = v })
-watch(() => props.initialRiotId, (v) => { if (v !== undefined) riotId.value = v })
 watch(() => props.initialAvatarUrl, (v) => { if (v !== undefined) avatarUrl.value = v })
 watch(() => props.initialDiscord, (v) => { if (v !== undefined) discord.value = v })
+watch(() => props.initialDiscordId, (v) => { if (v !== undefined) discordId.value = v })
+watch(() => props.initialRiotId, (v) => { if (v !== undefined) { riotId.value = v; isRiotIdLocked.value = !!v } })
 watch(() => props.initialIsLooking, (v) => { if (v !== undefined) isLooking.value = v })
 watch(() => props.initialRoles, (v) => { if (v !== undefined) preferredRoles.value = v || [] })
 
@@ -204,12 +282,29 @@ async function handleFileUpload(event: Event) {
   }
 }
 
+async function handleSyncDiscord() {
+  syncingDiscord.value = true
+  try {
+    const token = await getToken()
+    const { url } = await api.get('/auth/discord', token)
+    if (url) {
+      window.location.href = url
+    }
+  } catch (error: any) {
+    console.error('Error getting Discord sync URL:', error.message)
+    alert('Erreur lors de la préparation de la synchronisation Discord.')
+  } finally {
+    syncingDiscord.value = false
+  }
+}
+
 function handleSubmit() {
   emit('save', {
     bio: bio.value,
     riot_id: riotId.value,
     avatar_url: avatarUrl.value,
     discord: discord.value,
+    discord_id: discordId.value,
     is_looking_for_team: isLooking.value,
     preferred_roles: preferredRoles.value
   })

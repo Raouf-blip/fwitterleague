@@ -8,6 +8,7 @@ import recruitmentRoutes from './routes/recruitment.routes';
 import patchnoteRoutes from './routes/patchnote.routes';
 import scrimRoutes from './routes/scrim.routes';
 import statsRoutes from './routes/stats.routes';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 
@@ -25,6 +26,7 @@ router.use('/recruitment', recruitmentRoutes);
 router.use('/patchnotes', patchnoteRoutes);
 router.use('/scrims', scrimRoutes);
 router.use('/stats', statsRoutes);
+router.use('/auth', authRoutes);
 
 // Utilisation du versioning
 app.use("/api/v1", router);
