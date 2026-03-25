@@ -168,6 +168,7 @@ import {
   Swords,
   MessageCircle,
   BookOpen,
+  BarChart2,
 } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth";
 import { useInboxStore } from "../../stores/inbox";

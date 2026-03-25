@@ -6,6 +6,7 @@ import socialRoutes from "./routes/social.routes";
 import tournamentRoutes from "./routes/tournament.routes";
 import recruitmentRoutes from "./routes/recruitment.routes";
 import scrimRoutes from "./routes/scrim.routes";
+import statsRoutes from "./routes/stats.routes";
 
 const app = express();
 
@@ -21,6 +22,7 @@ router.use("/social", socialRoutes);
 router.use("/tournaments", tournamentRoutes);
 router.use("/recruitment", recruitmentRoutes);
 router.use("/scrims", scrimRoutes);
+router.use("/stats", statsRoutes);
 
 // Utilisation du versioning
 app.use("/api/v1", router);
