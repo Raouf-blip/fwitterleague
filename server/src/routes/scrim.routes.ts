@@ -157,8 +157,8 @@ router.post("/", authenticate, async (req: any, res) => {
           user_id: teamGuest.captain_id,
           type: "scrim_request", // Changed from "info" to "scrim_request"
           title: "Défi de Scrim reçu",
-          message: `L'équipe ${hostInfo.name} vous défie pour un scrim le ${new Date(scheduled_at).toLocaleString()}.`,
-          metadata: { scrim_id: scrim.id }, // Added metadata with scrim_id
+          message: `L'équipe ${hostInfo.name} vous défie pour un scrim.`,
+          metadata: { scrim_id: scrim.id, scheduled_at }, // Added scheduled_at to metadata
         });
       }
     }

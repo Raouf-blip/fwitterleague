@@ -93,14 +93,23 @@
                 <BaseBadge :variant="scrim.type === 'open' ? 'cyan' : 'purple'">
                   {{ scrim.type === "open" ? "OPEN" : "TEAM" }}
                 </BaseBadge>
-                <span class="text-xs text-text-muted font-mono">
-                  {{
-                    new Date(scrim.scheduled_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  }}
-                </span>
+                <div
+                  class="flex items-center gap-3 bg-surface-overlay/50 px-2 py-1 rounded border border-white/5"
+                >
+                  <div
+                    class="flex items-center gap-1.5 text-text-primary text-xs font-medium"
+                  >
+                    <Calendar :size="12" class="text-gold" />
+                    <span>{{ formatShortDate(scrim.scheduled_at) }}</span>
+                  </div>
+                  <div class="w-px h-3 bg-white/10"></div>
+                  <div
+                    class="flex items-center gap-1.5 text-text-primary text-xs font-bold font-mono"
+                  >
+                    <Clock :size="12" class="text-gold" />
+                    <span>{{ formatTime(scrim.scheduled_at) }}</span>
+                  </div>
+                </div>
               </div>
               <BaseBadge size="sm" :variant="getStatusVariant(scrim.status)">
                 {{ getStatusLabel(scrim.status) }}
@@ -288,8 +297,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { Swords } from "lucide-vue-next"; // New icon
+import { Swords, Calendar, Clock, Trophy } from "lucide-vue-next"; // New icon
 import { useScrimStore } from "../stores/scrims";
+import {
+  formatDateTime,
+  formatDate,
+  formatTime,
+  formatShortDate,
+} from "../lib/formatters";
 import PageHeader from "../components/layout/PageHeader.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import BaseBadge from "../components/ui/BaseBadge.vue";

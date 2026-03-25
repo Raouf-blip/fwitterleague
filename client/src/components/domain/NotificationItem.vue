@@ -85,6 +85,30 @@
         <strong class="text-text-secondary">{{ item.sender.username }}</strong>
       </div>
 
+      <!-- Scrim Schedule -->
+      <div
+        v-if="item.metadata?.scheduled_at"
+        class="mt-3 p-3 bg-gold/10 border border-gold/30 rounded-lg flex items-center gap-3 w-fit shadow-sm"
+      >
+        <div
+          class="h-10 w-10 shrink-0 rounded-full bg-gold/20 flex items-center justify-center text-gold"
+        >
+          <Calendar :size="20" />
+        </div>
+        <div>
+          <div
+            class="text-[10px] text-gold/80 uppercase font-bold tracking-wider mb-0.5"
+          >
+            Date du Scrim
+          </div>
+          <div
+            class="text-lg font-bold text-text-primary flex items-center gap-2"
+          >
+            {{ formatDateTime(item.metadata.scheduled_at) }}
+          </div>
+        </div>
+      </div>
+
       <span class="text-[11px] text-text-muted block mt-2">{{
         formatRelativeTime(item.created_at)
       }}</span>
@@ -118,8 +142,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { UserPlus, Send, Bell, Check } from "lucide-vue-next";
-import { formatRelativeTime } from "../../lib/formatters";
+import { UserPlus, Send, Bell, Check, Calendar } from "lucide-vue-next";
+import { formatRelativeTime, formatDateTime } from "../../lib/formatters";
 import { STATUS_MAP } from "../../lib/constants";
 import BaseBadge from "../ui/BaseBadge.vue";
 import BaseButton from "../ui/BaseButton.vue";
