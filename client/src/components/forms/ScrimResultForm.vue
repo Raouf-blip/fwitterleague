@@ -328,22 +328,30 @@
       </div>
 
       <div
-        class="flex justify-end gap-3 sticky bottom-4 bg-surface p-4 border border-border rounded-xl shadow-xl z-10"
+        class="sticky bottom-4 bg-surface p-4 border border-border rounded-xl shadow-xl z-10 flex flex-col gap-3"
       >
-        <BaseButton
-          type="button"
-          variant="ghost"
-          :disabled="loading"
-          @click="$emit('cancel')"
-          >Annuler</BaseButton
+        <div
+          v-if="formError"
+          class="text-danger text-sm font-bold text-center bg-danger/10 p-2 rounded border border-danger/20"
         >
-        <BaseButton
-          type="submit"
-          variant="primary"
-          :loading="loading"
-          class="px-8"
-          >Enregistrer les Résultats</BaseButton
-        >
+          {{ formError }}
+        </div>
+        <div class="flex justify-end gap-3">
+          <BaseButton
+            type="button"
+            variant="ghost"
+            :disabled="loading"
+            @click="$emit('cancel')"
+            >Annuler</BaseButton
+          >
+          <BaseButton
+            type="submit"
+            variant="primary"
+            :loading="loading"
+            class="px-8"
+            >Enregistrer les Résultats</BaseButton
+          >
+        </div>
       </div>
     </form>
   </div>
@@ -382,6 +390,7 @@ const errorMessage = ref<string | null>(null);
 const screenshotUrl = ref("");
 const gameDuration = ref(0);
 const winningTeam = ref<"blue" | "red" | null>(null);
+const formError = ref<string | null>(null);
 
 // Initialize stats array based on participants
 const localStats = ref<any[]>([]);
@@ -606,7 +615,19 @@ async function uploadAndAnalyze(file: File) {
 }
 
 async function handleSubmit() {
+  formError.value = null;
   const durationMin = Number(gameDuration.value) || 0;
+
+  if (!winningTeam.value) {
+    formError.value = "Veuillez sélectionner l'équipe gagnante.";
+    return;
+  }
+
+  if (durationMin <= 0) {
+    formError.value = "Veuillez renseigner une durée de match valide (> 0 min).";
+    return;
+  }
+
   emit("submit", {
     screenshot_url: screenshotUrl.value,
     game_duration: durationMin * 60, // minutes to seconds
