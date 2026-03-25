@@ -12,8 +12,10 @@ router.get("/players", async (req, res) => {
     // Alternatively, we use .rpc() if we create a function, but let's try to do it in JS for simplicity as we can't easily run migrations for functions here.
 
     // 1. Fetch all individual stats with profile info
-    const { data: stats, error } = await supabase.from("scrim_stats_individual")
-      .select(`
+    const { data: stats, error } = await supabase
+      .from("scrim_stats_individual")
+      .select(
+        `
         *,
         scrim:scrim_id!inner(is_validated),
         profile:user_id (
@@ -22,7 +24,8 @@ router.get("/players", async (req, res) => {
           avatar_url,
           rank
         )
-      `)
+      `,
+      )
       .eq("scrim.is_validated", true);
 
     if (error) throw error;
