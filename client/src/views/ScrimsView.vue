@@ -37,11 +37,24 @@
       >
         Classement Joueurs
       </BaseButton>
+      <div class="w-px bg-border mx-2"></div>
+      <BaseButton
+        :variant="currentFilter === 'teams' ? 'secondary' : 'ghost'"
+        size="sm"
+        @click="setFilter('teams')"
+      >
+        Classement Équipes
+      </BaseButton>
     </div>
 
     <!-- Players Stats View -->
     <div v-if="currentFilter === 'players'">
       <PlayerStatsTable />
+    </div>
+
+    <!-- Teams Stats View -->
+    <div v-else-if="currentFilter === 'teams'">
+      <TeamStatsTable />
     </div>
 
     <!-- Scrims View -->
@@ -284,6 +297,7 @@ import BaseSpinner from "../components/ui/BaseSpinner.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
 import CreateScrimModal from "../components/forms/CreateScrimModal.vue";
 import PlayerStatsTable from "../components/domain/PlayerStatsTable.vue";
+import TeamStatsTable from "../components/domain/TeamStatsTable.vue";
 
 const scrimStore = useScrimStore();
 const showCreateModal = ref(false);

@@ -82,44 +82,21 @@ router.get("/me", authenticate, async (req: any, res) => {
     }
   }
 
-  // Get Scrim Stats
-  const { data: stats } = await supabase
-    .from("scrim_stats_individual")
-    .select(
-      "kills, deaths, assists, cs, cs_min, win, champion_name, scrim:scrim_id!inner(is_validated)",
-    )
-    .eq("user_id", req.user.id)
-    .eq("scrim.is_validated", true);
+  // Get Scrim Stats via View
+  const { data: statsView } = await supabase
+    .from("player_stats_view")
+    .select("games_played, wins, losses, kda, avg_cs_min")
+    .eq("id", req.user.id)
+    .maybeSingle();
 
   const scrim_stats =
-    stats && stats.length > 0
+    statsView && statsView.games_played > 0
       ? {
-          games_played: stats.length,
-          wins: stats.filter((s: any) => s.win).length,
-          losses: stats.filter((s: any) => !s.win).length,
-          kda:
-            stats.length > 0
-              ? (
-                  stats.reduce(
-                    (acc: number, s: any) =>
-                      acc + (s.kills || 0) + (s.assists || 0),
-                    0,
-                  ) /
-                  Math.max(
-                    1,
-                    stats.reduce(
-                      (acc: number, s: any) => acc + (s.deaths || 0),
-                      0,
-                    ),
-                  )
-                ).toFixed(2)
-              : "0.00",
-          avg_cs: (
-            stats.reduce(
-              (acc: number, s: any) => acc + (Number(s.cs_min) || 0),
-              0,
-            ) / Math.max(1, stats.length)
-          ).toFixed(1),
+          games_played: statsView.games_played,
+          wins: statsView.wins,
+          losses: statsView.losses,
+          kda: Number(statsView.kda).toFixed(2),
+          avg_cs: Number(statsView.avg_cs_min).toFixed(1),
         }
       : null;
 
@@ -253,37 +230,21 @@ router.get("/:id", async (req, res) => {
     team = teamData;
   }
 
-  // Get Scrim Stats
-  const { data: stats } = await supabase
-    .from("scrim_stats_individual")
-    .select(
-      "kills, deaths, assists, cs, cs_min, win, champion_name, scrim:scrim_id!inner(is_validated)",
-    )
-    .eq("user_id", req.params.id)
-    .eq("scrim.is_validated", true);
+  // Get Scrim Stats via View
+  const { data: statsView } = await supabase
+    .from("player_stats_view")
+    .select("games_played, wins, losses, kda, avg_cs_min")
+    .eq("id", req.params.id)
+    .maybeSingle();
 
   const scrim_stats =
-    stats && stats.length > 0
+    statsView && statsView.games_played > 0
       ? {
-          games_played: stats.length,
-          wins: stats.filter((s: any) => s.win).length,
-          losses: stats.filter((s: any) => !s.win).length,
-          kda: (
-            stats.reduce(
-              (acc: number, s: any) => acc + (s.kills || 0) + (s.assists || 0),
-              0,
-            ) /
-            Math.max(
-              1,
-              stats.reduce((acc: number, s: any) => acc + (s.deaths || 0), 0),
-            )
-          ).toFixed(2),
-          avg_cs: (
-            stats.reduce(
-              (acc: number, s: any) => acc + (Number(s.cs_min) || 0),
-              0,
-            ) / Math.max(1, stats.length)
-          ).toFixed(1),
+          games_played: statsView.games_played,
+          wins: statsView.wins,
+          losses: statsView.losses,
+          kda: Number(statsView.kda).toFixed(2),
+          avg_cs: Number(statsView.avg_cs_min).toFixed(1),
         }
       : null;
 

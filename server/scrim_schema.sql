@@ -151,6 +151,65 @@ BEGIN
 END $$;
 
 
+-- 5. Vues SQL pour l'optimisation des statistiques
+-- Vue pour le classement des joueurs (Player Stats)
+CREATE OR REPLACE VIEW player_stats_view AS
+SELECT 
+    p.id,
+    p.username,
+    p.avatar_url,
+    p.rank,
+    p.lp,
+    COALESCE(st.games_played, 0) as games_played,
+    COALESCE(st.wins, 0) as wins,
+    COALESCE(st.losses, 0) as losses,
+    COALESCE(st.kills, 0) as kills,
+    COALESCE(st.deaths, 0) as deaths,
+    COALESCE(st.assists, 0) as assists,
+    COALESCE(st.avg_cs_min, 0) as avg_cs_min,
+    CASE 
+        WHEN COALESCE(st.games_played, 0) > 0 THEN (CAST(COALESCE(st.wins, 0) AS FLOAT) / st.games_played) * 100 
+        ELSE 0 
+    END as win_rate,
+    CASE 
+        WHEN COALESCE(st.deaths, 0) = 0 THEN CAST(COALESCE(st.kills, 0) + COALESCE(st.assists, 0) AS FLOAT) 
+        ELSE (CAST(COALESCE(st.kills, 0) + COALESCE(st.assists, 0) AS FLOAT) / st.deaths) 
+    END as kda
+FROM profiles p
+LEFT JOIN (
+    SELECT 
+        s.user_id,
+        COUNT(*) as games_played,
+        COUNT(CASE WHEN s.win THEN 1 END) as wins,
+        COUNT(CASE WHEN NOT s.win THEN 1 END) as losses,
+        SUM(s.kills) as kills,
+        SUM(s.deaths) as deaths,
+        SUM(s.assists) as assists,
+        AVG(s.cs_min) as avg_cs_min
+    FROM scrim_stats_individual s
+    JOIN scrims sc ON s.scrim_id = sc.id
+    WHERE sc.is_validated = TRUE
+    GROUP BY s.user_id
+) st ON p.id = st.user_id;
+
+-- Vue pour le classement des équipes (Team Stats)
+CREATE OR REPLACE VIEW team_stats_view AS
+SELECT 
+    t.id,
+    t.name,
+    t.tag,
+    t.logo_url,
+    COUNT(s.id) as games_played,
+    COUNT(CASE WHEN s.winner_id = t.id THEN 1 END) as wins,
+    COUNT(CASE WHEN s.winner_id IS NOT NULL AND s.winner_id != t.id THEN 1 END) as losses,
+    CASE 
+        WHEN COUNT(s.id) > 0 THEN (CAST(COUNT(CASE WHEN s.winner_id = t.id THEN 1 END) AS FLOAT) / COUNT(s.id)) * 100 
+        ELSE 0 
+    END as win_rate
+FROM teams t
+LEFT JOIN scrims s ON (s.challenger_team_id = t.id OR s.challenged_team_id = t.id) AND s.status = 'completed' AND s.is_validated = TRUE
+GROUP BY t.id;
+
 -- 4. Configuration du Storage pour les screenshots de Scrims
 -- Nécessaire pour l'upload des captures d'écran
 INSERT INTO storage.buckets (id, name, public)
