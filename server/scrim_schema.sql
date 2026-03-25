@@ -43,6 +43,13 @@ BEGIN
         WHEN duplicate_column THEN RAISE NOTICE 'Column game_duration already exists in scrims.';
     END;
 
+    -- Ajout de la colonne 'is_validated' pour la validation par un admin
+    BEGIN
+        ALTER TABLE scrims ADD COLUMN is_validated BOOLEAN DEFAULT FALSE;
+    EXCEPTION
+        WHEN duplicate_column THEN RAISE NOTICE 'Column is_validated already exists in scrims.';
+    END;
+
     -- Mise à jour de la contrainte CHECK sur 'status' pour inclure les nouveaux statuts
     BEGIN
         ALTER TABLE scrims DROP CONSTRAINT IF EXISTS scrims_status_check;

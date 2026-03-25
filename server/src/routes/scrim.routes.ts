@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabase } from "../config/supabase";
 import { authenticate } from "../middlewares/auth";
+import { authorizeAdmin } from "../middlewares/admin";
 import { analyzeScreenshot } from "../services/ai.service";
 
 const router = Router();
@@ -396,6 +397,28 @@ router.patch("/:id/status", authenticate, async (req: any, res) => {
 
   res.json({ message: "Statut mis à jour." });
 });
+
+// PATCH /:id/validate - Admin validate scrim
+router.patch(
+  "/:id/validate",
+  authenticate,
+  authorizeAdmin,
+  async (req: any, res) => {
+    const { id } = req.params;
+    const { is_validated } = req.body;
+    
+    // Default to true if not provided (backward compatibility)
+    const validState = is_validated !== undefined ? is_validated : true;
+
+    const { error } = await supabase
+      .from("scrims")
+      .update({ is_validated: validState })
+      .eq("id", id);
+
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ message: `Scrim ${validState ? 'validé' : 'invalidé'} avec succès.` });
+  },
+);
 
 // POST /:id/challenge - Respond into a Team Challenge
 router.post("/:id/challenge", authenticate, async (req: any, res) => {

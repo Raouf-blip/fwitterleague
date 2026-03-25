@@ -6,7 +6,6 @@ import { getToken } from "../composables/useAuth";
 import type { Scrim } from "../types";
 
 export const useScrimStore = defineStore("scrims", () => {
-  const authStore = useAuthStore();
   const scrims = ref<Scrim[]>([]);
   const currentScrim = ref<Scrim | null>(null);
   const loading = ref(false);
@@ -177,6 +176,22 @@ export const useScrimStore = defineStore("scrims", () => {
     }
   }
 
+  async function validateScrim(id: string, isValid: boolean) {
+    console.log("Validating scrim", id, isValid);
+    loading.value = true;
+    try {
+      const token = await getToken();
+      await api.patch(`/scrims/${id}/validate`, { is_validated: isValid }, token);
+      if (currentScrim.value && currentScrim.value.id === id) {
+        currentScrim.value.is_validated = isValid;
+      }
+    } catch (e: any) {
+      throw new Error(e.message || "Erreur lors de la validation");
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     scrims,
     currentScrim,
@@ -190,5 +205,6 @@ export const useScrimStore = defineStore("scrims", () => {
     respondToChallenge,
     markAsCompleted,
     submitResults,
+    validateScrim,
   };
 });

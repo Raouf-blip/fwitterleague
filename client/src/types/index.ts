@@ -53,6 +53,7 @@ export interface Scrim {
   participants?: ScrimParticipant[];
   stats?: ScrimStats[];
   created_at: string;
+  is_validated?: boolean;
 }
 
 export interface ScrimParticipant {
