@@ -1,12 +1,17 @@
 # 🤖 FwitterLeague Discord Bot
 
-Ce bot est le lien de notification entre la plateforme **FwitterLeague** et Discord.
+Ce bot est le lien de notification et de synchronisation entre la plateforme **FwitterLeague** et Discord.
 
 ## 🌟 Fonctionnalités
 
 1.  **🔔 Notifications de Scrims** : Envoie une notification automatique dans un salon Discord dès qu'un scrim est créé sur la plateforme.
 2.  **🚀 Notifications de Patch Notes** : Alerte la communauté lors de la sortie d'une nouvelle mise à jour de la plateforme.
-3.  **🔗 Redirection Directe** : Chaque notification contient un bouton permettant de se rendre directement sur la page correspondante (scrim ou patch note).
+3.  **🛡️ Synchronisation des Rôles & Salons** :
+    - **Équipes** : Crée automatiquement un rôle Discord pour chaque équipe et un salon textuel dédié, accessible uniquement aux membres de l'équipe.
+    - **Gestion des Membres** : Ajoute ou retire dynamiquement les joueurs des rôles d'équipe en fonction des changements dans la base de données.
+    - **Agents Libres** : Assigne automatiquement un rôle "Agent Libre" aux joueurs qui recherchent une équipe.
+    - **Casteurs** : Assigne un rôle "Casteur" aux profils identifiés comme tels.
+    - **Identification** : Utilise le `discord_id` enregistré en base de données pour identifier les utilisateurs sur le serveur. Si aucun ID n'est présent, l'utilisateur conserve son rôle par défaut.
 
 ## 🏗️ Architecture
 

@@ -1,15 +1,10 @@
 import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
+import { SyncService } from '../services/sync.service';
 
 export async function notifyNewPatchNote(client: Client, patchNote: any) {
-    const channelId = process.env.PATCH_NOTES_CHANNEL_ID;
-    if (!channelId) {
-        console.error('[PatchNote Notifier] PATCH_NOTES_CHANNEL_ID is not defined in .env');
-        return;
-    }
-
-    const channel = await client.channels.fetch(channelId) as TextChannel;
+    const channel = await SyncService.getNotificationChannel(client);
     if (!channel) {
-        console.error(`[PatchNote Notifier] Channel with ID ${channelId} not found`);
+        console.error('[PatchNote Notifier] Could not find or create notification channel');
         return;
     }
 
@@ -29,8 +24,21 @@ export async function notifyNewPatchNote(client: Client, patchNote: any) {
 
     // Show categories as a summary if they exist
     if (patchNote.categories && Array.isArray(patchNote.categories) && patchNote.categories.length > 0) {
-        const categoriesList = patchNote.categories.map((c: any) => `• ${c.name || 'Divers'}`).join('\n');
-        embed.addFields({ name: 'Contenu du Patch', value: categoriesList });
+        for (const cat of patchNote.categories) {
+            const emoji = cat.emoji || '🔹';
+            const label = cat.label || 'Divers';
+            const items = Array.isArray(cat.items) 
+                ? cat.items.map((item: string) => `• ${item}`).join('\n') 
+                : 'Aucun détail spécifié';
+            
+            // On limite la taille pour ne pas dépasser les limites de Discord (1024 char par field)
+            const truncatedItems = items.length > 500 ? items.substring(0, 500) + '...' : items;
+
+            embed.addFields({ 
+                name: `${emoji} ${label}`, 
+                value: truncatedItems || 'Aucun détail' 
+            });
+        }
     }
 
     const row = new ActionRowBuilder<ButtonBuilder>()

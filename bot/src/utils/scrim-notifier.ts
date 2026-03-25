@@ -1,16 +1,11 @@
 import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
 import { supabase } from '../config/supabase';
+import { SyncService } from '../services/sync.service';
 
 export async function notifyNewScrim(client: Client, scrim: any) {
-    const channelId = process.env.SCRIM_CHANNEL_ID;
-    if (!channelId) {
-        console.error('[Notifier] SCRIM_CHANNEL_ID is not defined in .env');
-        return;
-    }
-
-    const channel = await client.channels.fetch(channelId) as TextChannel;
+    const channel = await SyncService.getNotificationChannel(client);
     if (!channel) {
-        console.error(`[Notifier] Channel with ID ${channelId} not found`);
+        console.error('[Notifier] Could not find or create notification channel');
         return;
     }
 

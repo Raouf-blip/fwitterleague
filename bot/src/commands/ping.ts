@@ -1,10 +1,10 @@
-import { SlashCommandBuilder, CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from 'discord.js';
 
-module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('ping')
-		.setDescription('Répond avec Pong!'),
-	async execute(interaction: CommandInteraction) {
-		await interaction.reply('Pong!');
-	},
-};
+export const data = new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Répond avec Pong!')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+export async function execute(interaction: CommandInteraction) {
+    await interaction.reply('Pong!');
+}
