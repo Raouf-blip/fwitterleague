@@ -1,15 +1,17 @@
 import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
 import { SyncService } from '../services/sync.service';
+import { ConfigService } from '../services/config.service';
 
 export async function notifyNewPatchNote(client: Client, patchNote: any) {
-    const channel = await SyncService.getNotificationChannel(client);
+    const channel = await SyncService.getPatchNotesChannel(client);
     if (!channel) {
-        console.error('[PatchNote Notifier] Could not find or create notification channel');
+        console.error('[PatchNote Notifier] Could not find or create patch notes channel');
         return;
     }
 
-    const websiteUrl = process.env.WEBSITE_URL || 'https://fwitterleague.fr';
-    const patchNotesUrl = `${websiteUrl}/patch-notes`; // Or specific ID if website supports it
+    const config = await ConfigService.getConfig();
+    const websiteUrl = config.websiteUrl || 'https://fwitterleague.fr';
+    const patchNotesUrl = `${websiteUrl}/patch-notes`; 
 
     const embed = new EmbedBuilder()
         .setColor(0x7289DA) // Discord Blurple
@@ -22,7 +24,6 @@ export async function notifyNewPatchNote(client: Client, patchNote: any) {
         .setTimestamp()
         .setFooter({ text: 'FwitterLeague Patch Notes' });
 
-    // Show categories as a summary if they exist
     if (patchNote.categories && Array.isArray(patchNote.categories) && patchNote.categories.length > 0) {
         for (const cat of patchNote.categories) {
             const emoji = cat.emoji || '🔹';
@@ -31,7 +32,6 @@ export async function notifyNewPatchNote(client: Client, patchNote: any) {
                 ? cat.items.map((item: string) => `• ${item}`).join('\n') 
                 : 'Aucun détail spécifié';
             
-            // On limite la taille pour ne pas dépasser les limites de Discord (1024 char par field)
             const truncatedItems = items.length > 500 ? items.substring(0, 500) + '...' : items;
 
             embed.addFields({ 

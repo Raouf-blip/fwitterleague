@@ -1,19 +1,23 @@
 import { Client, Guild, Role, ChannelType, PermissionsBitField, OverwriteResolvable, GuildMember, TextChannel } from 'discord.js';
 import { supabase } from '../config/supabase';
 import { SupabaseService } from './supabase.service';
+import { ConfigService } from './config.service';
 
-const GUILD_ID = process.env.GUILD_ID;
-const TEAM_CATEGORY_ID = process.env.TEAM_CATEGORY_ID; 
 const CASTER_ROLE_NAME = 'Casteur';
 const FREE_AGENT_ROLE_NAME = 'Agent Libre';
 
 export class SyncService {
     static async syncUserRoles(client: Client, profile: any, inTeam?: boolean) {
         if (!profile.discord_id) return;
-        const guild = await client.guilds.fetch(GUILD_ID!);
+        const config = await ConfigService.getConfig();
+        if (!config.guildId) return;
+        const guild = await client.guilds.fetch(config.guildId);
         try {
-            const member = await guild.members.fetch(profile.discord_id);
-            if (!member) return;
+            const member = await guild.members.fetch(profile.discord_id).catch(() => null);
+            if (!member) {
+                console.log(`[Sync] Member ${profile.username} (${profile.discord_id}) not found in guild, skipping.`);
+                return;
+            }
 
             // Caster Role
             await this.handleSimpleRole(guild, member, CASTER_ROLE_NAME, profile.is_caster, '#f1c40f');
@@ -48,11 +52,14 @@ export class SyncService {
     }
 
     static async syncTeam(client: Client, team: any) {
-        const guild = await client.guilds.fetch(GUILD_ID!);
+        const config = await ConfigService.getConfig();
+        if (!config.guildId) return;
+        const guild = await client.guilds.fetch(config.guildId);
         
         // 1. Team Role
         const roleName = team.name;
         let role = guild.roles.cache.find(r => r.name === roleName);
+        
         if (!role) {
             role = await guild.roles.create({
                 name: roleName,
@@ -61,8 +68,8 @@ export class SyncService {
                 mentionable: true
             });
             console.log(`[Sync] Created role "${roleName}"`);
-        } else if (!role.hoist) {
-            await role.setHoist(true);
+        } else {
+            if (!role.hoist) await role.setHoist(true);
         }
 
         // 2. Team Channel
@@ -71,7 +78,7 @@ export class SyncService {
         let channel = channels.find(c => 
             c?.type === ChannelType.GuildText && 
             c.name === channelName && 
-            (!TEAM_CATEGORY_ID || c.parentId === TEAM_CATEGORY_ID)
+            (!config.teamCategoryId || c.parentId === config.teamCategoryId)
         );
         
         if (!channel) {
@@ -82,7 +89,7 @@ export class SyncService {
             channel = await guild.channels.create({
                 name: channelName,
                 type: ChannelType.GuildText,
-                parent: TEAM_CATEGORY_ID || null,
+                parent: config.teamCategoryId || null,
                 permissionOverwrites,
             });
             console.log(`[Sync] Created channel #${channelName}`);
@@ -91,7 +98,9 @@ export class SyncService {
     }
 
     static async syncTeamMember(client: Client, teamId: string, profileId: string, action: 'INSERT' | 'DELETE', skipUserRolesSync = false, teamData?: any, profileData?: any) {
-        const guild = await client.guilds.fetch(GUILD_ID!);
+        const config = await ConfigService.getConfig();
+        if (!config.guildId) return;
+        const guild = await client.guilds.fetch(config.guildId);
         let team = teamData || (await supabase.from('teams').select('*').eq('id', teamId).single()).data;
         let profile = profileData || (await supabase.from('profiles').select('*').eq('id', profileId).single()).data;
 
@@ -104,8 +113,11 @@ export class SyncService {
         }
 
         try {
-            const member = await guild.members.fetch(profile.discord_id);
-            if (!member) return;
+            const member = await guild.members.fetch(profile.discord_id).catch(() => null);
+            if (!member) {
+                console.log(`[Sync] Member ${profile.username} (${profile.discord_id}) not found in guild, skipping.`);
+                return;
+            }
 
             const tagPrefix = team.tag ? `[${team.tag}] ` : '';
             const newNickname = `${tagPrefix}${profile.username}`.substring(0, 32);
@@ -127,43 +139,171 @@ export class SyncService {
         }
     }
 
-    static async getNotificationChannel(client: Client) {
-        const guildId = process.env.GUILD_ID;
-        const channelId = process.env.NOTIFICATION_CHANNEL_ID;
-        const guild = await client.guilds.fetch(guildId!);
-
-        // 1. Try by ID from .env
-        if (channelId) {
+    static async getOrCreateCategory(guild: Guild) {
+        const config = await ConfigService.getConfig();
+        if (config.teamCategoryId) {
             try {
-                const channel = await guild.channels.fetch(channelId);
+                const category = await guild.channels.fetch(config.teamCategoryId);
+                if (category && category.type === ChannelType.GuildCategory) return category;
+            } catch (e) {}
+        }
+
+        const categoryName = 'FWITTER LEAGUE';
+        let category = guild.channels.cache.find(c => c.name === categoryName && c.type === ChannelType.GuildCategory);
+        
+        if (!category) {
+            category = await guild.channels.create({
+                name: categoryName,
+                type: ChannelType.GuildCategory,
+            });
+            console.log(`[Sync] Created category "${categoryName}"`);
+        }
+        
+        if (config.teamCategoryId !== category.id) {
+            await ConfigService.saveConfig({ teamCategoryId: category.id });
+        }
+        return category;
+    }
+
+    static async getOrCreateAnnouncementsCategory(guild: Guild) {
+        const config = await ConfigService.getConfig();
+        if (config.announcementsCategoryId) {
+            try {
+                const category = await guild.channels.fetch(config.announcementsCategoryId);
+                if (category && category.type === ChannelType.GuildCategory) return category;
+            } catch (e) {}
+        }
+
+        const categoryName = 'ANNONCES FWL';
+        let category = guild.channels.cache.find(c => c.name === categoryName && c.type === ChannelType.GuildCategory);
+        
+        if (!category) {
+            category = await guild.channels.create({
+                name: categoryName,
+                type: ChannelType.GuildCategory,
+            });
+            console.log(`[Sync] Created category "${categoryName}"`);
+        }
+        
+        if (config.announcementsCategoryId !== category.id) {
+            await ConfigService.saveConfig({ announcementsCategoryId: category.id });
+        }
+        return category;
+    }
+
+    static async getScrimChannel(client: Client) {
+        const config = await ConfigService.getConfig();
+        const guild = await client.guilds.fetch(config.guildId);
+        const category = await this.getOrCreateAnnouncementsCategory(guild);
+
+        if (config.scrimChannelId) {
+            try {
+                const channel = await guild.channels.fetch(config.scrimChannelId);
                 if (channel && channel.type === ChannelType.GuildText) return channel as TextChannel;
             } catch (e) {}
         }
 
-        // 2. Try by Name
-        const channelName = 'fwitter-league';
-        const channels = await guild.channels.fetch();
-        const existing = channels.find(c => c?.name === channelName && c.type === ChannelType.GuildText);
-        if (existing) return existing as TextChannel;
+        const channelName = 'annonces-scrims';
+        let channel = guild.channels.cache.find(c => c.name === channelName && c.parentId === category.id);
+        
+        if (!channel) {
+            channel = await guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildText,
+                parent: category.id,
+                topic: 'Annonces et nouveaux Scrims FwitterLeague',
+                permissionOverwrites: [
+                    { id: guild.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
+                ]
+            });
+            console.log(`[Sync] Created scrim channel #${channelName}`);
+        }
 
-        // 3. Create it
-        console.log(`[Sync] Creating notification channel #${channelName}`);
-        const newChannel = await guild.channels.create({
-            name: channelName,
-            type: ChannelType.GuildText,
-            topic: 'Annonces, Scrims et Patch Notes de FwitterLeague',
-            reason: 'Auto-created by FwitterBot'
-        });
-        return newChannel;
+        if (config.scrimChannelId !== channel.id) {
+            await ConfigService.saveConfig({ scrimChannelId: channel.id });
+        }
+        return channel as TextChannel;
+    }
+
+    static async getPatchNotesChannel(client: Client) {
+        const config = await ConfigService.getConfig();
+        const guild = await client.guilds.fetch(config.guildId);
+        const category = await this.getOrCreateAnnouncementsCategory(guild);
+
+        if (config.patchNotesChannelId) {
+            try {
+                const channel = await guild.channels.fetch(config.patchNotesChannelId);
+                if (channel && channel.type === ChannelType.GuildText) return channel as TextChannel;
+            } catch (e) {}
+        }
+
+        const channelName = 'patch-notes';
+        let channel = guild.channels.cache.find(c => c.name === channelName && c.parentId === category.id);
+        
+        if (!channel) {
+            channel = await guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildText,
+                parent: category.id,
+                topic: 'Notes de mise à jour de la plateforme FwitterLeague',
+                permissionOverwrites: [
+                    { id: guild.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
+                ]
+            });
+            console.log(`[Sync] Created patch notes channel #${channelName}`);
+        }
+
+        if (config.patchNotesChannelId !== channel.id) {
+            await ConfigService.saveConfig({ patchNotesChannelId: channel.id });
+        }
+        return channel as TextChannel;
+    }
+
+    static async getMercatoChannel(client: Client) {
+        const config = await ConfigService.getConfig();
+        const guild = await client.guilds.fetch(config.guildId);
+        const category = await this.getOrCreateAnnouncementsCategory(guild);
+
+        if (config.mercatoChannelId) {
+            try {
+                const channel = await guild.channels.fetch(config.mercatoChannelId);
+                if (channel && channel.type === ChannelType.GuildText) return channel as TextChannel;
+            } catch (e) {}
+        }
+
+        const channelName = 'mercato';
+        let channel = guild.channels.cache.find(c => c.name === channelName && c.parentId === category.id);
+        
+        if (!channel) {
+            channel = await guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildText,
+                parent: category.id,
+                topic: 'Annonces des joueurs à la recherche d\'une équipe (Agents Libres)',
+                permissionOverwrites: [
+                    { id: guild.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
+                ]
+            });
+            console.log(`[Sync] Created mercato channel #${channelName}`);
+        }
+
+        if (config.mercatoChannelId !== channel.id) {
+            await ConfigService.saveConfig({ mercatoChannelId: channel.id });
+        }
+        return channel as TextChannel;
     }
 
     static async fullSync(client: Client) {
         console.log('[Sync] Starting full synchronization...');
-        const guild = await client.guilds.fetch(GUILD_ID!);
+        const config = await ConfigService.getConfig();
+        if (!config.guildId) return;
+        const guild = await client.guilds.fetch(config.guildId);
         if (!guild) return;
 
-        // Ensure notification channel exists
-        await this.getNotificationChannel(client);
+        // Ensure category and notification channels exist
+        await this.getScrimChannel(client);
+        await this.getPatchNotesChannel(client);
+        await this.getMercatoChannel(client);
 
         const { data: teams } = await supabase.from('teams').select('*');
         const teamMap = new Map(teams?.map(t => [t.id, t]) || []);

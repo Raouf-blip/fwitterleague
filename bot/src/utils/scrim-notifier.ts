@@ -1,22 +1,23 @@
-import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
+import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { supabase } from '../config/supabase';
 import { SyncService } from '../services/sync.service';
+import { ConfigService } from '../services/config.service';
 
 export async function notifyNewScrim(client: Client, scrim: any) {
-    const channel = await SyncService.getNotificationChannel(client);
+    const channel = await SyncService.getScrimChannel(client);
     if (!channel) {
-        console.error('[Notifier] Could not find or create notification channel');
+        console.error('[Notifier] Could not find or create scrim channel');
         return;
     }
 
-    // Récupérer les infos du créateur
     const { data: creator } = await supabase
         .from('profiles')
         .select('username')
         .eq('id', scrim.creator_id)
         .single();
 
-    const websiteUrl = process.env.WEBSITE_URL || 'https://fwitterleague.fr';
+    const config = await ConfigService.getConfig();
+    const websiteUrl = config.websiteUrl || 'https://fwitterleague.fr';
     const scrimUrl = `${websiteUrl}/scrims/${scrim.id}`;
 
     const embed = new EmbedBuilder()

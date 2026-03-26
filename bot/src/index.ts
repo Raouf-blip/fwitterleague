@@ -2,12 +2,12 @@ import { Client, GatewayIntentBits, Collection, REST, Routes } from 'discord.js'
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { ConfigService } from './services/config.service';
 
 dotenv.config();
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID;
 
 if (!token || !clientId) {
     throw new Error('Missing DISCORD_TOKEN or CLIENT_ID in environment variables');
@@ -54,15 +54,23 @@ for (const file of eventFiles) {
 // Register Slash Commands
 const rest = new REST().setToken(token);
 (async () => {
+    const config = await ConfigService.getConfig();
+    const guildId = config.guildId;
+
+    if (!guildId) {
+        console.warn('[Warning] GUILD_ID is not defined in DB. Slash commands cannot be registered.');
+        return;
+    }
+
     try {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
         await rest.put(
-            Routes.applicationGuildCommands(clientId, guildId || ''),
+            Routes.applicationGuildCommands(clientId, guildId),
             { body: commands },
         );
         console.log(`Successfully reloaded application (/) commands.`);
     } catch (error) {
-        console.error(error);
+        console.error('[Error] Failed to register slash commands:', error);
     }
 })();
 
