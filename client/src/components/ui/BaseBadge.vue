@@ -33,7 +33,7 @@ const classes = computed(() => {
   }
 
   return [
-    'inline-flex items-center font-semibold uppercase tracking-wider rounded-md',
+    'inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider rounded-md',
     sizeClasses[props.size],
     variantClasses[props.variant],
   ]
