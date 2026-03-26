@@ -647,7 +647,7 @@ const pnForm = ref<{ version: string; title: string; dateInput: string; categori
 })
 
 const pnPage = ref(1)
-const pnPerPage = 5
+const pnPerPage = 10
 
 // Users pagination
 const usersPage = ref(1)

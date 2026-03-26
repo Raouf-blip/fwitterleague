@@ -13,7 +13,7 @@
           <BaseBadge variant="gold">{{ team.tag }}</BaseBadge>
           <span v-if="memberCount !== undefined" class="text-xs text-text-muted">{{ memberCount }}/6</span>
         </div>
-        <div v-if="team.average_rank && isAdmin" class="flex items-center gap-1.5 text-[10px] text-text-muted font-bold mt-1">
+        <div v-if="team.average_rank" class="flex items-center gap-1.5 text-[10px] text-text-muted font-bold mt-1">
           Elo moyen :
           <RankBadge :rank="team.average_rank" />
         </div>
@@ -42,17 +42,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Send } from 'lucide-vue-next'
 import type { Team } from '../../types'
-import { useAuthStore } from '../../stores/auth'
 import BaseCard from '../ui/BaseCard.vue'
 import BaseBadge from '../ui/BaseBadge.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import RankBadge from './RankBadge.vue'
-
-const authStore = useAuthStore()
-const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
 
 defineProps<{
   team: Team

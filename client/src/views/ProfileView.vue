@@ -391,7 +391,7 @@
                 <h3 class="font-bold text-text-primary truncate">{{ team.name }}</h3>
                 <div class="flex items-center gap-2 mt-1">
                   <p class="text-[10px] text-gold uppercase tracking-widest font-extrabold px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20">Membre Actif</p>
-                  <RankBadge v-if="team.average_rank && isAdmin" :rank="team.average_rank" />
+                  <RankBadge v-if="team.average_rank" :rank="team.average_rank" />
                 </div>
               </div>
             </div>
@@ -645,7 +645,6 @@ const sentApplications = ref<any[]>([]);
 
 const notifications = computed(() => inboxStore.notifications)
 const unreadNotifs = computed(() => inboxStore.unreadCount)
-const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
 
 const expandedNotifs = ref(new Set<string>())
 function toggleNotif(id: string) {

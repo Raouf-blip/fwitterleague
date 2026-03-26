@@ -119,7 +119,7 @@ interface PatchNote {
 
 const patchNotes = ref<PatchNote[]>([]);
 const loading = ref(true);
-const displayLimit = ref(10);
+const displayLimit = ref(5);
 
 const visiblePatchNotes = computed(() => patchNotes.value.slice(0, displayLimit.value));
 const hasMore = computed(() => patchNotes.value.length > displayLimit.value);
