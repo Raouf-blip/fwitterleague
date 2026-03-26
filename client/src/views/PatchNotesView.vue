@@ -21,7 +21,7 @@
 
       <div class="space-y-8">
         <div
-          v-for="(patch, index) in patchNotes"
+          v-for="(patch, index) in visiblePatchNotes"
           :key="patch.id"
           class="relative pl-12 sm:pl-16"
         >
@@ -77,18 +77,29 @@
           </BaseCard>
         </div>
       </div>
+
+      <!-- Show more button -->
+      <div v-if="hasMore" class="mt-12 flex justify-center pb-12 pl-4 sm:pl-6">
+        <BaseButton
+          variant="ghost"
+          @click="displayLimit += 10"
+        >
+          Voir plus
+        </BaseButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Megaphone } from "lucide-vue-next";
 import { api } from "../lib/api";
 import PageHeader from "../components/layout/PageHeader.vue";
 import BaseCard from "../components/ui/BaseCard.vue";
 import BaseSpinner from "../components/ui/BaseSpinner.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import BaseButton from "../components/ui/BaseButton.vue";
 
 interface PatchCategory {
   emoji: string;
@@ -108,6 +119,10 @@ interface PatchNote {
 
 const patchNotes = ref<PatchNote[]>([]);
 const loading = ref(true);
+const displayLimit = ref(10);
+
+const visiblePatchNotes = computed(() => patchNotes.value.slice(0, displayLimit.value));
+const hasMore = computed(() => patchNotes.value.length > displayLimit.value);
 
 onMounted(async () => {
   try {
