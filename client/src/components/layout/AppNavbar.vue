@@ -163,6 +163,7 @@ import {
   Award,
   Settings,
   Swords,
+  Book,
 } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth";
 import { useInboxStore } from "../../stores/inbox";
@@ -191,6 +192,7 @@ const navLinks = computed(() => {
     { to: "/scrims", label: "Scrims", icon: Swords },
     { to: "/agents", label: "Mercato", icon: Users },
     { to: "/teams", label: "Équipes", icon: Shield },
+    { to: "/rules", label: "Règlement", icon: Book },
   ];
   if (isAdmin.value) {
     links.push(
