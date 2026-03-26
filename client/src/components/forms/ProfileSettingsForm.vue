@@ -48,65 +48,35 @@
     </div>
 
     <!-- Riot ID Section -->
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-bold text-text-secondary">Riot ID</label>
       <BaseInput
         v-model="riotId"
-        label="Riot ID"
         placeholder="Pseudo#TAG"
         :error="riotError"
-        :disabled="isRiotIdLocked"
         :class="{ 'border-danger ring-danger/30': riotError }"
-      >
-        <template #trailing>
-          <div class="flex items-center gap-2">
-            <!-- Sync Button (Visible when editing) -->
-            <button
-              v-if="!isRiotIdLocked && riotId.includes('#')"
-              type="button"
-              @click="$emit('sync', riotId)"
-              class="p-1.5 text-cyan/60 hover:text-cyan transition-colors bg-cyan/5 hover:bg-cyan/10 rounded-md border border-cyan/10"
-              title="Synchroniser"
-              :disabled="syncing"
-            >
-              <Loader2 v-if="syncing" :size="14" class="animate-spin" />
-              <Check v-else :size="14" />
-            </button>
-
-            <!-- Modifier Button (Visible when locked) -->
-            <button
-              v-if="isRiotIdLocked && initialRiotId"
-              type="button"
-              @click="isRiotIdLocked = false"
-              class="p-1.5 text-cyan/60 hover:text-cyan transition-colors bg-cyan/5 hover:bg-cyan/10 rounded-md border border-cyan/10"
-              title="Modifier le Riot ID"
-            >
-              <Pencil :size="14" />
-            </button>
-          </div>
-        </template>
-      </BaseInput>
-
-      <div v-if="isRiotIdLocked && initialRiotId" class="flex items-center gap-4 px-1">
+      />
+      
+      <div v-if="riotId && riotId.includes('#') && !riotError" class="flex items-center gap-4 px-1">
         <a
           :href="getOpggUrl(riotId)"
           target="_blank"
-          class="text-[10px] font-bold text-cyan hover:underline inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+          class="text-xs text-cyan hover:underline inline-flex items-center gap-1"
         >
-          <ExternalLink :size="10" />
+          <ExternalLink :size="12" />
           Voir sur OP.GG
         </a>
 
         <a
           :href="getDpmUrl(riotId)"
           target="_blank"
-          class="text-[10px] font-bold text-cyan hover:underline inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+          class="text-xs text-cyan hover:underline inline-flex items-center gap-1"
         >
-          <ExternalLink :size="10" />
+          <ExternalLink :size="12" />
           Voir sur DPM.LOL
         </a>
       </div>
     </div>
-
     <!-- Discord Section -->
     <div class="flex flex-col gap-1.5">
       <label class="text-sm font-bold text-text-secondary">Compte Discord</label>
@@ -141,17 +111,21 @@
       </div>
     </div>
 
-    <RoleSelector
-      v-model="preferredRoles"
-      label="Postes préférés"
-    />
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-bold text-text-secondary">Postes préférés</label>
+      <RoleSelector
+        v-model="preferredRoles"
+      />
+    </div>
 
-    <BaseTextarea
-      v-model="bio"
-      label="Bio / Description"
-      placeholder="Décris ton style de jeu, tes champions préférés..."
-      :rows="4"
-    />
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-bold text-text-secondary">Bio / Description</label>
+      <BaseTextarea
+        v-model="bio"
+        placeholder="Décris ton style de jeu, tes champions préférés..."
+        :rows="4"
+      />
+    </div>
 
     <label 
       class="flex items-center gap-3 cursor-pointer group p-3 rounded-lg bg-white/5 border border-white/10 hover:border-cyan/30 transition-all"
@@ -185,7 +159,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Save, ExternalLink, Pencil, Loader2, Check } from 'lucide-vue-next'
+import { Save, ExternalLink, Pencil, Loader2 } from 'lucide-vue-next'
 import DiscordIcon from '../icons/DiscordIcon.vue'
 import { getDpmUrl, getOpggUrl } from '../../lib/formatters'
 import { supabase } from '../../lib/supabase'
@@ -225,14 +199,13 @@ const isLooking = ref(props.initialIsLooking || false)
 const preferredRoles = ref<string[]>(props.initialRoles || [])
 const uploading = ref(false)
 const syncingDiscord = ref(false)
-const isRiotIdLocked = ref(!!props.initialRiotId)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 watch(() => props.initialBio, (v) => { if (v !== undefined) bio.value = v })
 watch(() => props.initialAvatarUrl, (v) => { if (v !== undefined) avatarUrl.value = v })
 watch(() => props.initialDiscord, (v) => { if (v !== undefined) discord.value = v })
 watch(() => props.initialDiscordId, (v) => { if (v !== undefined) discordId.value = v })
-watch(() => props.initialRiotId, (v) => { if (v !== undefined) { riotId.value = v; isRiotIdLocked.value = !!v } })
+watch(() => props.initialRiotId, (v) => { if (v !== undefined) { riotId.value = v } })
 watch(() => props.initialIsLooking, (v) => { if (v !== undefined) isLooking.value = v })
 watch(() => props.initialRoles, (v) => { if (v !== undefined) preferredRoles.value = v || [] })
 
