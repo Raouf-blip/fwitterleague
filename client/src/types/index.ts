@@ -5,6 +5,7 @@ export interface Profile {
   opgg_url: string | null
   avatar_url: string | null
   discord: string | null
+  discord_id: string | null
   role: 'user' | 'admin' | 'superadmin'
   preferred_roles?: string[]
   is_captain: boolean

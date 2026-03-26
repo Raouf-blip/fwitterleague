@@ -1,6 +1,3 @@
-5. Dégradé radial fixe avec glow Un halo de couleur (or ou cyan très atténué)
-centré en haut de la page, comme un spot de lumière qui éclaire le contenu.
-Simple mais classe.
 <template>
   <nav
     class="fixed top-0 left-0 right-0 z-40 bg-body/80 backdrop-blur-xl border-b border-border"
@@ -166,9 +163,6 @@ import {
   Award,
   Settings,
   Swords,
-  MessageCircle,
-  BookOpen,
-  BarChart2,
 } from "lucide-vue-next";
 import { useAuthStore } from "../../stores/auth";
 import { useInboxStore } from "../../stores/inbox";
@@ -197,8 +191,6 @@ const navLinks = computed(() => {
     { to: "/scrims", label: "Scrims", icon: Swords },
     { to: "/agents", label: "Mercato", icon: Users },
     { to: "/teams", label: "Équipes", icon: Shield },
-    { to: "/rules", label: "Règlement", icon: BookOpen },
-    { to: "/contact", label: "Contact", icon: MessageCircle },
   ];
   if (isAdmin.value) {
     links.push(

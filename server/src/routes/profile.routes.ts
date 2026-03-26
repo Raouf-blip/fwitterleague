@@ -321,19 +321,13 @@ router.post("/sync-riot", authenticate, async (req: any, res) => {
   }
 
   // Rate Limiter
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("last_riot_sync")
-    .eq("id", req.user.id)
-    .single();
-  if (profile?.last_riot_sync) {
-    const diff =
-      new Date().getTime() - new Date(profile.last_riot_sync).getTime();
-    if (diff < 2 * 60 * 1000) {
-      // 2 minutes de cooldown
-      return res.status(429).json({
-        error: "Veuillez patienter 2 minutes entre chaque synchronisation.",
-      });
+  const { data: profile } = await supabase.from('profiles').select('last_riot_sync, riot_id').eq('id', req.user.id).single();
+
+  // Cooldown only if we are syncing the SAME ID. If it's a new ID, we allow it to bypass the timer.
+  if (profile?.last_riot_sync && profile.riot_id === riotId) {
+    const diff = new Date().getTime() - new Date(profile.last_riot_sync).getTime();
+    if (diff < 2 * 60 * 1000) { // 2 minutes de cooldown
+      return res.status(429).json({ error: 'Veuillez patienter 2 minutes entre chaque synchronisation.' });
     }
   }
 

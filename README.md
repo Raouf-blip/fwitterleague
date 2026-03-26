@@ -11,53 +11,51 @@ Bienvenue dans le dépôt de **FwitterLeague**, une plateforme complète pour la
 
 ---
 
-## 🛠️ Architecture du Projet
+## 🤖 Bot Discord (`bot/`)
 
-Le projet est divisé en deux parties principales :
+Le bot assure la liaison en temps réel entre la plateforme web et votre serveur Discord. Il automatise la gestion de la communauté et synchronise les données de jeu.
 
-1.  **Client (Frontend)** : Interface utilisateur construite avec **Vue 3 (Vite + TypeScript)** et stylisée aux couleurs de l'univers League of Legends.
-2.  **Server (Backend)** : API REST construite avec **Node.js (Express + TypeScript)** utilisant **Supabase** comme base de données et système d'authentification.
+### ✨ Fonctionnalités Principales
+
+*   **Synchronisation Automatique** :
+    *   **Profils** : Attribution automatique des rôles "Casteur" et "Agent Libre".
+    *   **Équipes** : Création automatique d'un rôle (avec couleur aléatoire) et d'un salon textuel privé pour chaque équipe créée.
+    *   **Identité** : Mise à jour automatique du pseudo Discord au format `[TAG] Pseudo`.
+*   **Nettoyage Intelligent** : Suppression automatique des rôles et salons sur Discord si une équipe ou un profil est supprimé en base de données.
+*   **Notifications en Temps Réel** : Un canal dédié (`#fwitter-league`) est automatiquement créé pour annoncer les nouveaux scrims et les patch notes.
+*   **Commandes Slash** : Interactions directes pour consulter les données de la ligue.
+
+### ⌨️ Commandes Disponibles
+
+| Commande | Description | Options |
+| :--- | :--- | :--- |
+| `/help` | Affiche la liste des commandes disponibles | - |
+| `/profile` | Affiche la fiche joueur (Rang, Riot ID, rôles, etc.) | `discord_user` ou `plateforme_user` |
+| `/team` | Affiche les détails d'une équipe et ses membres | `name` (nom de l'équipe) |
+| `/ping` | Teste la latence du bot (Admin uniquement) | - |
 
 ---
 
 ## 🚀 Installation & Lancement Rapide
 
-### 1. Cloner le projet
-```bash
-git clone <url-du-repo>
-cd fwitterleague
-```
-
-### 2. Configurer le Backend
-Rends-toi dans le dossier `server`, installe les dépendances et configure ton `.env` :
-```bash
-cd server
-npm install
-cp .env.example .env
-# Remplis le fichier .env avec tes clés Supabase
-npm run dev
-```
-*Le serveur sera lancé par défaut sur [http://localhost:3000](http://localhost:3000).*
-
-### 3. Configurer le Frontend
-Dans un autre terminal, rends-toi dans le dossier `client`, installe les dépendances et lance Vite :
-```bash
-cd client
-npm install
-cp .env.example .env
-# Remplis le fichier .env avec l'URL de ton API et les clés Supabase
-npm run dev
-```
-*L'interface sera accessible sur [http://localhost:5173](http://localhost:5173).*
+... (reste des instructions d'installation) ...
 
 ---
 
 ## 🔒 Variables d'Environnement
 
-Assure-toi de configurer les fichiers `.env` dans `client/` et `server/` avec les informations suivantes de ton projet Supabase :
-*   `SUPABASE_URL`
-*   `SUPABASE_ANON_KEY`
-*   `SUPABASE_SERVICE_ROLE_KEY` (Serveur uniquement)
+### Bot Discord (`bot/.env`)
+
+| Clé | Description |
+| :--- | :--- |
+| `DISCORD_TOKEN` | Token secret du bot Discord |
+| `CLIENT_ID` | ID de l'application Discord |
+| `GUILD_ID` | ID de votre serveur Discord |
+| `TEAM_CATEGORY_ID` | (Optionnel) ID de la catégorie pour les salons d'équipe |
+| `NOTIFICATION_CHANNEL_ID` | (Optionnel) ID du canal pour les annonces (créé par défaut sinon) |
+| `SUPABASE_URL` | URL de votre projet Supabase |
+| `SUPABASE_ANON_KEY` | Clé publique anonyme Supabase |
+| `WEBSITE_URL` | URL de la plateforme web (pour les liens dans les embeds) |
 
 ---
 

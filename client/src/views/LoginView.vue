@@ -45,7 +45,8 @@ function onSuccess() {
 }
 
 function onRegisterSuccess() {
-  notificationStore.show('Inscription reussie !', 'success')
+  notificationStore.show('Inscription réussie !', 'success')
   router.push('/profile')
 }
+
 </script>

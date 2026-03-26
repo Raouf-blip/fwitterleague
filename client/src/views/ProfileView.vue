@@ -12,13 +12,13 @@
         <div class="flex-1">
           <div class="flex items-center gap-3 flex-wrap">
             <h1 class="text-2xl font-extrabold text-text-primary">{{ authStore.profile.username }}</h1>
-            
+
             <!-- Team Badge -->
             <div v-if="team" class="flex items-center gap-1.5 px-2 py-1 bg-gold/10 rounded-lg border border-gold/20 shrink-0">
               <Shield :size="12" class="text-gold" />
               <span class="text-[11px] font-black text-gold uppercase tracking-widest">{{ team.tag || team.name }}</span>
             </div>
-            
+
             <!-- Caster Badge -->
             <div v-if="authStore.profile.is_caster" class="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 rounded-lg border border-purple-500/20 shrink-0">
               <Mic :size="12" class="text-purple-400" />
@@ -60,10 +60,7 @@
               <ExternalLink :size="12" />
               DPM.LOL
             </a>
-            <span
-              v-if="authStore.profile.discord"
-              class="flex items-center gap-1 text-sm text-text-secondary"
-            >
+            <span v-if="authStore.profile.discord_id" class="flex items-center gap-1 text-sm text-text-secondary">
               <DiscordIcon :size="14" class="text-[#5865F2]" />
               {{ authStore.profile.discord }}
             </span>
@@ -153,6 +150,41 @@
     </BaseCard>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Discord Sync Alert Banner (Full Width) -->
+      <div v-if="!authStore.profile.discord_id" class="lg:col-span-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-danger/10 border border-danger/20 gap-4 shadow-lg shadow-danger/5">
+          <div class="flex items-center gap-4 text-center sm:text-left">
+            <div class="p-2 bg-danger/20 rounded-lg shrink-0">
+              <AlertCircle :size="24" class="text-danger" />
+            </div>
+            <div>
+              <p class="font-bold text-text-primary">Synchronisation Discord</p>
+              <p class="text-xs text-text-secondary">Votre compte Discord n'est pas lié. Veuillez lier votre compte Discord dans les paramètres pour synchroniser vos informations avec le serveur.</p>
+            </div>
+          </div>
+          <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
+            Lier mon compte
+          </BaseButton>
+        </div>
+      </div>
+
+      <div v-if="!authStore.profile.riot_id" class="lg:col-span-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between p-4 rounded-xl bg-danger/10 border border-danger/20 gap-4 shadow-lg shadow-danger/5">
+          <div class="flex items-center gap-4 text-center sm:text-left">
+            <div class="p-2 bg-danger/20 rounded-lg shrink-0">
+              <AlertCircle :size="24" class="text-danger" />
+            </div>
+            <div>
+              <p class="font-bold text-text-primary">Synchronisation Riot</p>
+              <p class="text-xs text-text-secondary">Votre compte Riot n'est pas lié. Veuillez entrez votre Riot ID dans les paramètres pour que les autres joueurs puissent vous trouver.</p>
+            </div>
+          </div>
+          <BaseButton variant="danger" size="sm" @click="showSettings = true" class="w-full sm:w-auto shrink-0">
+            Lier mon compte
+          </BaseButton>
+        </div>
+      </div>
+
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
         <!-- Bio -->
@@ -247,8 +279,8 @@
                     <p class="text-xs text-text-secondary mt-0.5 whitespace-pre-wrap break-words" :class="expandedNotifs.has(notif.id) ? '' : 'line-clamp-2'">
                       {{ notif.message }}
                     </p>
-                    <button 
-                      v-if="notif.message && notif.message.length > 100" 
+                    <button
+                      v-if="notif.message && notif.message.length > 100"
                       @click="toggleNotif(notif.id)"
                       class="text-[10px] text-cyan hover:underline mt-1 font-bold uppercase tracking-tight"
                     >
@@ -311,11 +343,11 @@
                   >
                     {{ app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé' }}
                   </BaseBadge>
-                  <BaseButton 
+                  <BaseButton
                     v-if="app.status === 'pending' && canRespond(app)"
-                    variant="ghost" 
-                    size="sm" 
-                    to="/notifications" 
+                    variant="ghost"
+                    size="sm"
+                    to="/notifications"
                     class="!p-1 h-8 w-8"
                     title="Voir les détails"
                   >
@@ -359,7 +391,7 @@
                 <h3 class="font-bold text-text-primary truncate">{{ team.name }}</h3>
                 <div class="flex items-center gap-2 mt-1">
                   <p class="text-[10px] text-gold uppercase tracking-widest font-extrabold px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20">Membre Actif</p>
-                  <RankBadge v-if="team.average_rank && isAdmin" :rank="team.average_rank" />
+                  <RankBadge v-if="team.average_rank" :rank="team.average_rank" />
                 </div>
               </div>
             </div>
@@ -513,6 +545,7 @@
         :initial-riot-id="authStore.profile.riot_id || ''"
         :initial-avatar-url="authStore.profile.avatar_url || ''"
         :initial-discord="authStore.profile.discord || ''"
+        :initial-discord-id="authStore.profile.discord_id || null"
         :initial-is-looking="authStore.profile.is_looking_for_team"
         :initial-roles="authStore.profile.preferred_roles || []"
         :has-team="!!team"
@@ -520,6 +553,7 @@
         :syncing="fetchingRiot"
         :riot-error="riotError"
         @save="handleSaveSettings"
+        @sync="handleRiotSyncOnly"
       />
     </BaseModal>
 
@@ -567,6 +601,7 @@ import {
   Mic,
   ShieldCheck,
   Eye,
+  AlertCircle,
 } from 'lucide-vue-next'
 import DiscordIcon from '../components/icons/DiscordIcon.vue'
 import LolRoleIcon from '../components/icons/LolRoleIcon.vue'
@@ -575,7 +610,7 @@ import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import { useInboxStore } from '../stores/inbox'
-import { getOpggUrl, getDpmUrl, formatRelativeTime, formatDate } from '../lib/formatters'
+import { getOpggUrl, getDpmUrl, formatRelativeTime } from '../lib/formatters'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseBadge from '../components/ui/BaseBadge.vue'
@@ -610,7 +645,6 @@ const sentApplications = ref<any[]>([]);
 
 const notifications = computed(() => inboxStore.notifications)
 const unreadNotifs = computed(() => inboxStore.unreadCount)
-const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin')
 
 const expandedNotifs = ref(new Set<string>())
 function toggleNotif(id: string) {
@@ -619,18 +653,18 @@ function toggleNotif(id: string) {
 }
 
 const allInteractions = computed(() => {
-  const sent = sentApplications.value.map(a => ({ ...a, direction: 'sent' }))
-  const received = inboxStore.applications.map(a => ({ ...a, direction: 'received' }))
-  
+  const sent = sentApplications.value.map((a: any) => ({ ...a, direction: 'sent' }))
+  const received = inboxStore.applications.map((a: any) => ({ ...a, direction: 'received' }))
+
   // Fusionner et retirer les doublons (si une offre apparaît dans les deux)
   const merged = [...sent]
-  received.forEach(r => {
-    if (!merged.find(m => m.id === r.id)) {
+  received.forEach((r: any) => {
+    if (!merged.find((m: any) => m.id === r.id)) {
       merged.push(r)
     }
   })
-  
-  return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+  return merged.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 })
 
 function interactionTitle(app: any) {
@@ -669,11 +703,29 @@ const now = ref(Date.now());
 let syncTimer: any = null;
 
 onMounted(async () => {
-  syncTimer = setInterval(() => {
-    now.value = Date.now();
-  }, 10000);
-  await fetchData();
-});
+  syncTimer = setInterval(() => { now.value = Date.now() }, 10000)
+
+  // Handle Discord Sync results from URL
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('success')) {
+    if (params.get('success') === 'discord_synced') {
+      notificationStore.show('Compte Discord synchronisé !', 'success')
+    }
+    // Clean URL
+    router.replace({ query: {} })
+  } else if (params.has('error')) {
+    const error = params.get('error')
+    if (error === 'discord_denied') {
+      notificationStore.show('Synchronisation Discord annulée.', 'warning')
+    } else {
+      notificationStore.show('Échec de la synchronisation Discord.', 'error')
+    }
+    // Clean URL
+    router.replace({ query: {} })
+  }
+
+  await fetchData()
+})
 
 onUnmounted(() => {
   if (syncTimer) clearInterval(syncTimer);
@@ -760,15 +812,87 @@ async function handleSyncRiot() {
   }
 }
 
-async function handleSaveSettings(data: any) {
-  savingProfile.value = true;
-  riotError.value = "";
+async function handleRiotSyncOnly(newRiotId: string) {
+  if (!newRiotId || !newRiotId.includes('#')) {
+    riotError.value = 'Format invalide (Pseudo#TAG)'
+    return
+  }
+
+  // Allow bypassing the cooldown IF it's a new ID
+  const isNewId = newRiotId !== authStore.profile?.riot_id
+
+  if (isSyncDisabled.value && !isNewId) {
+    notificationStore.show(syncTooltip.value, 'warning')
+    return
+  }
+
+  fetchingRiot.value = true
+  riotError.value = ''
   try {
-    const token = await getToken();
-    await api.patch("/profiles/me", data, token);
-    await authStore.fetchProfile();
-    notificationStore.show("Profil mis à jour", "success");
-    showSettings.value = false;
+    const token = await getToken()
+    await api.post('/profiles/sync-riot', { riotId: newRiotId }, token)
+    await authStore.fetchProfile()
+    notificationStore.show('Profil Riot synchronisé !', 'success')
+    showSettings.value = false
+  } catch (err: any) {
+    let msg = err.message
+    try { msg = JSON.parse(err.message).error || msg } catch(e) {}
+
+    if (msg.includes('introuvable')) {
+      riotError.value = 'Riot ID introuvable.'
+    } else if (msg.includes('patienter')) {
+      riotError.value = 'Veuillez patienter.'
+    } else {
+      riotError.value = 'Erreur de synchronisation.'
+    }
+    notificationStore.show('Erreur Riot Sync: ' + msg, 'error')
+  } finally {
+    fetchingRiot.value = false
+  }
+}
+
+
+async function markAsRead(id: string) {
+  try {
+    await inboxStore.markAsRead(id)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function handleSaveSettings(data: { bio: string; riot_id: string; avatar_url: string; discord: string; discord_id: string | null; is_looking_for_team: boolean; preferred_roles: string[] }) {
+  savingProfile.value = true
+  riotError.value = ''
+
+  try {
+    const token = await getToken()
+
+    // Step 1: Update Profile data
+    await api.patch('/profiles/me', data, token)
+
+    // Step 2: Auto-sync Riot data ONLY if Riot ID has changed relative to our last loaded profile
+    if (data.riot_id !== authStore.profile?.riot_id && data.riot_id && data.riot_id.includes('#')) {
+      fetchingRiot.value = true
+      try {
+        await api.post('/profiles/sync-riot', { riotId: data.riot_id }, token)
+      } catch (syncErr: any) {
+        let msg = syncErr.message
+        try { msg = JSON.parse(syncErr.message).error || msg } catch(e) {}
+
+        if (msg.includes('introuvable')) {
+          riotError.value = 'Riot ID introuvable. Ce compte n\'existe pas.'
+        } else if (msg.includes('patienter')) {
+          riotError.value = 'Veuillez patienter 2 minutes entre chaque synchronisation.'
+        } else {
+          riotError.value = 'Impossible de lier ce compte Riot.'
+        }
+        return // Keep modal open on error
+      }
+    }
+    
+    await authStore.fetchProfile()
+    notificationStore.show("Profil mis à jour", "success")
+    showSettings.value = false
   } catch (err: any) {
     if (err.response?.data?.error?.includes("Riot ID")) {
       riotError.value = err.response.data.error;
@@ -779,7 +903,8 @@ async function handleSaveSettings(data: any) {
       );
     }
   } finally {
-    savingProfile.value = false;
+    savingProfile.value = false
+    fetchingRiot.value = false
   }
 }
 
@@ -824,9 +949,5 @@ async function leaveTeam() {
 function logout() {
   authStore.signOut();
   router.push("/login");
-}
-
-function markAsRead(id: string) {
-  inboxStore.markAsRead(id);
 }
 </script>

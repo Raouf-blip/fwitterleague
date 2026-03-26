@@ -67,7 +67,7 @@
       </div>
     </div>
 
-    <div v-if="player.discord" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+    <div v-if="player.discord_id" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
       <DiscordIcon :size="12" class="text-[#5865F2]" />
       <span>{{ player.discord }}</span>
     </div>

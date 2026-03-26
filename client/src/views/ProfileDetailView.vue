@@ -62,13 +62,10 @@
               <ExternalLink :size="12" />
               DPM.LOL
             </a>
-            <span
-              v-if="profile.discord"
-              class="flex items-center gap-1 text-sm text-text-secondary"
-            >
-              <DiscordIcon :size="14" class="text-[#5865F2]" />
-              {{ profile.discord }}
-            </span>
+            <div v-if="profile.discord_id" class="flex items-center gap-1.5 mt-2 text-xs text-text-muted">
+              <DiscordIcon :size="12" class="text-[#5865F2]" />
+              <span>{{ profile.discord }}</span>
+            </div>
           </div>
           <div class="flex items-center gap-4 mt-3">
             <RankBadge :rank="profile.rank" :lp="profile.lp" />
@@ -221,7 +218,7 @@
               <h3 class="font-bold text-text-primary text-sm">
                 {{ team.name }} [{{ team.tag }}]
               </h3>
-              <div v-if="team.average_rank && isAdmin" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
+              <div v-if="team.average_rank" class="mt-1 flex items-center gap-1.5 text-[10px] text-text-muted font-bold">
                 Elo moyen :
                 <RankBadge :rank="team.average_rank" />
               </div>
@@ -300,7 +297,6 @@ const opggUrl = computed(() =>
 const dpmUrl = computed(() =>
   profile.value?.riot_id ? getDpmUrl(profile.value.riot_id) : null,
 );
-const isAdmin = computed(() => authStore.profile?.role === 'admin' || authStore.profile?.role === 'superadmin');
 
 const canRecruit = computed(() => {
   return (

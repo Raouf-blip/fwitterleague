@@ -23,14 +23,17 @@
     <BaseInput
       v-model="riotId"
       label="Riot ID"
-      placeholder="Pseudo#TAG (Optionnel)"
+      placeholder="Pseudo#TAG"
+      required
       :error="riotError"
     />
-    <BaseInput
-      v-model="discord"
-      label="Discord"
-      placeholder="tonpseudo (Optionnel)"
-    />
+
+    <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+      <p class="text-[10px] font-black uppercase tracking-widest text-[#5865F2] mb-1">Information Discord</p>
+      <p class="text-xs text-text-secondary leading-relaxed">
+        La synchronisation Discord se fera dans un second temps depuis votre profil pour garantir la liaison officielle avec le Bot.
+      </p>
+    </div>
 
     <RoleSelector
       v-model="preferredRoles"

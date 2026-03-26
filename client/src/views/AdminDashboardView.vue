@@ -56,7 +56,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="u in filteredUsers"
+                v-for="u in paginatedUsers"
                 :key="u.id"
                 class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
                 :class="{ 'opacity-50': u.role === 'admin' && !isSuperAdmin }"
@@ -133,6 +133,27 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="usersTotalPages > 1" class="flex items-center justify-center gap-4 pt-4 border-t border-white/5">
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            :disabled="usersPage === 1"
+            @click="usersPage--"
+          >
+            <template #icon><ChevronLeft :size="16" /></template>
+          </BaseButton>
+          <span class="text-xs font-bold text-text-muted">Page {{ usersPage }} / {{ usersTotalPages }}</span>
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            :disabled="usersPage === usersTotalPages"
+            @click="usersPage++"
+          >
+            <template #icon><ChevronRight :size="16" /></template>
+          </BaseButton>
+        </div>
       </BaseCard>
     </div>
 
@@ -163,7 +184,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="t in filteredTeams"
+                v-for="t in paginatedTeams"
                 :key="t.id"
                 class="border-b border-border/50 hover:bg-white/[0.02] transition-colors"
               >
@@ -232,6 +253,27 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <div v-if="teamsTotalPages > 1" class="flex items-center justify-center gap-4 pt-4 border-t border-white/5">
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            :disabled="teamsPage === 1"
+            @click="teamsPage--"
+          >
+            <template #icon><ChevronLeft :size="16" /></template>
+          </BaseButton>
+          <span class="text-xs font-bold text-text-muted">Page {{ teamsPage }} / {{ teamsTotalPages }}</span>
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            :disabled="teamsPage === teamsTotalPages"
+            @click="teamsPage++"
+          >
+            <template #icon><ChevronRight :size="16" /></template>
+          </BaseButton>
+        </div>
       </BaseCard>
     </div>
 
@@ -251,7 +293,7 @@
 
         <div v-else class="space-y-4">
           <div
-            v-for="pn in patchNotes"
+            v-for="pn in paginatedPatchNotes"
             :key="pn.id"
             class="flex items-start justify-between p-4 rounded-xl bg-white/5 border border-white/10"
           >
@@ -276,6 +318,27 @@
                 <template #icon><Trash2 :size="14" /></template>
               </BaseButton>
             </div>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="pnTotalPages > 1" class="flex items-center justify-center gap-4 pt-4 border-t border-white/5">
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              :disabled="pnPage === 1"
+              @click="pnPage--"
+            >
+              <template #icon><ChevronLeft :size="16" /></template>
+            </BaseButton>
+            <span class="text-xs font-bold text-text-muted">Page {{ pnPage }} / {{ pnTotalPages }}</span>
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              :disabled="pnPage === pnTotalPages"
+              @click="pnPage++"
+            >
+              <template #icon><ChevronRight :size="16" /></template>
+            </BaseButton>
           </div>
         </div>
       </BaseCard>
@@ -501,8 +564,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic, Plus, Pencil, X } from 'lucide-vue-next'
+import { ref, computed, onMounted, watch } from 'vue'
+import {
+  Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic, Plus, Pencil, X,
+  ChevronLeft, ChevronRight
+} from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
 import { useAuthStore } from '../stores/auth'
@@ -578,6 +644,33 @@ const pnForm = ref<{ version: string; title: string; dateInput: string; categori
   title: '',
   dateInput: getTodayDate(),
   categories: [],
+})
+
+const pnPage = ref(1)
+const pnPerPage = 10
+
+// Users pagination
+const usersPage = ref(1)
+const usersPerPage = 10
+const usersTotalPages = computed(() => Math.ceil(filteredUsers.value.length / usersPerPage))
+const paginatedUsers = computed(() => {
+  const start = (usersPage.value - 1) * usersPerPage
+  return filteredUsers.value.slice(start, start + usersPerPage)
+})
+
+// Teams pagination
+const teamsPage = ref(1)
+const teamsPerPage = 10
+const teamsTotalPages = computed(() => Math.ceil(filteredTeams.value.length / teamsPerPage))
+const paginatedTeams = computed(() => {
+  const start = (teamsPage.value - 1) * teamsPerPage
+  return filteredTeams.value.slice(start, start + teamsPerPage)
+})
+
+const pnTotalPages = computed(() => Math.ceil(patchNotes.value.length / pnPerPage))
+const paginatedPatchNotes = computed(() => {
+  const start = (pnPage.value - 1) * pnPerPage
+  return patchNotes.value.slice(start, start + pnPerPage)
 })
 
 function getTodayDate() {
@@ -670,6 +763,11 @@ const filteredUsers = computed(() => {
   return result
 })
 
+// Reset pages on filter changes
+watch([userSearch, roleFilter, statusFilter], () => {
+  usersPage.value = 1
+})
+
 const filteredTeams = computed(() => {
   if (!teamSearch.value) return teams.value
   const q = teamSearch.value.toLowerCase()
@@ -677,6 +775,10 @@ const filteredTeams = computed(() => {
     t.name.toLowerCase().includes(q) ||
     t.tag.toLowerCase().includes(q)
   )
+})
+
+watch(teamSearch, () => {
+  teamsPage.value = 1
 })
 
 const addPlayerResults = computed(() => {
@@ -877,6 +979,9 @@ async function removeMember(profileId: string) {
 async function fetchPatchNotes() {
   try {
     patchNotes.value = await api.get('/patchnotes')
+    if (pnPage.value > pnTotalPages.value && pnTotalPages.value > 0) {
+      pnPage.value = pnTotalPages.value
+    }
   } catch (e: any) {
     console.error('Erreur chargement patch notes:', e)
   }
