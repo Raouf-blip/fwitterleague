@@ -8,7 +8,12 @@ const router = Router();
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fwitterleague.lol' : 'http://localhost:5173');
+
+if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
+  console.warn('[Discord OAuth] Warning: FRONTEND_URL is not set in production. Using fallback: https://fwitterleague.lol');
+}
+
 
 // Helper to sign/verify state (prevents CSRF and links the response to the right user)
 function signState(userId: string): string {
