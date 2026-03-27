@@ -41,7 +41,7 @@
           {{ item.message }}
         </p>
         <button
-          v-if="item.message.length > 20"
+          v-if="item.message.length > 50"
           @click="showFullMessage = !showFullMessage"
           class="text-xs text-cyan hover:underline inline-block mt-1"
         >

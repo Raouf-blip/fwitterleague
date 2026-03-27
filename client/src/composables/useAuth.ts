@@ -1,21 +1,24 @@
 import { supabase } from '../lib/supabase'
 
 let cachedToken: string | undefined
-let cacheExpiry = 0
+
+function getTokenExpiry(token: string): number {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000
+  } catch { return 0 }
+}
 
 export async function getToken(): Promise<string | undefined> {
-  const now = Date.now()
-  if (cachedToken && now < cacheExpiry) {
+  if (cachedToken && Date.now() < getTokenExpiry(cachedToken) - 60_000) {
     return cachedToken
   }
+  cachedToken = undefined
   const { data: { session } } = await supabase.auth.getSession()
   cachedToken = session?.access_token
-  // Cache for 5 minutes (tokens last much longer)
-  cacheExpiry = now + 5 * 60 * 1000
   return cachedToken
 }
 
 export function clearTokenCache() {
   cachedToken = undefined
-  cacheExpiry = 0
 }

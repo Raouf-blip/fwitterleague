@@ -4,11 +4,13 @@ import { authenticate } from '../middlewares/auth';
 
 const router = Router();
 
+const PUBLIC_AGENT_COLUMNS = 'id, username, avatar_url, bio, rank, lp, winrate, riot_id, discord, preferred_roles, is_looking_for_team, is_captain, is_caster, role, created_at';
+
 // Public: List all players (Free Agents prioritized in frontend)
 router.get('/agents', async (req, res) => {
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('*, team_members(team_id, team:team_id(name, tag))')
+    .select(`${PUBLIC_AGENT_COLUMNS}, team_members(team_id, team:team_id(name, tag))`)
     .order('created_at', { ascending: false });
 
   if (error) return res.status(400).json({ error: error.message });
@@ -60,7 +62,7 @@ router.get('/inbox', authenticate, async (req: any, res) => {
 
 // Private: Mark notification as read
 router.patch('/notifications/:id', authenticate, async (req: any, res) => {
-  const { data, error } = await supabase.from('notifications').update({ is_read: true }).eq('id', req.params.id).select().single();
+  const { data, error } = await supabase.from('notifications').update({ is_read: true }).eq('id', req.params.id).eq('user_id', req.user.id).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });

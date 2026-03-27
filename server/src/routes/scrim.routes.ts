@@ -570,10 +570,21 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
   }
 
   // Insert stats
-  // On suppose que le client envoie un tableau propre
   if (stats && Array.isArray(stats) && stats.length > 0) {
-    // Determine game duration for CS/min if not provided in stats
-    // Priority: req.body.game_duration -> scrim.game_duration
+    // Validate that all user_ids are actual participants of this scrim
+    const { data: scrimParticipants } = await supabase
+      .from("scrim_participants")
+      .select("user_id")
+      .eq("scrim_id", id);
+    const participantIds = new Set((scrimParticipants || []).map((p: any) => p.user_id));
+
+    const invalidUsers = stats.filter((s: any) => !participantIds.has(s.user_id));
+    if (invalidUsers.length > 0) {
+      return res.status(400).json({
+        error: "Certains joueurs ne sont pas participants de ce scrim.",
+      });
+    }
+
     const durationSec = game_duration || scrim.game_duration || 0;
     const durationMin = durationSec > 0 ? durationSec / 60 : 0;
 
@@ -615,21 +626,53 @@ router.post("/:id/results", authenticate, async (req: any, res) => {
 // POST /:id/analyze-screenshot - AI Vision Analysis for Stats
 router.post("/:id/analyze-screenshot", authenticate, async (req: any, res) => {
   const { id } = req.params;
+  const userId = req.user.id;
   const { imageUrl } = req.body;
 
   if (!imageUrl) {
     return res.status(400).json({ error: "Aucune URL d'image fournie." });
   }
 
+  const ALLOWED_IMAGE_HOSTS = [
+    process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).hostname : '',
+    'supabase.co',
+  ].filter(Boolean);
+
   try {
-    // 1. Get Participants for context based on Scrim Type
+    const parsedUrl = new URL(imageUrl);
+    if (!ALLOWED_IMAGE_HOSTS.some(host => parsedUrl.hostname.endsWith(host))) {
+      return res.status(400).json({ error: "L'URL de l'image n'est pas autorisée." });
+    }
+  } catch {
+    return res.status(400).json({ error: "URL d'image invalide." });
+  }
+
+  try {
     const { data: scrim } = await supabase
       .from("scrims")
-      .select("type, challenger_team_id, challenged_team_id")
+      .select("type, creator_id, challenger_team_id, challenged_team_id, challenger_team:challenger_team_id(captain_id), challenged_team:challenged_team_id(captain_id)")
       .eq("id", id)
       .single();
 
     if (!scrim) throw new Error("Scrim introuvable");
+
+    // Verify user is creator, captain, or participant
+    const isCreator = scrim.creator_id === userId;
+    const isChallengerCaptain = (scrim.challenger_team as any)?.captain_id === userId;
+    const isChallengedCaptain = (scrim.challenged_team as any)?.captain_id === userId;
+
+    if (!isCreator && !isChallengerCaptain && !isChallengedCaptain) {
+      const { data: participation } = await supabase
+        .from("scrim_participants")
+        .select("id")
+        .eq("scrim_id", id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!participation) {
+        return res.status(403).json({ error: "Vous n'êtes pas participant de ce scrim." });
+      }
+    }
 
     let participants: any[] = [];
 

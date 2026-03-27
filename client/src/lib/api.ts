@@ -1,6 +1,8 @@
+import { supabase } from './supabase'
+import { clearTokenCache } from '../composables/useAuth'
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
 
-// Timeout par défaut augmenté à 60s pour les traitements IA longs (OCR Gemini)
 async function fetchWithTimeout(
   url: string,
   options: any = {},
@@ -25,14 +27,33 @@ async function fetchWithTimeout(
   }
 }
 
+async function authenticatedFetch(
+  url: string,
+  options: any,
+  token?: string,
+): Promise<Response> {
+  if (token) options.headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetchWithTimeout(url, options);
+
+  if (res.status === 401 && token) {
+    clearTokenCache();
+    const { data: { session } } = await supabase.auth.refreshSession();
+    if (session?.access_token) {
+      options.headers["Authorization"] = `Bearer ${session.access_token}`;
+      return fetchWithTimeout(url, options);
+    }
+  }
+
+  return res;
+}
+
 export const api = {
   async get(endpoint: string, token?: string) {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, { headers });
+    const res = await authenticatedFetch(`${API_URL}${endpoint}`, { headers }, token);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -41,13 +62,12 @@ export const api = {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+    const res = await authenticatedFetch(`${API_URL}${endpoint}`, {
       method: "PATCH",
       headers,
       body: JSON.stringify(body),
-    });
+    }, token);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -56,26 +76,24 @@ export const api = {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+    const res = await authenticatedFetch(`${API_URL}${endpoint}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
-    });
+    }, token);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async put(endpoint: string, body: any, token?: string) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
-    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+
+    const res = await authenticatedFetch(`${API_URL}${endpoint}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
-    });
+    }, token);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -84,12 +102,11 @@ export const api = {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+    const res = await authenticatedFetch(`${API_URL}${endpoint}`, {
       method: "DELETE",
       headers,
-    });
+    }, token);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
