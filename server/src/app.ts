@@ -14,9 +14,9 @@ import authRoutes from './routes/auth.routes';
 const app = express();
 
 app.use(helmet());
-// const FRONTEND_ORIGIN = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+const FRONTEND_ORIGIN = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
 app.use(cors({
-  origin: 'https://fwitterleague.lol/',
+  origin: FRONTEND_ORIGIN,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
