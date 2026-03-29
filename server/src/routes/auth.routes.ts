@@ -15,22 +15,37 @@ if (process.env.NODE_ENV === 'production' && !process.env.FRONTEND_URL) {
 }
 
 
-// Helper to sign/verify state (prevents CSRF and links the response to the right user)
+const STATE_TTL = 10 * 60 * 1000;
+
+function getStateSecret(): string {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for OAuth state signing');
+  return secret;
+}
+
 function signState(userId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'default_secret';
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(userId);
-  return `${userId}.${hmac.digest('hex')}`;
+  const timestamp = Date.now().toString(36);
+  const payload = `${userId}.${timestamp}`;
+  const hmac = crypto.createHmac('sha256', getStateSecret());
+  hmac.update(payload);
+  return `${payload}.${hmac.digest('hex')}`;
 }
 
 function verifyState(state: string): string | null {
-  const [userId, mac] = state.split('.');
-  if (!userId || !mac) return null;
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'default_secret';
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(userId);
-  if (hmac.digest('hex') === mac) return userId;
-  return null;
+  const parts = state.split('.');
+  if (parts.length !== 3) return null;
+  const [userId, timestamp, mac] = parts;
+  if (!userId || !timestamp || !mac) return null;
+
+  const payload = `${userId}.${timestamp}`;
+  const hmac = crypto.createHmac('sha256', getStateSecret());
+  hmac.update(payload);
+  if (hmac.digest('hex') !== mac) return null;
+
+  const stateTime = parseInt(timestamp, 36);
+  if (Date.now() - stateTime > STATE_TTL) return null;
+
+  return userId;
 }
 
 // Route to get the Discord Authorization URL

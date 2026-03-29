@@ -10,9 +10,9 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`🚀 FWITTERLEAGUE Server ready at http://localhost:${port}/api/v1`);
 
-  // Planification: tous les jours à 23:59:59
-  cron.schedule('59 59 23 * * *', () => {
-    console.log('[Cron] Exécution de la tâche journalière : syncAllRiotProfiles');
+  // Planification: toutes les heures
+  cron.schedule('0 0 * * * *', () => {
+    console.log('[Cron] Synchronisation horaire Riot');
     syncAllRiotProfiles();
   });
 });

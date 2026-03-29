@@ -26,6 +26,58 @@ router.get('/', authenticate, authorizeAdmin, async (req: any, res) => {
   res.json(result);
 });
 
+// Private: Delete my account (GDPR)
+router.delete("/me", authenticate, async (req: any, res) => {
+  const { data: team } = await supabase
+    .from("teams")
+    .select("id, name")
+    .eq("captain_id", req.user.id)
+    .maybeSingle();
+
+  if (team) {
+    const { checkTeamLock } = await import("../utils/team-lock");
+    if (await checkTeamLock(team.id)) {
+      return res.status(403).json({
+        error:
+          "Impossible de supprimer votre compte : votre équipe est engagée dans un tournoi actif.",
+      });
+    }
+
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("profile_id")
+      .eq("team_id", team.id);
+    const profileIds = members?.map((m) => m.profile_id) || [];
+
+    const notificationPromises = profileIds
+      .filter((id) => id !== req.user.id)
+      .map((id) =>
+        supabase.from("notifications").insert({
+          user_id: id,
+          title: "Équipe dissoute",
+          message: `Votre équipe ${team.name} a été dissoute car le capitaine a supprimé son compte.`,
+          type: "system",
+        }),
+      );
+    await Promise.all(notificationPromises);
+
+    await supabase
+      .from("profiles")
+      .update({ is_captain: false, is_looking_for_team: false })
+      .in("id", profileIds);
+    await supabase.from("teams").delete().eq("id", team.id);
+  }
+
+  const { error: authError } = await supabase.auth.admin.deleteUser(
+    req.user.id,
+  );
+  if (authError) return res.status(400).json({ error: authError.message });
+
+  await supabase.from("profiles").delete().eq("id", req.user.id);
+
+  res.json({ message: "Compte supprimé définitivement." });
+});
+
 // SuperAdmin: Delete a user account (HEAD version with explicit cleanup)
 router.delete(
   "/:id",
@@ -77,45 +129,33 @@ router.delete(
 
 // Private: Get my profile (Scrim version with stats)
 router.get("/me", authenticate, async (req: any, res) => {
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", req.user.id)
-    .single();
-  if (error) {
-    if (error.code === "PGRST116")
+  const userId = req.user.id;
+
+  const [profileResult, memberResult, statsResult] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userId).single(),
+    supabase.from("team_members").select("team_id").eq("profile_id", userId).maybeSingle(),
+    supabase.from("player_stats_view").select("games_played, wins, losses, kda, avg_cs_min").eq("id", userId).maybeSingle(),
+  ]);
+
+  if (profileResult.error) {
+    if (profileResult.error.code === "PGRST116")
       return res.status(404).json({ error: "Profil non existant." });
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: profileResult.error.message });
   }
 
-  const { data: member } = await supabase
-    .from("team_members")
-    .select("team_id")
-    .eq("profile_id", req.user.id)
-    .maybeSingle();
   let team = null;
-  if (member) {
-    const { data: teamData } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("id", member.team_id)
-      .single();
-    if (teamData) {
-      const { count } = await supabase
-        .from("team_members")
-        .select("*", { count: "exact", head: true })
-        .eq("team_id", member.team_id);
-      team = { ...teamData, member_count: count || 0 };
+  if (memberResult.data) {
+    const teamId = memberResult.data.team_id;
+    const [teamResult, countResult] = await Promise.all([
+      supabase.from("teams").select("*").eq("id", teamId).single(),
+      supabase.from("team_members").select("*", { count: "exact", head: true }).eq("team_id", teamId),
+    ]);
+    if (teamResult.data) {
+      team = { ...teamResult.data, member_count: countResult.count || 0 };
     }
   }
 
-  // Get Scrim Stats via View
-  const { data: statsView } = await supabase
-    .from("player_stats_view")
-    .select("games_played, wins, losses, kda, avg_cs_min")
-    .eq("id", req.user.id)
-    .maybeSingle();
-
+  const statsView = statsResult.data;
   const scrim_stats =
     statsView && statsView.games_played > 0
       ? {
@@ -127,16 +167,19 @@ router.get("/me", authenticate, async (req: any, res) => {
         }
       : null;
 
-  res.json({ ...profile, team, scrim_stats });
+  res.json({ ...profileResult.data, team, scrim_stats });
 });
 
 // Private: Update my profile
 router.patch("/me", authenticate, async (req: any, res) => {
-  // On empêche la modification manuelle du rôle via cette route
-  const { role, is_captain, last_riot_sync, riot_id, ...updateData } = req.body;
+  const ALLOWED_FIELDS = ['username', 'bio', 'avatar_url', 'preferred_roles', 'is_looking_for_team'];
+  const updateData: Record<string, any> = {};
+  for (const key of ALLOWED_FIELDS) {
+    if (req.body[key] !== undefined) updateData[key] = req.body[key];
+  }
 
-  // Autoriser UNIQUEMENT la suppression du riot_id manuelle. L'ajout/modificaiton passe par /sync-riot.
-  if (riot_id === "" || riot_id === null) {
+  // Autoriser UNIQUEMENT la suppression du riot_id manuelle. L'ajout/modification passe par /sync-riot.
+  if (req.body.riot_id === "" || req.body.riot_id === null) {
     updateData.riot_id = null;
     updateData.rank = "Unranked";
     updateData.winrate = 0;
@@ -151,63 +194,6 @@ router.patch("/me", authenticate, async (req: any, res) => {
     .single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
-});
-
-// Private: Delete my account (GDPR)
-router.delete("/me", authenticate, async (req: any, res) => {
-  // Case 1: If user is captain, disband their team first
-  const { data: team } = await supabase
-    .from("teams")
-    .select("id, name")
-    .eq("captain_id", req.user.id)
-    .maybeSingle();
-
-  if (team) {
-    // Check if team is locked (active tournament)
-    const { checkTeamLock } = await import("../utils/team-lock");
-    if (await checkTeamLock(team.id)) {
-      return res.status(403).json({
-        error:
-          "Impossible de supprimer votre compte : votre équipe est engagée dans un tournoi actif.",
-      });
-    }
-
-    const { data: members } = await supabase
-      .from("team_members")
-      .select("profile_id")
-      .eq("team_id", team.id);
-    const profileIds = members?.map((m) => m.profile_id) || [];
-
-    // Notify other members
-    const notificationPromises = profileIds
-      .filter((id) => id !== req.user.id)
-      .map((id) =>
-        supabase.from("notifications").insert({
-          user_id: id,
-          title: "Équipe dissoute",
-          message: `Votre équipe ${team.name} a été dissoute car le capitaine a supprimé son compte.`,
-          type: "system",
-        }),
-      );
-    await Promise.all(notificationPromises);
-
-    await supabase
-      .from("profiles")
-      .update({ is_captain: false, is_looking_for_team: false })
-      .in("id", profileIds);
-    await supabase.from("teams").delete().eq("id", team.id);
-  }
-
-  // Note: auth.deleteUser nécessite une clé service_role (déjà configurée dans notre client supabase serveur)
-  const { error: authError } = await supabase.auth.admin.deleteUser(
-    req.user.id,
-  );
-  if (authError) return res.status(400).json({ error: authError.message });
-
-  // Le profil sera supprimé via cascade ou manuellement :
-  await supabase.from("profiles").delete().eq("id", req.user.id);
-
-  res.json({ message: "Compte supprimé définitivement." });
 });
 
 // SuperAdmin Only: Change user role (promote to admin)
@@ -252,38 +238,31 @@ router.patch('/:id/status', authenticate, authorizeAdmin, async (req: any, res) 
   res.json(data);
 });
 
+const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, bio, rank, lp, winrate, riot_id, discord, discord_id, preferred_roles, is_looking_for_team, is_captain, is_caster, role, created_at';
+
 // Public: Get profile by ID
 router.get("/:id", async (req, res) => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", req.params.id)
-    .single();
-  if (error) return res.status(404).json({ error: "Profil non trouvé" });
+  const targetId = req.params.id;
 
-  const { data: member } = await supabase
-    .from("team_members")
-    .select("team_id")
-    .eq("profile_id", req.params.id)
-    .maybeSingle();
+  const [profileResult, memberResult, statsResult] = await Promise.all([
+    supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).eq("id", targetId).single(),
+    supabase.from("team_members").select("team_id").eq("profile_id", targetId).maybeSingle(),
+    supabase.from("player_stats_view").select("games_played, wins, losses, kda, avg_cs_min").eq("id", targetId).maybeSingle(),
+  ]);
+
+  if (profileResult.error) return res.status(404).json({ error: "Profil non trouvé" });
 
   let team = null;
-  if (member) {
+  if (memberResult.data) {
     const { data: teamData } = await supabase
       .from("teams")
       .select("*")
-      .eq("id", member.team_id)
+      .eq("id", memberResult.data.team_id)
       .single();
     team = teamData;
   }
 
-  // Get Scrim Stats via View
-  const { data: statsView } = await supabase
-    .from("player_stats_view")
-    .select("games_played, wins, losses, kda, avg_cs_min")
-    .eq("id", req.params.id)
-    .maybeSingle();
-
+  const statsView = statsResult.data;
   const scrim_stats =
     statsView && statsView.games_played > 0
       ? {
@@ -295,7 +274,7 @@ router.get("/:id", async (req, res) => {
         }
       : null;
 
-  res.json({ ...data, team, scrim_stats });
+  res.json({ ...profileResult.data, team, scrim_stats });
 });
 
 // Private: Get my sent applications

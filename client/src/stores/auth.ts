@@ -10,9 +10,11 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const profile = ref<Profile | null>(null)
   const loading = ref(true)
+  const profileLoading = ref(false)
 
   async function fetchProfile(token?: string) {
     if (!user.value) return
+    profileLoading.value = true
     try {
       if (!token) {
         const { data: { session } } = await supabase.auth.getSession()
@@ -33,6 +35,8 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (e) {
       console.error('Erreur API Profil:', e)
+    } finally {
+      profileLoading.value = false
     }
   }
 
@@ -40,21 +44,20 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user ?? null
+    loading.value = false
     if (user.value && session) {
-      // Reuse the token we already have - no double getSession()
-      await fetchProfile(session.access_token)
+      fetchProfile(session.access_token)
     }
 
     supabase.auth.onAuthStateChange(async (_event, session) => {
       clearTokenCache()
       user.value = session?.user ?? null
       if (user.value && session) {
-        await fetchProfile(session.access_token)
+        fetchProfile(session.access_token)
       } else {
         profile.value = null
       }
     })
-    loading.value = false
   }
 
   async function signOut() {
@@ -64,5 +67,5 @@ export const useAuthStore = defineStore('auth', () => {
     profile.value = null
   }
 
-  return { user, profile, loading, initialize, fetchProfile, signOut }
+  return { user, profile, loading, profileLoading, initialize, fetchProfile, signOut }
 })

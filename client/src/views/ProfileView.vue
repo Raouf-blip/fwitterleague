@@ -569,7 +569,7 @@
     />
   </div>
 
-  <BaseSpinner v-else-if="authStore.loading" />
+  <BaseSpinner v-else-if="authStore.loading || authStore.profileLoading" />
 
   <BaseEmptyState
     v-else
