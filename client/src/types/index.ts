@@ -135,6 +135,29 @@ export interface TournamentRegistration {
   team: Team
 }
 
+export interface AppNotification {
+  id: string
+  user_id: string
+  title: string
+  message: string
+  type: string
+  is_read: boolean
+  metadata?: Record<string, any>
+  created_at: string
+}
+
+export interface Application {
+  id: string
+  team_id: string
+  sender_id: string
+  message: string | null
+  status: 'pending' | 'accepted' | 'rejected'
+  type: 'application' | 'offer'
+  created_at: string
+  team?: { name: string; tag: string }
+  sender?: { id: string; username: string; rank: string | null }
+}
+
 export interface Match {
   id: string
   tournament_id: string

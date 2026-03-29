@@ -54,9 +54,17 @@ router.get('/inbox', authenticate, async (req: any, res) => {
 
   const { data: interactions } = await query.order('created_at', { ascending: false });
 
+  // 3. Notifications envoyées par l'admin (type admin_message avec sender_id dans metadata)
+  const { data: sentNotifications } = await supabase
+    .from('notifications')
+    .select('*, recipient:user_id(id, username, avatar_url)')
+    .eq('metadata->>sender_id', userId)
+    .order('created_at', { ascending: false });
+
   res.json({
     notifications: notifications || [],
-    interactions: interactions || []
+    interactions: interactions || [],
+    sent_notifications: sentNotifications || []
   });
 });
 

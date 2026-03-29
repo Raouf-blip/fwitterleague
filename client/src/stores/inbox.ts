@@ -9,6 +9,7 @@ export const useInboxStore = defineStore('inbox', () => {
   const authStore = useAuthStore()
   const notifications = ref<AppNotification[]>([])
   const applications = ref<Application[]>([])
+  const sentNotifications = ref<any[]>([])
   const loading = ref(false)
 
   const unreadCount = computed(() => {
@@ -46,6 +47,7 @@ export const useInboxStore = defineStore('inbox', () => {
       const res = await api.get('/social/inbox', token)
       notifications.value = res.notifications || []
       applications.value = res.interactions || []
+      sentNotifications.value = res.sent_notifications || []
     } catch (e) {
       console.error('Failed to fetch inbox:', e)
     } finally {
@@ -77,6 +79,7 @@ export const useInboxStore = defineStore('inbox', () => {
   return {
     notifications,
     applications,
+    sentNotifications,
     loading,
     unreadCount,
     fetchInbox,

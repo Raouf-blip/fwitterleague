@@ -15,11 +15,14 @@
           ? 'bg-gold-muted text-gold'
           : item.type === 'application'
             ? 'bg-cyan-muted text-cyan'
-            : 'bg-white/5 text-text-muted',
+            : item.type === 'admin_message'
+              ? 'bg-purple-500/10 text-purple-400'
+              : 'bg-white/5 text-text-muted',
       ]"
     >
       <UserPlus v-if="item.type === 'offer'" :size="16" />
       <Send v-else-if="item.type === 'application'" :size="16" />
+      <MessageSquare v-else-if="item.type === 'admin_message'" :size="16" />
       <Bell v-else :size="16" />
     </div>
 
@@ -84,6 +87,20 @@
         Joueur invité :
         <strong class="text-text-secondary">{{ item.sender.username }}</strong>
       </div>
+      <div
+        v-if="item.type === 'admin_message' && item.metadata?.sender_username && direction === 'inbox'"
+        class="text-xs text-text-muted mt-1.5"
+      >
+        De :
+        <strong class="text-text-secondary">{{ item.metadata.sender_username }}</strong>
+      </div>
+      <div
+        v-if="item.type === 'admin_message' && item.recipient && direction === 'outbox'"
+        class="text-xs text-text-muted mt-1.5"
+      >
+        Envoyé à :
+        <strong class="text-text-secondary">{{ item.recipient.username }}</strong>
+      </div>
 
       <!-- Scrim Schedule -->
       <div
@@ -142,7 +159,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { UserPlus, Send, Bell, Check, Calendar } from "lucide-vue-next";
+import { UserPlus, Send, Bell, Check, Calendar, MessageSquare } from "lucide-vue-next";
 import { formatRelativeTime, formatDateTime } from "../../lib/formatters";
 import { STATUS_MAP } from "../../lib/constants";
 import BaseBadge from "../ui/BaseBadge.vue";
@@ -171,6 +188,7 @@ const isUnread = computed(() => {
 const defaultTitle = computed(() => {
   if (props.item.type === "offer") return "Invitation de recrutement";
   if (props.item.type === "application") return "Candidature";
+  if (props.item.type === "admin_message") return "Message admin";
   return "Notification";
 });
 

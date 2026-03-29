@@ -384,4 +384,29 @@ router.post("/sync-riot", authenticate, async (req: any, res) => {
   }
 });
 
+// Admin: Send notification to a user
+router.post('/:id/notify', authenticate, authorizeAdmin, async (req: any, res) => {
+  const { title, message } = req.body;
+  if (!title || !message) {
+    return res.status(400).json({ error: 'Titre et message requis.' });
+  }
+
+  const { data: sender } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', req.user.id)
+    .single();
+
+  const { error } = await supabase.from('notifications').insert({
+    user_id: req.params.id,
+    title,
+    message,
+    type: 'admin_message',
+    metadata: { sender_id: req.user.id, sender_username: sender?.username },
+  });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Notification envoyée.' });
+});
+
 export default router;

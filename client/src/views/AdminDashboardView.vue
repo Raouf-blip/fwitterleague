@@ -50,6 +50,7 @@
                 <th class="px-5 py-3 hidden md:table-cell">Équipe</th>
                 <th class="px-5 py-3 text-center hidden lg:table-cell">Rôle</th>
                 <th class="px-5 py-3 text-center">Rank</th>
+                <th class="px-5 py-3 text-center hidden lg:table-cell">Discord</th>
                 <th class="px-5 py-3 text-center">Statut</th>
                 <th class="px-5 py-3 text-right">Actions</th>
               </tr>
@@ -96,6 +97,14 @@
                 <td class="px-5 py-3 text-center">
                   <RankBadge :rank="u.rank" :lp="u.lp" />
                 </td>
+                <td class="px-5 py-3 text-center hidden lg:table-cell">
+                  <BaseBadge :variant="u.discord_id ? 'success' : 'muted'" size="sm">
+                    {{ u.discord_id ? 'Linked' : 'Unlinked' }}
+                  </BaseBadge>
+                  <div v-if="u.discord_id" class="text-xs text-text-muted">
+                    {{ u.discord }}
+                  </div>
+                </td>
                 <td class="px-5 py-3">
                   <div class="flex flex-wrap justify-center gap-1.5">
                     <BaseBadge v-if="u.is_captain" variant="gold" size="sm">Capitaine</BaseBadge>
@@ -116,6 +125,13 @@
                       :disabled="u.role === 'superadmin' && authStore.profile?.id !== u.id && !isSuperAdmin"
                     >
                       <template #icon><UserCog :size="14" /></template>
+                    </BaseButton>
+                    <BaseButton
+                      variant="ghost"
+                      size="sm"
+                      @click="openNotifyModal(u)"
+                    >
+                      <template #icon><MessageSquare :size="14" /></template>
                     </BaseButton>
                     <BaseButton
                       v-if="isSuperAdmin"
@@ -386,6 +402,49 @@
       </div>
     </BaseModal>
 
+    <!-- Notify Modal -->
+    <BaseModal v-model="showNotifyModal" title="Envoyer une notification" size="sm">
+      <div v-if="selectedUser" class="space-y-4">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 mb-4">
+          <BaseAvatar :src="selectedUser.avatar_url || undefined" :name="selectedUser.username" size="md" />
+          <div>
+            <div class="font-bold text-text-primary">{{ selectedUser.username }}</div>
+            <div class="text-xs text-text-muted">{{ selectedUser.riot_id || 'Riot ID non lié' }}</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Titre</label>
+          <BaseInput v-model="notifyTitle" placeholder="Titre de la notification">
+            <template #icon><MessageSquare :size="16" /></template>
+          </BaseInput>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-text-muted uppercase tracking-widest mb-1.5 ml-1">Message</label>
+          <textarea
+            v-model="notifyMessage"
+            rows="4"
+            placeholder="Contenu du message..."
+            class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-gold/50 transition-colors resize-none"
+          />
+        </div>
+
+        <div class="pt-4 flex gap-2">
+          <BaseButton variant="secondary" class="flex-1" @click="showNotifyModal = false">Annuler</BaseButton>
+          <BaseButton
+            variant="primary"
+            class="flex-1"
+            :loading="sendingNotify"
+            :disabled="!notifyTitle.trim() || !notifyMessage.trim()"
+            @click="sendNotification"
+          >
+            Envoyer
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
+
     <!-- Confirm Dialogs -->
     <ConfirmDialog
       v-model="showDeleteUserConfirm"
@@ -567,7 +626,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import {
   Trash2, Eye, Users, Shield, UserCog, UserPlus, UserMinus, Mic, Plus, Pencil, X,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, MessageSquare
 } from 'lucide-vue-next'
 import { api } from '../lib/api'
 import { getToken } from '../composables/useAuth'
@@ -607,6 +666,11 @@ const newRole = ref('user')
 const newStatus = ref<'none' | 'captain' | 'lft'>('none')
 const isCaster = ref('no')
 const changingRole = ref(false)
+
+const showNotifyModal = ref(false)
+const notifyTitle = ref('')
+const notifyMessage = ref('')
+const sendingNotify = ref(false)
 
 const showDeleteUserConfirm = ref(false)
 const deletingUser = ref(false)
@@ -853,6 +917,31 @@ function openRoleModal(user: Profile) {
   else newStatus.value = 'none'
   isCaster.value = user.is_caster ? 'yes' : 'no'
   showRoleModal.value = true
+}
+
+function openNotifyModal(user: Profile) {
+  selectedUser.value = user
+  notifyTitle.value = ''
+  notifyMessage.value = ''
+  showNotifyModal.value = true
+}
+
+async function sendNotification() {
+  if (!selectedUser.value) return
+  sendingNotify.value = true
+  try {
+    const token = await getToken()
+    await api.post(`/profiles/${selectedUser.value.id}/notify`, {
+      title: notifyTitle.value.trim(),
+      message: notifyMessage.value.trim(),
+    }, token)
+    notificationStore.show('Notification envoyée', 'success')
+    showNotifyModal.value = false
+  } catch (e: any) {
+    notificationStore.show(e.message || 'Erreur envoi notification', 'error')
+  } finally {
+    sendingNotify.value = false
+  }
 }
 
 function confirmDeleteUser(user: Profile) {

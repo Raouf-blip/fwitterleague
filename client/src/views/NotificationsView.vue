@@ -107,7 +107,7 @@ const inbox = computed(() => {
 });
 
 const outbox = computed(() => {
-  return inboxStore.applications.filter((i: any) => {
+  const sentApps = inboxStore.applications.filter((i: any) => {
     const userIsApplicant =
       i.type === "application" && i.sender_id === authStore.user?.id;
     const userIsInitiatorOfOffer =
@@ -116,6 +116,16 @@ const outbox = computed(() => {
       authStore.profile?.is_captain;
     return userIsApplicant || userIsInitiatorOfOffer;
   });
+
+  const sentNotifs = inboxStore.sentNotifications.map((n: any) => ({
+    ...n,
+    isSentNotif: true,
+  }));
+
+  return [...sentApps, ...sentNotifs].sort(
+    (a: any, b: any) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 });
 
 onMounted(async () => {
